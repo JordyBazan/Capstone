@@ -10,7 +10,12 @@
 {% block topbar %}
 <input class="search" placeholder="Buscar curso…" aria-label="Buscar curso" />
 {% if user.perfil.role == 'utp' %}
-<button class="topCta">+ Nuevo curso</button>
+<a href="{% url 'crear_curso' %}">Nuevo curso</a>
+<a href="{% url 'asignar_docente_curso' %}">Asignar Docente</a>
+<a href="{% url 'crear_asignatura' %}">Crear Asignatura</a>
+
+
+
 {% endif %}
 {% endblock %}
 
