@@ -1,0 +1,39 @@
+.main{ background:#ffffff; color:#0f172a; }
+.main h1, .main h2, .main h3{ color:#111827; }
+.main .sectionTitle{ color:#111827; }
+.main .hint{ color:#64748b; }
+.main .divider{ background:#e5e7eb; }
+
+.main .input, .main select{
+  background:#f1f5f9; border:1px solid #e5e7eb; color:#0f172a;
+  padding:.6rem .75rem; border-radius:10px; outline:0;
+  transition:border .2s, box-shadow .2s, background .2s;
+}
+.main .input::placeholder{ color:#6b7280; }
+.main .input:focus, .main select:focus{ border-color:var(--brand-600); box-shadow:0 0 0 3px var(--ring); }
+
+.main thead th{ background:#f8fafc; color:#0f172a; border-bottom:1px solid #e5e7eb; padding:.85rem; }
+.main tbody td{ border-bottom:1px solid #e5e7eb; color:#0f172a; }
+.main tbody tr:hover{ background:#f9fafb; }
+
+.curso-options{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:14px; justify-content:start;
+}
+
+.curso-card{
+  background:#ffffff;
+  border:1px solid #323865;           
+  border-left:6px solid var(--brand-600);
+  border-radius:16px;
+  padding:16px;
+  color:#0f172a;
+}
+.curso-card h3{ margin:0 0 6px; font-weight:800; color:#111827; }
+.curso-card p{ color:#475569; }
+.curso-card a{
+  display:inline-flex; margin-top:10px; background:#111827; color:#fff;
+  padding:.45rem .8rem; border-radius:10px;
+}
+.curso-card a:hover{ background:#0b1220; }

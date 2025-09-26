@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}AulaTrack - Anotaciones{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/Anotaciones.css' %}">
+{% endblock %}
+
+{% block topbar %}
+<input class="search" placeholder="Buscar alumno…" aria-label="Buscar alumno" />
+<button class="topCta">Nueva anotación</button>
+{% endblock %}
+
+{% block content %}
+<h2 class="sectionTitle">Anotaciones</h2>
+<p class="hint">Observaciones y reportes de conducta</p>
+<div class="divider"></div>
+
+<div class="curso-options">
+  <div class="curso-card op-anotaciones">
+    <h3>María Pérez</h3>
+    <p>Observación positiva: participación destacada.</p>
+    <a href="#">Ver detalle</a>
+  </div>
+  <div class="curso-card op-anotaciones">
+    <h3>Juan Soto</h3>
+    <p>Observación: llegó atrasado.</p>
+    <a href="#">Ver detalle</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}AulaTrack - Asistencia{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/asistencia.css' %}">
+{% endblock %}
+
+{% block topbar %}
+<input class="search" type="date" aria-label="Fecha de asistencia" />
+<button class="topCta">Guardar asistencia</button>
+{% endblock %}
+
+{% block content %}
+<h2 class="sectionTitle">Asistencia</h2>
+<p class="hint">Registro de Asistencia de alumnos</p>
+<div class="divider"></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Alumno</th>
+      <th>Estado</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for alumno in alumnos %}
+    <tr>
+      <td>{{ alumno.nombres }} {{ alumno.apellidos }}</td>
+      <td>
+        <select name="estado_{{ alumno.id }}">
+          <option value="presente">Presente</option>
+          <option value="ausente">Ausente</option>
+          <option value="justificado">Justificado</option>
+        </select>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="2">No hay alumnos registrados</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

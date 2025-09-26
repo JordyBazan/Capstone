@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{% block title %}AulaTrack{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body>
+    <main class="app">
+      <aside class="sidebar" aria-label="Barra lateral">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">AT</div>
+          <div class="name">AulaTrack</div>
+        </div>
+
+        {% if user.is_authenticated %}
+        <div class="profile" aria-label="Perfil usuario">
+          <div class="avatar" aria-hidden="true">
+            {{ user.username|slice:":2"|upper }}
+          </div>
+          <div>
+            <div class="docente">{{ user.username }}</div>
+            <div class="rol">
+              {{ user.perfil.get_role_display|default:"Sin rol" }}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <nav aria-label="Menú principal">
+          <ul>
+            <li><a class="navLink active" href="{% url 'home' %}">Cursos</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <section class="main">
+        <header class="topbar">
+          {% if user.is_authenticated %}
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="logout-btn">Cerrar sesión</button>
+            </form>
+          {% endif %}
+          {% block topbar %}{% endblock %}
+        </header>
+
+        <div class="content">
+          {% block content %}{% endblock %}
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

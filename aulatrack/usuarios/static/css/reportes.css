@@ -1,0 +1,31 @@
+.main{ background:#ffffff; color:#0f172a; }
+.main h1, .main h2, .main h3{ color:#111827; }
+.main .sectionTitle{ color:#111827; }
+.main .hint{ color:#64748b; }
+.main .divider{ background:#e5e7eb; }
+
+.main .input, .main select{
+  background:#f1f5f9; border:1px solid #e5e7eb; color:#0f172a;
+  padding:.6rem .75rem; border-radius:10px; outline:0;
+}
+
+.curso-options{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:14px; justify-content:start;
+}
+
+.op-reportes{
+  background:#ffffff;
+  border:1px solid #323865;          
+  border-left:6px solid var(--brand-600);
+  border-radius:16px;
+  padding:16px;
+  color:#0f172a;
+}
+.op-reportes h3{ margin:0 0 6px; font-weight:800; color:#111827; }
+.op-reportes p{ color:#475569; }
+.op-reportes a{
+  display:inline-flex; margin-top:10px; background:#111827; color:#fff;
+  padding:.45rem .8rem; border-radius:10px;
+}
+.op-reportes a:hover{ background:#0b1220; }

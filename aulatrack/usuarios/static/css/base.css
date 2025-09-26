@@ -1,0 +1,148 @@
+/* === AulaTrack · Base Theme (Dark + Purple) === */
+:root{
+  /* Brand */
+  --brand-300:#c084fc; --brand-400:#b072ff; --brand-500:#a855f7;
+  --brand-600:#8b5cf6; --brand-700:#7c3aed; --brand-800:#6d28d9;
+
+  /* Surfaces (dark) */
+  --bg-900:#141725;   /* body */
+  --bg-800:#191c2b;   /* sidebar */
+  --bg-700:#1f2333;   /* main */
+  --panel:#23273a;    /* cards */
+  --panel-2:#2b3050;  /* hover/accent */
+
+  /* Text */
+  --txt-100:#f3f4f6; --txt-200:#e5e7eb; --txt-400:#cbd5e1; --txt-600:#94a3b8;
+
+  /* States */
+  --success:#22c55e; --warning:#f59e0b; --danger:#ef4444;
+
+  --ring: rgba(168,85,247,.45);
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+  --radius: 14px;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  color:var(--txt-200);
+  background:var(--bg-900);
+}
+
+/* Links & headings */
+a{color:var(--brand-400);text-decoration:none}
+a:hover{color:var(--brand-300)}
+h1,h2,h3{margin:0 0 .5rem;color:#fff}
+p{margin:.25rem 0;color:var(--txt-400)}
+
+.sectionTitle{font-size:1.35rem;font-weight:800;color:#fff}
+.hint{color:var(--txt-600)}
+.divider{height:1px;background:#2a2d45;margin:12px 0 18px}
+
+/* App Shell */
+.app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+
+/* Pegamos más el contenido al borde izquierdo del main */
+.main{
+  background:var(--bg-700);
+  padding:24px 28px 28px 12px; /* ⬅️ reducido a 12px */
+}
+
+/* Quitamos cualquier centrado global de .content */
+.content{max-width:none;width:100%;margin:0}
+
+/* Topbar (controles a la derecha) */
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.topbar .search{margin-left:auto}
+
+/* Sidebar */
+.sidebar{
+  background:var(--bg-800);color:var(--txt-200);
+  width:260px;min-height:100vh;padding:18px 14px;
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;color:#fff;margin-bottom:10px}
+.brand .logo{
+  width:36px;height:36px;display:grid;place-items:center;border-radius:10px;
+  background:linear-gradient(135deg,var(--brand-600),var(--brand-800));
+  color:#fff;font-weight:900
+}
+.profile{display:flex;gap:10px;align-items:center;margin:12px 4px 14px}
+.profile .avatar{
+  width:36px;height:36px;border-radius:999px;display:grid;place-items:center;
+  background:#2f3352;color:#fff;font-weight:900;border:1px solid #3a3f6b
+}
+.profile .docente{color:#fff;font-weight:700}
+.profile .rol{color:var(--txt-600);font-size:.85rem}
+
+.sidebar nav ul{list-style:none;margin:0;padding:0}
+.navLink{
+  display:block;padding:10px 12px;border-radius:10px;color:var(--txt-200);transition:.2s;
+}
+.navLink:hover,.navLink.active{background:#252942;color:#fff;box-shadow: inset 0 0 0 1px #2e3357}
+
+/* Cards base */
+.card{
+  background:var(--panel);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  border:1px solid #2b3050;
+  padding:16px;
+}
+
+/* Controles */
+.input, select{
+  background:#22263b;border:1px solid #30365e;color:#fff;
+  padding:.6rem .75rem;border-radius:10px;outline:0;transition:border .2s, box-shadow .2s;
+}
+.input::placeholder{color:var(--txt-600)}
+.input:focus, select:focus{border-color:var(--brand-600);box-shadow:0 0 0 3px var(--ring)}
+
+/* Buscador con icono */
+.input.search{
+  max-width:480px;background:#1e2236;border:1px solid #323864;border-radius:12px;
+  padding:.7rem .9rem .7rem 2.4rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.02);
+  transition: box-shadow .2s, border-color .2s, background .2s;
+  background-image: url("data:image/svg+xml,%3Csvg width='18' height='18' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z' stroke='%23b9bff2' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:.8rem 50%;
+}
+.input.search:focus{
+  border-color: var(--brand-600);
+  background:#202547;
+  box-shadow: 0 0 0 3px var(--ring), 0 10px 26px rgba(124,58,237,.18);
+}
+
+/* Botones */
+.topCta,.cta,.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  gap:.5rem;padding:.6rem 1rem;border-radius:999px;border:0;cursor:pointer;font-weight:700;
+  transition:transform .05s ease, box-shadow .2s ease, background .2s ease;
+}
+.topCta,.btn-primary{
+  color:#fff;background:linear-gradient(135deg,var(--brand-600),var(--brand-700));
+  box-shadow:0 8px 20px rgba(124,58,237,.35);
+}
+.topCta:hover{background:linear-gradient(135deg,var(--brand-500),var(--brand-700))}
+.cta{background:#2a2f4a;color:#fff;border-radius:10px}
+.cta:hover{background:#323862}
+.btn:active,.topCta:active,.cta:active{transform:translateY(1px)}
+
+/* Tablas (aplican a cualquier <table>) */
+table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;background:transparent}
+thead th{
+  background:linear-gradient(135deg, #2a2f4b, #252946);
+  color:#fff;text-align:left;padding:.85rem;border-bottom:1px solid #32365a;font-weight:700
+}
+tbody td{padding:.8rem;border-bottom:1px solid #2a2e4a;color:var(--txt-200)}
+tbody tr:hover{background:#222640}
+
+/* Utilidades */
+.badge{
+  display:inline-flex;align-items:center;gap:.35rem;
+  padding:.25rem .55rem;border-radius:999px;font-size:.75rem;font-weight:800
+}
+.badge-success{background:rgba(34,197,94,.15);color:#d1fae5;border:1px solid rgba(34,197,94,.35)}
+.badge-danger{background:rgba(239,68,68,.15);color:#fee2e2;border:1px solid rgba(239,68,68,.35)}
+.badge-warning{background:rgba(245,158,11,.15);color:#fff7ed;border:1px solid rgba(245,158,11,.35)}

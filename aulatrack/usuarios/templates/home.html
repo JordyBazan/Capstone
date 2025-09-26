@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}AulaTrack - Home Docente{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock %}
+
+{% block topbar %}
+<input class="search" placeholder="Buscar curso…" aria-label="Buscar curso" />
+{% if user.perfil.role == 'utp' %}
+<button class="topCta">+ Nuevo curso</button>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div>
+  <div class="sectionTitle">Tus cursos</div>
+  <div class="hint">Acceso rápido a los cursos asignados</div>
+</div>
+
+<div class="courses">
+  {% if cursos_asignados %}
+    {% for asignacion in cursos_asignados %}
+      <article class="courseCard" role="button" tabindex="0">
+        <span class="badge">{{ asignacion.curso.año }}</span>
+        <div class="title">{{ asignacion.curso.nombre }}</div>
+        <div class="meta">Aula {{ asignacion.curso.sala }}</div>
+        <a href="{% url 'curso' %}?id={{ asignacion.curso.id }}" class="cta">Entrar</a>
+      </article>
+    {% endfor %}
+  {% else %}
+    <p>No tienes cursos asignados.</p>
+  {% endif %}
+</div>
+{% endblock %}

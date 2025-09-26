@@ -1,0 +1,57 @@
+/* === Anotaciones (fondo blanco + lista vertical) === */
+
+/* Tema claro solo para esta vista */
+.main{ background:#ffffff; color:#0f172a; }
+.main h1, .main h2, .main h3{ color:#111827; }
+.main .sectionTitle{ color:#111827; }
+.main .hint{ color:#64748b; }
+.main .divider{ background:#e5e7eb; }
+
+/* Controles claros dentro de .main */
+.main .input, .main select{
+  background:#f1f5f9; border:1px solid #e5e7eb; color:#0f172a;
+  padding:.6rem .75rem; border-radius:10px; outline:0;
+  transition:border .2s, box-shadow .2s, background .2s;
+}
+.main .input::placeholder{ color:#6b7280; }
+.main .input:focus, .main select:focus{
+  border-color:var(--brand-600); box-shadow:0 0 0 3px var(--ring);
+}
+
+/* Tablas claras (si se usan) */
+.main table{ width:100%; border-collapse:collapse; border-radius:12px; overflow:hidden; background:transparent; }
+.main thead th{
+  background:#f8fafc; color:#0f172a; text-align:left;
+  padding:.85rem; border-bottom:1px solid #e5e7eb; font-weight:700;
+}
+.main tbody td{ padding:.8rem; border-bottom:1px solid #e5e7eb; color:#0f172a; }
+.main tbody tr:hover{ background:#f9fafb; }
+
+/* ===== Lista vertical (una card por fila) ===== */
+.curso-options{
+  width:100%;
+  display:flex;                 
+  flex-direction:column;        
+  gap:14px;
+  align-items:stretch;          
+  justify-content:flex-start;   
+}
+
+.op-anotaciones{
+  width:100%;                   
+  background:#ffffff;
+  border:1px solid #323865;     
+  border-left:6px solid var(--brand-600);
+  border-radius:16px;
+  padding:16px;
+  color:#0f172a;
+}
+.op-anotaciones h3{ margin:0 0 6px; font-weight:800; color:#111827; }
+.op-anotaciones p{ color:#475569; }
+.op-anotaciones a{
+  display:inline-flex; margin-top:10px; background:#111827; color:#fff;
+  padding:.45rem .8rem; border-radius:10px;
+}
+.op-anotaciones a:hover{ background:#0b1220; }
+
+

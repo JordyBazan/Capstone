@@ -1,0 +1,46 @@
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/login.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="login">
+  <header><h1>AulaTrack</h1></header>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    {# errores generales (credenciales inválidas, etc.) #}
+    {% if form.non_field_errors %}
+      <div class="form-errors">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="field">
+      <label for="{{ form.username.id_for_label }}">Usuario</label>
+      {{ form.username }}
+      <div class="error">{{ form.username.errors }}</div>
+    </div>
+
+    <div class="field">
+      <label for="{{ form.password.id_for_label }}">Contraseña</label>
+      {{ form.password }}
+      <div class="error">{{ form.password.errors }}</div>
+    </div>
+
+    {# si venías de una página protegida, Django pasa ?next=/ruta #}
+    {% if next %}
+      <input type="hidden" name="next" value="{{ next }}">
+    {% endif %}
+
+    <div class="actions">
+      <button type="submit">Acceder</button>
+      <a href="{% url 'registro' %}">Crear cuenta</a>
+    </div>
+
+    <div class="help">
+      <a href="#">¿Olvidaste tu contraseña?</a>
+    </div>
+  </form>
+</main>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Crear asignatura{% endblock %}
+
+{% block content %}
+<h1>Crear Asignatura</h1>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <p>
+    <label for="{{ form.nombre.id_for_label }}">Nombre</label><br>
+    {{ form.nombre }} {{ form.nombre.errors }}
+  </p>
+  <p>
+    <label for="{{ form.descripcion.id_for_label }}">Descripción</label><br>
+    {{ form.descripcion }} {{ form.descripcion.errors }}
+  </p>
+  <p>
+    <label for="{{ form.profesor.id_for_label }}">Profesor (Docente)</label><br>
+    {{ form.profesor }} {{ form.profesor.errors }}
+  </p>
+
+  <button type="submit">Guardar</button>
+</form>
+{% endblock %}

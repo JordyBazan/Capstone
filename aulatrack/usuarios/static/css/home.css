@@ -1,0 +1,84 @@
+/* === Home (Listado de cursos) — Tema claro solo para Home === */
+
+/* 1) Fondo blanco en el área MAIN cuando estás en Home */
+.main{
+  background:#ffffff;            /* 🔹 fondo blanco solo en Home */
+  color:#0f172a;                 /* texto oscuro para contraste */
+}
+
+/* 2) Títulos y textos sobre blanco */
+.main h1, .main h2, .main h3{ color:#111827; }
+.main .sectionTitle{ color:#111827; }
+.main .hint{ color:#64748b; }    /* gris azulado suave */
+
+/* 3) Buscador estilo claro (mantiene posición a la derecha por base.css) */
+.main .input.search{
+  max-width:520px;
+  background:#f1f5f9;           /* gris muy claro */
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:.7rem .9rem .7rem 2.4rem;
+  box-shadow:0 2px 6px rgba(2,6,23,.06);
+  background-image:url("data:image/svg+xml,%3Csvg width='18' height='18' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z' stroke='%236b7280' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:.8rem 50%;
+}
+.main .input.search:focus{
+  background:#ffffff;
+  border-color:#974be4; /* lavanda */
+  box-shadow:0 0 0 3px var(--ring), 0 6px 16px rgba(124,58,237,.10);
+}
+
+/* 4) Grid de cursos — pegado a la izquierda */
+.courses{
+  display:grid;
+  grid-auto-flow:row;
+  grid-template-columns:repeat(auto-fill, 240px); /* ancho fijo por card */
+  gap:18px;
+  margin-top:18px;
+
+  justify-content:start;  /* a la izquierda */
+  justify-items:start;
+}
+
+/* 5) Cards más claras (menos moradas) */
+.courseCard{
+  width:240px;
+  position:relative;
+  color:#1f2937; /* texto oscuro */
+  border-radius:16px;
+  padding:16px;
+
+  /* 🔹 gradiente suave lavanda */
+  background:linear-gradient(145deg, #6600ff, #8a70af);
+  border:1px solid #6a00ff;
+  box-shadow:0 10px 26px rgba(17,24,39,.08);
+  transition:transform .1s ease, box-shadow .2s ease;
+}
+.courseCard:hover{
+  transform:translateY(-2px);
+  box-shadow:0 14px 32px rgba(17,24,39,.12);
+}
+
+/* Badge clarita */
+.courseCard .badge{
+  position:absolute;top:10px;left:10px;
+  background:rgba(124,58,237,.08);
+  border:1px solid rgba(124,58,237,.18);
+  color:#6d28d9;
+  border-radius:12px;
+  padding:.25rem .5rem;
+  font-weight:900;
+}
+
+/* Textos dentro de la card */
+.courseCard .title{font-weight:900;margin:26px 0 2px;color:#ffffff} /* indigo-900 */
+.courseCard .meta{color:#ffffff}                                       /* slate-600 */
+
+/* CTA sobria para fondo blanco */
+.courseCard .cta{
+  display:inline-flex;margin-top:12px;
+  background:#111827;          /* gris muy oscuro en vez de morado */
+  color:#fff;border-radius:10px;
+  padding:.45rem .8rem;
+}
+.courseCard .cta:hover{ background:#0b1220; }
