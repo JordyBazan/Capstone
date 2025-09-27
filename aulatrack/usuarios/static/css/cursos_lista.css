@@ -1,0 +1,67 @@
+/* === Cursos Lista (UTP) — Tema claro consistente con Home === */
+:root{
+  --bg:#ffffff;
+  --text:#0f172a;        /* texto principal */
+  --text-strong:#111827; /* títulos */
+  --muted:#64748b;       /* gris azulado */
+  --border:#e5e7eb;      /* borde suave */
+  --focus:#974be4;       /* lavanda (focus) */
+}
+.main{
+  background:#ffffff;            /* 🔹 fondo blanco solo en Home */
+  color:#0f172a;                 /* texto oscuro para contraste */
+}
+.page-head{ margin:0 0 1rem; }
+.page-head h1{
+  color:var(--text-strong);
+  font-size:1.5rem;font-weight:800;margin:0 0 .25rem;
+}
+.page-head .hint{ color:var(--muted); }
+
+/* contenedor tabla */
+.table-wrap{
+  background:#fff;border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;
+  box-shadow:0 6px 18px rgba(2,6,23,.06);
+}
+.table{ width:100%; border-collapse:collapse; font-size:.95rem; }
+.table th, .table td{
+  padding:.85rem 1rem; border-bottom:1px solid var(--border);
+  text-align:left; color:var(--text);
+}
+.table thead th{
+  background:#f8fafc; color:var(--muted);
+  text-transform:uppercase; font-size:.78rem; letter-spacing:.02em;
+}
+.table tr:hover td{ background:#fbfdff; }
+
+.cell-actions{
+  display:flex; gap:.6rem; flex-wrap:wrap;
+}
+.cell-actions a{
+  color:var(--text-strong); text-decoration:none; font-weight:600;
+  border:1px solid var(--border); border-radius:10px; padding:.35rem .7rem;
+  background:#fff; transition:box-shadow .15s ease, border-color .15s ease;
+}
+.cell-actions a:hover{
+  border-color:var(--focus);
+  box-shadow:0 0 0 3px rgba(151,75,228,.15);
+}
+
+/* buscador opcional arriba de la tabla */
+.table-toolbar{
+  display:flex; justify-content:flex-end; gap:.6rem; margin:.5rem 0;
+}
+.input{
+  height:38px; border:1px solid var(--border); border-radius:10px;
+  padding:0 .8rem; outline:none; background:#f1f5f9; color:var(--text);
+}
+.input:focus{
+  background:#fff; border-color:var(--focus);
+  box-shadow:0 0 0 3px rgba(151,75,228,.18);
+}
+
+/* responsive */
+@media (max-width: 720px){
+  .table th:nth-child(3), .table td:nth-child(3){ display:none; } /* oculta 'Sala' en móvil si hace falta */
+}

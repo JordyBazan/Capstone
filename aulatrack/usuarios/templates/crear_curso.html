@@ -1,10 +1,36 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Crear curso{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/crear_curso.css' %}">
+{% endblock %}
+
 {% block content %}
-<h1>Crear Curso</h1>
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Guardar</button>
-</form>
+<div class="page">
+  <h1>Crear Curso</h1>
+  <div class="hint">Ingresa los datos base del curso</div>
+
+  <form method="post" class="form-card">
+    {% csrf_token %}
+    <div class="grid">
+      <div class="field">
+        <label class="label" for="{{ form.año.id_for_label }}">Año</label>
+        {{ form.año }}
+      </div>
+      <div class="field">
+        <label class="label" for="{{ form.nombre.id_for_label }}">Nombre</label>
+        {{ form.nombre }}
+      </div>
+      <div class="field full">
+        <label class="label" for="{{ form.sala.id_for_label }}">Sala</label>
+        {{ form.sala }}
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" type="submit">Guardar</button>
+      <a class="btn" href="{% url 'cursos_lista' %}">Cancelar</a>
+    </div>
+  </form>
+</div>
 {% endblock %}

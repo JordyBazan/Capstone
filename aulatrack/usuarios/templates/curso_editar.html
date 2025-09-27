@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Editar curso{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/curso_editar.css' %}">{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>Editar curso: {{ curso.año }} {{ curso.nombre }}</h1>
+  <div class="hint">Actualiza datos del curso</div>
+</div>
+
+<form method="post" class="form-card">
+  {% csrf_token %}
+  <div class="form-grid">
+    <div class="form-row">
+      <label class="label" for="{{ form.año.id_for_label }}">Año</label>
+      {{ form.año }}
+    </div>
+    <div class="form-row">
+      <label class="label" for="{{ form.nombre.id_for_label }}">Nombre</label>
+      {{ form.nombre }}
+    </div>
+    <div class="form-row">
+      <label class="label" for="{{ form.sala.id_for_label }}">Sala</label>
+      {{ form.sala }}
+    </div>
+    
+    <div class="form-row full">
+      <label class="label" for="{{ form.asignaturas.id_for_label }}">Asignaturas</label>
+      {{ form.asignaturas }}
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn primary" type="submit">Guardar</button>
+    <a class="btn" href="{% url 'cursos_lista' %}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

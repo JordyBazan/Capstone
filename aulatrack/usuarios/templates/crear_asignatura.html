@@ -1,22 +1,29 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Crear asignatura{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/crear_asignatura.css' %}">
+{% endblock %}
 
 {% block content %}
-<h1>Crear Asignatura</h1>
+<div class="page">
+  <h1>Nueva Asignatura</h1>
+  <div class="hint">Completa la información de la asignatura</div>
 
-<form method="post" novalidate>
-  {% csrf_token %}
-  {{ form.non_field_errors }}
-  <p>
-    <label for="{{ form.nombre.id_for_label }}">Nombre</label><br>
-    {{ form.nombre }} {{ form.nombre.errors }}
-  </p>
-  <p>
-    <label for="{{ form.descripcion.id_for_label }}">Descripción</label><br>
-    {{ form.descripcion }} {{ form.descripcion.errors }}
-  </p>
-
-
-  <button type="submit">Guardar</button>
-</form>
+  <form method="post" class="form-card" novalidate>
+    {% csrf_token %}
+    <div class="field">
+      <label class="label" for="{{ form.nombre.id_for_label }}">Nombre</label>
+      {{ form.nombre }}
+    </div>
+    <div class="field">
+      <label class="label" for="{{ form.descripcion.id_for_label }}">Descripción</label>
+      {{ form.descripcion }}
+    </div>
+    <div class="actions">
+      <button class="btn primary" type="submit">Guardar</button>
+      <a class="btn" href="{% url 'home' %}">Cancelar</a>
+    </div>
+  </form>
+</div>
 {% endblock %}

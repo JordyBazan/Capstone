@@ -71,7 +71,7 @@ class Asignatura(models.Model):
 class Curso(models.Model):
     año = models.CharField(max_length=15)
     nombre = models.CharField(max_length=30)
-    asignaturas = models.ManyToManyField('Asignatura', blank=True)  # opcional
+    asignaturas = models.ManyToManyField('Asignatura', blank=True)  
     profesor_jefe = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

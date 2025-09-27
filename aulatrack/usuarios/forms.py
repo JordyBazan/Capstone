@@ -1,8 +1,10 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
+from .models import Curso, Asignatura, DocenteCurso, Perfil
+from django.forms import CheckboxSelectMultiple
 
-from .models import Perfil
+
 
 
 class RegistroForm(UserCreationForm):
@@ -19,11 +21,15 @@ class LoginForm(AuthenticationForm):
     password = forms.CharField(label="Contraseña", widget=forms.PasswordInput)
 
 
+class AsignaturaForm(forms.ModelForm):
+    class Meta:
+        model = Asignatura
+        fields = ['nombre', 'descripcion']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'placeholder': 'Ej. Matemática'}),
+            'descripcion': forms.Textarea(attrs={'placeholder': 'Breve descripción…', 'rows': 5}),
+        }
 
-# usuarios/forms.py
-
-from django import forms
-from .models import DocenteCurso, Curso,Asignatura
 
 class DocenteCursoForm(forms.ModelForm):
     class Meta:
@@ -34,8 +40,38 @@ class CursoForm(forms.ModelForm):
     class Meta:
         model = Curso
         fields = ['año', 'nombre', 'sala']
+        widgets = {
+            'año': forms.TextInput(attrs={'placeholder':'Ej:2025 / 1° Básico'}),
+            'nombre': forms.TextInput(attrs={'placeholder':'Ej:1° Básico A'}),
+            'sala': forms.TextInput(attrs={'placeholder':'Ej:Aula 1'}),
+        }
+
         
 class AsignaturaForm(forms.ModelForm):
     class Meta:
         model = Asignatura
         fields = ['nombre', 'descripcion'] 
+
+
+
+
+class CursoEditForm(forms.ModelForm):
+    asignaturas = forms.ModelMultipleChoiceField(
+        queryset=Asignatura.objects.all(),
+        required=False,
+        widget=CheckboxSelectMultiple,
+        label="Asignaturas"
+    )
+
+    class Meta:
+        model = Curso
+        fields = ['año', 'nombre', 'sala', 'asignaturas']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        
+
+        def label_asignatura(a: Asignatura):
+            return f"Asignatura: {a.nombre}"
+        self.fields['asignaturas'].label_from_instance = label_asignatura

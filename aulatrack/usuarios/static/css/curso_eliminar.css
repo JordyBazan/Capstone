@@ -1,0 +1,37 @@
+/* === Curso Eliminar Confirmar — Tema claro consistente con Home === */
+:root{
+  --bg:#ffffff;
+  --text:#0f172a;
+  --text-strong:#111827;
+  --border:#e5e7eb;
+  --danger:#ef4444;
+  --danger-weak:#fee2e2;
+  --focus:#974be4;
+}
+.main{
+  background:#ffffff;            /* 🔹 fondo blanco solo en Home */
+  color:#0f172a;                 /* texto oscuro para contraste */
+}
+.confirm{
+  background:#fff; border:1px solid var(--border); border-radius:12px;
+  padding:1rem; max-width:640px;
+  box-shadow:0 6px 18px rgba(2,6,23,.06);
+}
+.confirm h1{ margin:0 0 .5rem; font-size:1.25rem; font-weight:800; color:var(--text-strong); }
+.confirm p{ color:var(--text); }
+
+.warn{
+  background:var(--danger-weak); color:var(--danger);
+  padding:.6rem .8rem; border-radius:10px; font-weight:700; margin: .75rem 0 1rem;
+}
+
+.actions{ display:flex; gap:.6rem; flex-wrap:wrap; }
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  height:38px; padding:0 .9rem; border-radius:10px; font-weight:700;
+  border:1px solid var(--border); background:#fff; color:var(--text-strong);
+  text-decoration:none; cursor:pointer; transition:box-shadow .15s ease, border-color .15s ease;
+}
+.btn:hover{ border-color:var(--focus); box-shadow:0 0 0 3px rgba(151,75,228,.15); }
+.btn.danger{ background:var(--danger); color:#fff; border-color:transparent; }
+.btn.cancel{ background:#fff; }

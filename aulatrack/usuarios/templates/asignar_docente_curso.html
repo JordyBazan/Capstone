@@ -1,11 +1,32 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Asignar docente a curso{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/asignar_docente_curso.css' %}">
+{% endblock %}
 
 {% block content %}
-<h1>Asignar Docente a Curso</h1>
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Guardar</button>
-</form>
+<div class="page">
+  <h1>Asignar Docente a Curso</h1>
+  <div class="hint">Selecciona un docente y el curso a asignar</div>
+
+  <form method="post" class="form-card">
+    {% csrf_token %}
+
+    <div class="field">
+      <label class="label" for="{{ form.docente.id_for_label }}">Docente</label>
+      {{ form.docente }}
+    </div>
+
+    <div class="field">
+      <label class="label" for="{{ form.curso.id_for_label }}">Curso</label>
+      {{ form.curso }}
+    </div>
+
+    <div class="actions">
+      <button type="submit" class="btn primary">Guardar</button>
+      <a href="{% url 'cursos_lista' %}" class="btn">Cancelar</a>
+    </div>
+  </form>
+</div>
 {% endblock %}

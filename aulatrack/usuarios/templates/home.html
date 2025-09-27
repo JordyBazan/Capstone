@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}AulaTrack - Home Docente{% endblock %}
+{% block title %}AulaTrack - Home{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/home.css' %}">
@@ -10,12 +10,9 @@
 {% block topbar %}
 <input class="search" placeholder="Buscar curso…" aria-label="Buscar curso" />
 {% if user.perfil.role == 'utp' %}
-<a href="{% url 'crear_curso' %}">Nuevo curso</a>
-<a href="{% url 'asignar_docente_curso' %}">Asignar Docente</a>
-<a href="{% url 'crear_asignatura' %}">Crear Asignatura</a>
-
-
-
+  <a href="{% url 'crear_curso' %}">Nuevo curso</a>
+  <a href="{% url 'asignar_docente_curso' %}">Asignar Docente</a>
+  <a href="{% url 'crear_asignatura' %}">Crear Asignatura</a>
 {% endif %}
 {% endblock %}
 
@@ -35,8 +32,33 @@
         <a href="{% url 'curso' %}?id={{ asignacion.curso.id }}" class="cta">Entrar</a>
       </article>
     {% endfor %}
-  {% else %}
+  {% elif user.perfil.role == 'docente' %}
     <p>No tienes cursos asignados.</p>
   {% endif %}
 </div>
+
+{% if user.perfil.role == 'utp' %}
+  <div>
+    <div class="sectionTitle">Todos los cursos</div>
+    <div class="hint">Vista de UTP: gestión de todos los cursos</div>
+  </div>
+
+  <div class="courses">
+    {% if cursos_todos %}
+      {% for curso in cursos_todos %}
+        <article class="courseCard" role="button" tabindex="0">
+          <span class="badge">{{ curso.año }}</span>
+          <div class="title">{{ curso.nombre }}</div>
+          <div class="meta">Aula {{ curso.sala }}</div>
+          <div class="meta">Profesor Jefe: {{ curso.profesor_jefe|default:"Sin asignar" }}</div>
+          <a href="{% url 'curso' %}?id={{ curso.id }}" class="cta">Entrar</a>
+          <a href="{% url 'curso_editar' curso.id %}">Editar</a> |
+          <a href="{% url 'curso_eliminar' curso.id %}">Eliminar</a>
+        </article>
+      {% endfor %}
+    {% else %}
+      <p>No hay cursos creados.</p>
+    {% endif %}
+  </div>
+{% endif %}
 {% endblock %}

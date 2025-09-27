@@ -1,0 +1,44 @@
+.main{ background:#fff; color:#0f172a; }
+
+.page{
+  max-width: 680px;
+  margin: 16px 0;                 /* se alinea al contenido de tu layout */
+}
+
+.form-card{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  padding:1.25rem;
+  box-shadow:0 6px 18px rgba(2,6,23,.06);
+}
+
+/* Inputs full width y legibles */
+.field{ margin-bottom:1rem; }
+.label{ display:block; font-weight:700; color:#111827; margin-bottom:.35rem; }
+.form-card input[type="text"],
+.form-card textarea{
+  width:100%;
+  box-sizing:border-box;
+  border:1px solid #d1d5db;
+  border-radius:10px;
+  padding:.55rem .75rem;
+  background:#fff !important;
+  color:#111827 !important;
+}
+.form-card textarea{ min-height:120px; resize:vertical; }
+.form-card input:focus, .form-card textarea:focus{
+  border-color:#974be4;
+  box-shadow:0 0 0 3px rgba(151,75,228,.18);
+  outline:none;
+}
+
+.actions{ display:flex; gap:.6rem; }
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  height:38px; padding:0 .95rem; border-radius:10px; font-weight:700;
+  border:1px solid #e5e7eb; background:#fff; color:#111827; text-decoration:none;
+}
+.btn:hover{ border-color:#974be4; box-shadow:0 0 0 3px rgba(151,75,228,.15); }
+.btn.primary{ background:#8b5cf6; border-color:#8b5cf6; color:#fff; }
+.btn.primary:hover{ background:#7c3aed; }

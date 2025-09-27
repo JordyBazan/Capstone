@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Eliminar curso{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/curso_eliminar.css' %}">{% endblock %}
+
+{% block content %}
+<div class="confirm">
+  <h1>Eliminar curso</h1>
+  <p>¿Seguro que deseas eliminar <strong>{{ curso.año }} {{ curso.nombre }}</strong> (Aula {{ curso.sala }})?</p>
+  <div class="warn">Esta acción no se puede deshacer.</div>
+  <form method="post" class="actions">
+    {% csrf_token %}
+    <button class="btn danger" type="submit">Sí, eliminar</button>
+    <a class="btn ghost" href="{% url 'cursos_lista' %}">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

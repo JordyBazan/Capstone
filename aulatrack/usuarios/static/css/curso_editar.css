@@ -1,0 +1,55 @@
+/* === Curso Editar — Tema claro consistente con Home === */
+:root{
+  --bg:#ffffff;
+  --text:#0f172a;
+  --text-strong:#111827;
+  --muted:#64748b;
+  --border:#e5e7eb;
+  --focus:#974be4;
+}
+.main{
+  background:#ffffff;            /* 🔹 fondo blanco solo en Home */
+  color:#0f172a;                 /* texto oscuro para contraste */
+}
+.page-head{ margin-bottom:1rem; }
+.page-head h1{ color:var(--text-strong); font-size:1.35rem; font-weight:800; margin:0 0 .25rem; }
+.page-head .hint{ color:var(--muted); }
+
+.form-card{
+  background:#fff; border:1px solid var(--border); border-radius:12px;
+  padding:1rem; max-width:720px;
+  box-shadow:0 6px 18px rgba(2,6,23,.06);
+}
+
+.form-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:1rem;
+}
+.form-row{ display:grid; gap:.4rem; }
+.form-row.full{ grid-column:1/-1; }
+
+.label{ font-weight:700; color:var(--text-strong); }
+
+input[type="text"], input[type="number"], select, textarea{
+  width:100%; min-height:40px; border:1px solid var(--border); border-radius:10px;
+  padding:.55rem .75rem; background:#fff; color:var(--text); outline:none;
+}
+textarea{ min-height:110px; resize:vertical; }
+
+input:focus, select:focus, textarea:focus{
+  border-color:var(--focus);
+  box-shadow:0 0 0 3px rgba(151,75,228,.18);
+}
+
+.form-actions{ display:flex; gap:.6rem; margin-top:.5rem; }
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:.4rem;
+  height:38px; padding:0 .9rem; border-radius:10px; font-weight:700;
+  border:1px solid var(--border); background:#fff; color:var(--text-strong);
+  text-decoration:none; cursor:pointer; transition:box-shadow .15s ease, border-color .15s ease;
+}
+.btn:hover{ border-color:var(--focus); box-shadow:0 0 0 3px rgba(151,75,228,.15); }
+.btn.primary{ background:var(--focus); border-color:transparent; color:#fff; }
+
+@media (max-width: 720px){
+  .form-grid{ grid-template-columns:1fr; }
+}

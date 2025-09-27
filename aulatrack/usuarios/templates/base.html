@@ -40,6 +40,14 @@
             <li><a class="navLink active" href="{% url 'home' %}">Cursos</a></li>
           </ul>
         </nav>
+        {% if user.is_authenticated and user.perfil.role == 'utp' %}
+          <ul>
+            <li><a href="{% url 'cursos_lista' %}">Gestionar cursos</a></li>
+            <li><a href="{% url 'crear_curso' %}">Crear curso</a></li>
+            <li><a href="{% url 'crear_asignatura' %}">Crear asignatura</a></li>
+            <li><a href="{% url 'asignar_docente_curso' %}">Asignar docentes a curso</a></li>
+          </ul>
+        {% endif %}
       </aside>
 
       <section class="main">

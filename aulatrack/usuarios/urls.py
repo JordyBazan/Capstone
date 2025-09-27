@@ -4,6 +4,7 @@ from .views import (
     MiLoginView, registro, home, curso, asistencia,
     notas, anotaciones, reportes, asignar_docente_curso, crear_curso, crear_asignatura
 )
+from . import views
 
 urlpatterns = [
     path('', home, name='home'),
@@ -21,6 +22,8 @@ urlpatterns = [
     path('crear-curso/', crear_curso, name='crear_curso'),
     path('crear-asignatura/', crear_asignatura, name='crear_asignatura'),
 
-
+    path('cursos/', views.cursos_lista, name='cursos_lista'),
+    path('cursos/<int:pk>/editar/', views.curso_editar, name='curso_editar'),
+    path('cursos/<int:pk>/eliminar/', views.curso_eliminar, name='curso_eliminar'),
 
 ]
