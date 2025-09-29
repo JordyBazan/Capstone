@@ -7,38 +7,35 @@
 <link rel="stylesheet" href="{% static 'css/home.css' %}">
 {% endblock %}
 
-{% block topbar %}
-<input class="search" placeholder="Buscar curso…" aria-label="Buscar curso" />
-{% if user.perfil.role == 'utp' %}
-  <a href="{% url 'crear_curso' %}">Nuevo curso</a>
-  <a href="{% url 'asignar_docente_curso' %}">Asignar Docente</a>
-  <a href="{% url 'crear_asignatura' %}">Crear Asignatura</a>
-{% endif %}
-{% endblock %}
-
 {% block content %}
 <div>
   <div class="sectionTitle">Tus cursos</div>
   <div class="hint">Acceso rápido a los cursos asignados</div>
 </div>
 
+<!-- ===== Cursos asignados al docente ===== -->
 <div class="courses">
   {% if cursos_asignados %}
     {% for asignacion in cursos_asignados %}
-      <article class="courseCard" role="button" tabindex="0">
+      <article class="courseCard" tabindex="0">
         <span class="badge">{{ asignacion.curso.año }}</span>
+
         <div class="title">{{ asignacion.curso.nombre }}</div>
         <div class="meta">Aula {{ asignacion.curso.sala }}</div>
-        <a href="{% url 'curso' %}?id={{ asignacion.curso.id }}" class="cta">Entrar</a>
+
+        <div class="actions">
+          <a href="{% url 'curso' %}?id={{ asignacion.curso.id }}" class="btn btn-primary">Entrar</a>
+        </div>
       </article>
     {% endfor %}
   {% elif user.perfil.role == 'docente' %}
-    <p>No tienes cursos asignados.</p>
+    <p class="muted">No tienes cursos asignados.</p>
   {% endif %}
 </div>
 
+<!-- ===== Vista UTP: todos los cursos ===== -->
 {% if user.perfil.role == 'utp' %}
-  <div>
+  <div style="margin-top: 8px;">
     <div class="sectionTitle">Todos los cursos</div>
     <div class="hint">Vista de UTP: gestión de todos los cursos</div>
   </div>
@@ -46,18 +43,22 @@
   <div class="courses">
     {% if cursos_todos %}
       {% for curso in cursos_todos %}
-        <article class="courseCard" role="button" tabindex="0">
+        <article class="courseCard" tabindex="0">
           <span class="badge">{{ curso.año }}</span>
+
           <div class="title">{{ curso.nombre }}</div>
           <div class="meta">Aula {{ curso.sala }}</div>
           <div class="meta">Profesor Jefe: {{ curso.profesor_jefe|default:"Sin asignar" }}</div>
-          <a href="{% url 'curso' %}?id={{ curso.id }}" class="cta">Entrar</a>
-          <a href="{% url 'curso_editar' curso.id %}">Editar</a> |
-          <a href="{% url 'curso_eliminar' curso.id %}">Eliminar</a>
+
+          <div class="actions">
+            <a href="{% url 'curso' %}?id={{ curso.id }}" class="btn btn-primary">Entrar</a>
+            <a href="{% url 'curso_editar' curso.id %}" class="btn btn-ghost">Editar</a>
+            <a href="{% url 'curso_eliminar' curso.id %}" class="btn btn-danger">Eliminar</a>
+          </div>
         </article>
       {% endfor %}
     {% else %}
-      <p>No hay cursos creados.</p>
+      <p class="muted">No hay cursos creados.</p>
     {% endif %}
   </div>
 {% endif %}

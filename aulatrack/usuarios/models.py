@@ -22,11 +22,6 @@ class Perfil(models.Model):
         return f"{self.user.username} - {self.get_role_display()}"
 
 
-# usuarios/models.py
-
-from django.db import models
-from django.contrib.auth.models import User
-
 class DocenteCurso(models.Model):
     docente = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'perfil__role': 'docente'})
     curso = models.ForeignKey('Curso', on_delete=models.CASCADE)
@@ -66,22 +61,35 @@ class Asignatura(models.Model):
         blank=True    
     )
     
+from django.db.models.functions import Lower
 
 
 class Curso(models.Model):
     año = models.CharField(max_length=15)
     nombre = models.CharField(max_length=30)
-    asignaturas = models.ManyToManyField('Asignatura', blank=True)  
+    asignaturas = models.ManyToManyField('Asignatura', blank=True)
+
     profesor_jefe = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        null=True,   
-        blank=True   
+        null=True,
+        blank=True,
+        limit_choices_to={'perfil__role': 'docente'}, 
+        related_name='cursos_como_profesor_jefe'
     )
+
     sala = models.CharField(max_length=10)
 
     def __str__(self):
         return f"{self.año} {self.nombre} - ({self.sala})"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                Lower('año'), Lower('nombre'), Lower('sala'),
+                name='uniq_curso_anio_nombre_sala_ci'
+            )
+        ]
 
 
 class Nota(models.Model):

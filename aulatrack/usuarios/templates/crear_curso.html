@@ -10,20 +10,38 @@
   <h1>Crear Curso</h1>
   <div class="hint">Ingresa los datos base del curso</div>
 
+  {# Muestra errores no-campo (como duplicado) #}
+  {% if form.non_field_errors %}
+    <div class="alert error">
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+
   <form method="post" class="form-card">
     {% csrf_token %}
     <div class="grid">
       <div class="field">
         <label class="label" for="{{ form.año.id_for_label }}">Año</label>
         {{ form.año }}
+        {{ form.año.errors }}
       </div>
+
       <div class="field">
         <label class="label" for="{{ form.nombre.id_for_label }}">Nombre</label>
         {{ form.nombre }}
+        {{ form.nombre.errors }}
       </div>
+
+      <div class="field">
+        <label class="label" for="{{ form.profesor_jefe.id_for_label }}">Profesor Jefe</label>
+        {{ form.profesor_jefe }}
+        {{ form.profesor_jefe.errors }}
+      </div>
+
       <div class="field full">
         <label class="label" for="{{ form.sala.id_for_label }}">Sala</label>
         {{ form.sala }}
+        {{ form.sala.errors }}
       </div>
     </div>
 

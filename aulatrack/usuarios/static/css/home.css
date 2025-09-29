@@ -1,84 +1,127 @@
-/* === Home (Listado de cursos) — Tema claro solo para Home === */
+/* ===== Área principal (solo Home) ===== */
+.main{ background:#ffffff; color:#0f172a; }
 
-/* 1) Fondo blanco en el área MAIN cuando estás en Home */
-.main{
-  background:#ffffff;            /* 🔹 fondo blanco solo en Home */
-  color:#0f172a;                 /* texto oscuro para contraste */
+/* Titulares y descripciones */
+.sectionTitle{
+  font-size:1.5rem; font-weight:800; letter-spacing:.2px;
+  color:#111827; margin-bottom:.25rem;
 }
+.hint{ color:#5b647a; font-size:.95rem; margin-bottom:.8rem; }
 
-/* 2) Títulos y textos sobre blanco */
-.main h1, .main h2, .main h3{ color:#111827; }
-.main .sectionTitle{ color:#111827; }
-.main .hint{ color:#64748b; }    /* gris azulado suave */
-
-/* 3) Buscador estilo claro (mantiene posición a la derecha por base.css) */
-.main .input.search{
-  max-width:520px;
-  background:#f1f5f9;           /* gris muy claro */
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  padding:.7rem .9rem .7rem 2.4rem;
-  box-shadow:0 2px 6px rgba(2,6,23,.06);
-  background-image:url("data:image/svg+xml,%3Csvg width='18' height='18' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z' stroke='%236b7280' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:.8rem 50%;
-}
-.main .input.search:focus{
-  background:#ffffff;
-  border-color:#974be4; /* lavanda */
-  box-shadow:0 0 0 3px var(--ring), 0 6px 16px rgba(124,58,237,.10);
-}
-
-/* 4) Grid de cursos — pegado a la izquierda */
+/* ===== Grid ===== */
 .courses{
   display:grid;
-  grid-auto-flow:row;
-  grid-template-columns:repeat(auto-fill, 240px); /* ancho fijo por card */
-  gap:18px;
-  margin-top:18px;
-
-  justify-content:start;  /* a la izquierda */
-  justify-items:start;
+  grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+  gap:20px; margin:14px 0 28px; align-items:stretch;
 }
 
-/* 5) Cards más claras (menos moradas) */
+/* ===== Card de curso ===== */
 .courseCard{
-  width:240px;
-  position:relative;
-  color:#1f2937; /* texto oscuro */
-  border-radius:16px;
-  padding:16px;
-
-  /* 🔹 gradiente suave lavanda */
-  background:linear-gradient(145deg, #6600ff, #8a70af);
-  border:1px solid #6a00ff;
-  box-shadow:0 10px 26px rgba(17,24,39,.08);
-  transition:transform .1s ease, box-shadow .2s ease;
+  position:relative; overflow:hidden; border-radius:16px;
+  padding:16px 16px 56px; isolation:isolate;
+  /* Paleta morada AulaTrack */
+  background:linear-gradient(140deg,#7c3aed 0%,#8b5cf6 38%,#6d28d9 100%);
+  border:1px solid rgba(124,58,237,.40);
+  box-shadow:0 14px 30px rgba(17,24,39,.10), 0 4px 10px rgba(17,24,39,.05);
+  transition:transform .12s ease, box-shadow .2s ease, border-color .15s ease;
+}
+.courseCard::before{
+  content:""; position:absolute; inset:0; z-index:0;
+  /* Overlay para asegurar contraste de texto */
+  background: radial-gradient(110% 90% at 75% 15%, rgba(0,0,0,.12) 0%, rgba(0,0,0,.18) 60%, rgba(0,0,0,.22) 100%);
+  mix-blend-mode: multiply;
+}
+.courseCard::after{
+  content:""; position:absolute; inset:0; z-index:0;
+  background:linear-gradient(to bottom, rgba(255,255,255,.12), transparent 40%);
 }
 .courseCard:hover{
   transform:translateY(-2px);
-  box-shadow:0 14px 32px rgba(17,24,39,.12);
+  box-shadow:0 18px 36px rgba(17,24,39,.16), 0 6px 14px rgba(17,24,39,.08);
+  border-color:rgba(124,58,237,.55);
 }
 
-/* Badge clarita */
+/* Distintivo del año */
 .courseCard .badge{
-  position:absolute;top:10px;left:10px;
-  background:rgba(124,58,237,.08);
-  border:1px solid rgba(124,58,237,.18);
-  color:#6d28d9;
-  border-radius:12px;
-  padding:.25rem .5rem;
-  font-weight:900;
+  position:absolute; top:10px; left:10px; z-index:1;
+  display:inline-block; padding:.25rem .55rem; font-size:.8rem; font-weight:800;
+  color:#fff; background:rgba(17,24,39,.35); border:1px solid rgba(255,255,255,.28);
+  border-radius:10px; backdrop-filter:blur(4px);
 }
 
 /* Textos dentro de la card */
-.courseCard .title{font-weight:900;margin:26px 0 2px;color:#ffffff} /* indigo-900 */
-.courseCard .meta{color:#ffffff}                                       /* slate-600 */
-
-/* CTA sobria para fondo blanco */
-.courseCard .cta{
-  display:inline-flex;margin-top:12px;
-  background:#111827;          /* gris muy oscuro en vez de morado */
-  color:#fff;border-radius:10px;
-  padding:.45rem .8rem;
+.courseCard .title{
+  position:relative; z-index:1; margin-top:28px;
+  color:#fff; font-weight:900; letter-spacing:.2px; font-size:1.05rem;
+  text-shadow:0 1px 1px rgba(0,0,0,.25);
 }
-.courseCard .cta:hover{ background:#0b1220; }
+.courseCard .meta{
+  position:relative; z-index:1; margin-top:.2rem; font-weight:500;
+  color:#eef; text-shadow:0 1px 1px rgba(0,0,0,.20);
+}
+
+/* ===== Acciones ===== */
+.courseCard .actions{
+  position:absolute; left:16px; right:16px; bottom:12px; z-index:1;
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+}
+
+/* Botones base */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  height:34px; padding:0 .9rem; border-radius:10px;
+  font-weight:800; letter-spacing:.2px; font-size:.92rem;
+  text-decoration:none; border:1px solid transparent;
+  transition: filter .15s ease, transform .12s ease, box-shadow .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
+}
+.btn:focus{
+  outline:none;
+  box-shadow:0 0 0 3px rgba(255,255,255,.35), 0 0 0 5px rgba(124,58,237,.55);
+}
+
+/* Entrar (primario) */
+.btn-primary{
+  color:#0b1220; background:#f8fafc;
+  border-color:rgba(15,23,42,.12);
+  box-shadow:0 4px 12px rgba(2,6,23,.25);
+}
+.btn-primary:hover{ filter:brightness(1.03); transform:translateY(-1px); }
+.btn-primary:active{ transform:translateY(0); }
+
+/* Editar (secundario/ghost) */
+.btn-ghost{
+  color:#ffffff;
+  background:rgba(255,255,255,.14);
+  border-color:rgba(255,255,255,.25);
+  backdrop-filter:blur(4px);
+}
+.btn-ghost:hover{ background:rgba(255,255,255,.22); transform:translateY(-1px); }
+
+/* Eliminar (peligro) */
+.btn-danger{
+  color:#ffffff;
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+  border:1px solid rgba(255,255,255,.25);
+  box-shadow:0 4px 12px rgba(220,38,38,.35);
+}
+.btn-danger:hover{ filter:brightness(1.05); transform:translateY(-1px); }
+
+/* Si quieres que Editar/Eliminar aparezcan solo en hover, descomenta:
+.courseCard .btn-ghost, .courseCard .btn-danger{ opacity:0; transform:translateY(2px); }
+.courseCard:hover .btn-ghost, .courseCard:hover .btn-danger{
+  opacity:1; transform:translateY(0);
+  transition:opacity .18s ease, transform .18s ease;
+}
+*/
+
+/* Utilidades */
+.muted{ color:#64748b; }
+
+/* Responsive */
+@media (max-width: 920px){
+  .courses{ grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+}
+@media (max-width: 520px){
+  .courses{ grid-template-columns: 1fr; }
+  .courseCard{ padding-bottom:64px; }
+}

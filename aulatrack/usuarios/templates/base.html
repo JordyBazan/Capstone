@@ -16,51 +16,52 @@
   <body>
     <main class="app">
       <aside class="sidebar" aria-label="Barra lateral">
-        <div class="brand">
-          <div class="logo" aria-hidden="true">AT</div>
-          <div class="name">AulaTrack</div>
+        <div class="sidebar-top">
+          <div class="brand">
+            <div class="logo" aria-hidden="true">AT</div>
+            <div class="name">AulaTrack</div>
+          </div>
+
+          <div class="profile" aria-label="Perfil usuario">
+            <div class="avatar" aria-hidden="true">
+              {{ user.username|slice:":2"|upper }}
+            </div>
+            <div>
+              <div class="docente">{{ user.username }}</div>
+              <div class="rol">{{ user.perfil.role|title|default:"Sin rol" }}</div>
+            </div>
+          </div>
+
+          <nav aria-label="Menú principal" class="menu">
+            <div class="nav-section">
+              <h4>Cursos</h4>
+              <ul>
+                <li><a href="{% url 'home' %}">Tus cursos</a></li>
+                {% if user.perfil.role == "utp" %}
+                  <li><a href="{% url 'cursos_lista' %}">Gestionar cursos</a></li>
+                  <li><a href="{% url 'crear_curso' %}">Crear curso</a></li>
+                  <li><a href="{% url 'crear_asignatura' %}">Crear asignatura</a></li>
+                  <li><a href="{% url 'asignar_docente_curso' %}">Asignar docentes</a></li>
+                {% endif %}
+              </ul>
+            </div>
+          </nav>
         </div>
 
         {% if user.is_authenticated %}
-        <div class="profile" aria-label="Perfil usuario">
-          <div class="avatar" aria-hidden="true">
-            {{ user.username|slice:":2"|upper }}
-          </div>
-          <div>
-            <div class="docente">{{ user.username }}</div>
-            <div class="rol">
-              {{ user.perfil.get_role_display|default:"Sin rol" }}
-            </div>
-          </div>
+        <div class="logout">
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="logout-btn">Cerrar sesión</button>
+          </form>
         </div>
-        {% endif %}
-
-        <nav aria-label="Menú principal">
-          <ul>
-            <li><a class="navLink active" href="{% url 'home' %}">Cursos</a></li>
-          </ul>
-        </nav>
-        {% if user.is_authenticated and user.perfil.role == 'utp' %}
-          <ul>
-            <li><a href="{% url 'cursos_lista' %}">Gestionar cursos</a></li>
-            <li><a href="{% url 'crear_curso' %}">Crear curso</a></li>
-            <li><a href="{% url 'crear_asignatura' %}">Crear asignatura</a></li>
-            <li><a href="{% url 'asignar_docente_curso' %}">Asignar docentes a curso</a></li>
-          </ul>
         {% endif %}
       </aside>
 
       <section class="main">
         <header class="topbar">
-          {% if user.is_authenticated %}
-            <form method="post" action="{% url 'logout' %}">
-              {% csrf_token %}
-              <button type="submit" class="logout-btn">Cerrar sesión</button>
-            </form>
-          {% endif %}
           {% block topbar %}{% endblock %}
         </header>
-
         <div class="content">
           {% block content %}{% endblock %}
         </div>
