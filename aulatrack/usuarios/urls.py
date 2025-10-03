@@ -12,9 +12,9 @@ urlpatterns = [
 
     # Páginas principales
     path('', home, name='home'),
-    path('curso/', curso, name='curso'),
-    path('asistencia/', asistencia, name='asistencia'),
-    path('notas/', notas, name='notas'),
+    path('curso/<int:curso_id>/', views.curso, name='curso'), #REVISAR
+    path("asistencia/<int:curso_id>/", views.asistencia, name="asistencia"), #REVISAR
+    path('notas/<int:curso_id>/', views.notas, name='notas'),
     path('anotaciones/', anotaciones, name='anotaciones'),
     path('reportes/', reportes, name='reportes'),
 

@@ -7,7 +7,7 @@ from django.contrib.auth.views import LoginView
 from django.shortcuts import render, redirect, get_object_or_404
 
 # Modelos: evita duplicados y conflictos de nombres
-from usuarios.models import Alumno, Curso, Asignatura
+from usuarios.models import Alumno, Curso, Asignatura, Nota
 from .models import Perfil, DocenteCurso
 
 # Formularios
@@ -50,19 +50,49 @@ def home(request):
 
 
 @login_required
-def curso(request):
-    return render(request, 'curso.html')
+def curso(request, curso_id):
+    curso = get_object_or_404(Curso, id=curso_id)
+    return render(request, 'curso.html', {'curso': curso}) #REVISAR
 
 
+
+#MOSTRAR SOLO ALUMNOS DE SU CURSO
 @login_required
-def asistencia(request):
-    alumnos = Alumno.objects.all()
-    return render(request, 'asistencia.html', {'alumnos': alumnos})
+def asistencia(request, curso_id):
+
+    curso = get_object_or_404(Curso, id=curso_id)
+
+    alumnos = Alumno.objects.filter(curso=curso)
+
+    return render(request, 'asistencia.html', {
+        'curso': curso,
+        'alumnos': alumnos
+    })
 
 
+#MOSTRAR SOLO ALUMNOS DE SU CURSO // REVISAR
 @login_required
-def notas(request):
-    return render(request, 'notas.html')
+def notas(request, curso_id):
+    curso = get_object_or_404(Curso, id=curso_id)
+
+    alumnos = Alumno.objects.filter(curso=curso).order_by('apellidos', 'nombres')
+
+    # Obtener notas existentes para ese curso
+    notas = Nota.objects.filter(alumno__curso=curso)
+
+    # Crear un diccionario de notas por alumno
+    notas_dict = {}
+    for nota in notas:
+        if nota.alumno_id not in notas_dict:
+            notas_dict[nota.alumno_id] = []
+        notas_dict[nota.alumno_id].append(nota)
+
+    return render(request, "notas.html", {
+        "curso": curso,
+        "alumnos": alumnos,
+        "notas_dict": notas_dict
+    })
+
 
 
 @login_required

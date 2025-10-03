@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block content %}
-<h2 class="sectionTitle">Curso mat-1m</h2>
+<h2 class="sectionTitle">{{ curso.año }} {{ curso.nombre }} - {{ curso.sala }}</h2>
 <p class="hint">Aula X</p>
 
 <div class="divider"></div>
@@ -22,13 +22,13 @@
   <div class="curso-card op-asistencia">
     <h3>Asistencia</h3>
     <p>Registro de Asistencia de alumnos</p>
-    <a href="{% url 'asistencia' %}" class="cta">Entrar</a>
+   <a href="{% url 'asistencia' curso.id %}" class="cta">Entrar</a> 
   </div>
 
   <div class="curso-card op-notas">
     <h3>Notas</h3>
     <p>Calificaciones por asignatura</p>
-    <a href="{% url 'notas' %}" class="cta">Entrar</a>
+    <a href="{% url 'notas' curso.id %}" class="cta" class="cta">Entrar</a>
   </div>
 
   <div class="curso-card op-anotaciones">

@@ -51,7 +51,7 @@
           <div class="meta">Profesor Jefe: {{ curso.profesor_jefe|default:"Sin asignar" }}</div>
 
           <div class="actions">
-            <a href="{% url 'curso' %}?id={{ curso.id }}" class="btn btn-primary">Entrar</a>
+            <a href="{% url 'curso' curso.id %}" class="btn btn-primary">Entrar</a>
             <a href="{% url 'curso_editar' curso.id %}" class="btn btn-ghost">Editar</a>
             <a href="{% url 'curso_eliminar' curso.id %}" class="btn btn-danger">Eliminar</a>
           </div>

@@ -49,7 +49,8 @@ class Alumno(models.Model):
 
     def __str__(self):
         return f"{self.nombres} {self.apellidos} - ({self.rut})"
-    
+    class Meta:
+        ordering = ['apellidos', 'nombres']  # Ordenar por apellidos, luego por nombres
 
 class Asignatura(models.Model):
     nombre = models.CharField(max_length=30)

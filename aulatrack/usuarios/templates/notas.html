@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block content %}
-<h2 class="sectionTitle">Notas</h2>
+<h2 class="sectionTitle">Notas - {{ curso.año }} {{ curso.nombre }}</h2>
 <p class="hint">Calificaciones por asignatura</p>
 <div class="divider"></div>
 
@@ -28,26 +28,18 @@
       </tr>
     </thead>
     <tbody>
+      {% for alumno in alumnos %}
       <tr>
-        <td>María Pérez</td>
-        <td>
-          <input type="number" step="0.1" min="1.0" max="7.0" value="6.0" aria-label="Nota Prueba 1 de María Pérez">
-        </td>
-        <td>
-          <input type="number" step="0.1" min="1.0" max="7.0" value="5.5" aria-label="Nota Prueba 2 de María Pérez">
-        </td>
-        <td>5.8</td>
+        <td>{{ alumno.nombres }} {{ alumno.apellidos }}</td>
+        <td><input type="number" step="0.1" min="1.0" max="7.0" value=""></td>
+        <td><input type="number" step="0.1" min="1.0" max="7.0" value=""></td>
+        <td></td>
       </tr>
+      {% empty %}
       <tr>
-        <td>Juan Soto</td>
-        <td>
-          <input type="number" step="0.1" min="1.0" max="7.0" value="5.0" aria-label="Nota Prueba 1 de Juan Soto">
-        </td>
-        <td>
-          <input type="number" step="0.1" min="1.0" max="7.0" value="6.0" aria-label="Nota Prueba 2 de Juan Soto">
-        </td>
-        <td>5.5</td>
+        <td colspan="4">No hay alumnos en este curso.</td>
       </tr>
+      {% endfor %}
     </tbody>
   </table>
 </div>
