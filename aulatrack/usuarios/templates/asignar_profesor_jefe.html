@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Asignar profesor jefe{% endblock %}
+
+{% block content %}
+  <div class="card" style="max-width:720px;margin:auto;">
+    <h1>"QUITAR PROFES REPERIDOS"</h1>
+    <h1 style="margin-bottom:1rem;">Asignar profesor jefe</h1>
+
+    {# mensajes de Django #}
+    {% if messages %}
+      <ul class="messages" style="margin:0 0 1rem 0;padding:0;list-style:none;">
+        {% for message in messages %}
+          <li class="msg {{ message.tags }}" style="padding:.5rem .75rem;border-radius:.5rem;margin-bottom:.5rem;background:#f1f5f9;">
+            {{ message }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <form method="post" class="form" style="display:grid;gap:1rem;">
+      {% csrf_token %}
+      <div class="form-row">
+        <label for="{{ form.curso.id_for_label }}">Curso</label>
+        {{ form.curso }}
+      </div>
+      <div class="form-row">
+        <label for="{{ form.docente.id_for_label }}">Docente</label>
+        {{ form.docente }}
+      </div>
+
+      <div style="display:flex;gap:.5rem;">
+        <button type="submit" class="btn-primary">Asignar</button>
+        <a href="{% url 'cursos_lista' %}" class="btn-secondary">Volver</a>
+      </div>
+    </form>
+  </div>
+
+  <hr style="margin:2rem 0;opacity:.2;">
+
+  <div class="card" style="max-width:980px;margin:auto;">
+    <h2 style="margin-bottom:1rem;">Cursos y profesor jefe actual</h2>
+    <div style="overflow:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:.5rem;border-bottom:1px solid #e5e7eb;">Año</th>
+            <th style="text-align:left;padding:.5rem;border-bottom:1px solid #e5e7eb;">Nombre</th>
+            <th style="text-align:left;padding:.5rem;border-bottom:1px solid #e5e7eb;">Sala</th>
+            <th style="text-align:left;padding:.5rem;border-bottom:1px solid #e5e7eb;">Profesor jefe</th>
+            <th style="text-align:left;padding:.5rem;border-bottom:1px solid #e5e7eb;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in cursos %}
+            <tr>
+              <td style="padding:.5rem;border-bottom:1px solid #f1f5f9;">{{ c.año }}</td>
+              <td style="padding:.5rem;border-bottom:1px solid #f1f5f9;">{{ c.nombre }}</td>
+              <td style="padding:.5rem;border-bottom:1px solid #f1f5f9;">{{ c.sala }}</td>
+              <td style="padding:.5rem;border-bottom:1px solid #f1f5f9;">
+                {{ c.profesor_jefe.username|default:"—" }}
+              </td>
+              <td style="padding:.5rem;border-bottom:1px solid #f1f5f9;">
+                <a href="{% url 'asignar_profesor_jefe' %}?curso={{ c.id }}" class="chip">Editar</a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" style="padding:.75rem;">No hay cursos registrados.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

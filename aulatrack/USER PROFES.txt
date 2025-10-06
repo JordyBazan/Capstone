@@ -1,0 +1,11 @@
+USER PROFES
+| Nombre completo  | Usuario       | Contraseña     |
+| ---------------- | ------------- | -------------- |
+| Andres Fernandez | `a.fernandez` | `andres123`    |
+| Beatriz Guzman   | `b.guzman`    | `beatriz123`   |
+| Claudio Leiva    | `c.leiva`     | `claudio123`   |
+| Diana Morales    | `d.morales`   | `diana123`     |
+| Esteban Fuentes  | `e.fuentes`   | `esteban123`   |
+| Francisca Nunez  | `f.nunez`     | `francisca123` |
+| Gonzalo Reyes    | `g.reyes`     | `gonzalo123`   |
+| Helena Vargas    | `h.vargas`    | `helena123`    |

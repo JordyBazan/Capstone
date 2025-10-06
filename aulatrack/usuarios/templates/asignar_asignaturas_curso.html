@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Asignar asignaturas — {{ curso }}{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/crear_asignatura.css' %}">
+<style>
+  .form-card { max-width: 720px; margin: 1rem auto; padding: 1rem; }
+  .asignaturas-list { columns: 2; column-gap: 2rem; }
+  .asignaturas-list li { break-inside: avoid; margin-bottom: .5rem; list-style: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Asignar asignaturas</h1>
+  <div class="hint">Curso: <strong>{{ curso }}</strong></div>
+
+  <form method="post" class="form-card" novalidate>
+    {% csrf_token %}
+    <div class="field">
+      <label class="label">Selecciona asignaturas</label>
+      {# Puedes renderizar directo: {{ form.asignaturas }} #}
+      <ul class="asignaturas-list">
+        {% for cb in form.asignaturas %}
+        <li><label>{{ cb.tag }} {{ cb.choice_label }}</label></li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" type="submit">Guardar cambios</button>
+      <a class="btn" href="{% url 'cursos_lista' %}">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

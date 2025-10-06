@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Asignaturas{% endblock %}
+{% block content %}
+<h1>Asignaturas</h1>
+<p><a class="btn" href="{% url 'asignatura_crear' %}">+ Crear asignatura</a></p>
+<table class="table">
+  <thead><tr><th>Nombre</th><th>Descripción</th><th>Profesor</th><th></th></tr></thead>
+  <tbody>
+  {% for a in asignaturas %}
+    <tr>
+      <td>{{ a.nombre }}</td>
+      <td>{{ a.descripcion|default:"—" }}</td>
+      <td>{% if a.profesor %}{{ a.profesor.get_full_name|default:a.profesor.username }}{% else %}—{% endif %}</td>
+      <td class="cell-actions">
+        <a class="link" href="{% url 'asignatura_editar' a.id %}">Editar</a>
+        <a class="link" href="{% url 'asignatura_eliminar' a.id %}">Eliminar</a>
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4">No hay asignaturas.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

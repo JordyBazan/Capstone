@@ -1,13 +1,18 @@
-# usuarios/forms.py
+# =========================================================
+# Importaciones
+# =========================================================
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.forms import CheckboxSelectMultiple
+from django.db.models.functions import Lower
 
 from .models import Curso, Asignatura, DocenteCurso, Perfil
 
 
-# ---------- LOGIN ----------
+# =========================================================
+# 1) Autenticación
+# =========================================================
 class LoginForm(AuthenticationForm):
     username = forms.CharField(
         label="Usuario",
@@ -29,7 +34,9 @@ class LoginForm(AuthenticationForm):
     }
 
 
-# ---------- REGISTRO ----------
+# =========================================================
+# 2) Registro
+# =========================================================
 class RegistroForm(UserCreationForm):
     username = forms.CharField(
         label="Usuario",
@@ -86,30 +93,37 @@ class RegistroForm(UserCreationForm):
         return cleaned
 
 
-# ---------- GESTIÓN ACADÉMICA ----------
+# =========================================================
+# 3) Gestión Académica
+# =========================================================
+# 3.1) Asignatura
 class AsignaturaForm(forms.ModelForm):
     class Meta:
         model = Asignatura
-        fields = ["nombre", "descripcion"]
-        labels = {"nombre": "Nombre", "descripcion": "Descripción"}
+        fields = ["nombre", "descripcion", "profesor"]
+        labels = {
+            "nombre": "Nombre",
+            "descripcion": "Descripción",
+            "profesor": "Docente a cargo",
+        }
         widgets = {
             "nombre": forms.TextInput(attrs={"placeholder": "Ej. Matemática"}),
             "descripcion": forms.Textarea(attrs={"placeholder": "Breve descripción…", "rows": 4}),
+            "profesor": forms.Select(attrs={"data-placeholder": "Seleccione un docente"}),
         }
 
-
-class DocenteCursoForm(forms.ModelForm):
-    class Meta:
-        model = DocenteCurso
-        fields = ["docente", "curso"]
-        labels = {"docente": "Docente", "curso": "Curso"}
-
-
-
-
-from django.db.models.functions import Lower
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["profesor"].queryset = (
+            User.objects.filter(perfil__role=Perfil.ROLE_DOCENTE, is_active=True)
+            .order_by("first_name", "last_name")
+        )
+        self.fields["profesor"].label_from_instance = (
+            lambda u: f"{(u.get_full_name() or u.username).strip()} ({u.username})"
+        )
 
 
+# 3.2) Curso (crear)
 class CursoForm(forms.ModelForm):
     class Meta:
         model = Curso
@@ -129,12 +143,10 @@ class CursoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         self.fields["profesor_jefe"].queryset = (
-            User.objects.filter(is_active=True, perfil__role='docente')
+            User.objects.filter(is_active=True, perfil__role=Perfil.ROLE_DOCENTE)
             .order_by('first_name', 'last_name', 'username')
         )
-
         self.fields["profesor_jefe"].label_from_instance = (
             lambda u: f"{u.get_full_name()} ({u.username})".strip()
             if u.get_full_name() else f"{u.username}"
@@ -142,9 +154,8 @@ class CursoForm(forms.ModelForm):
 
     def clean_profesor_jefe(self):
         prof = self.cleaned_data.get("profesor_jefe")
-        if prof:
-            if not hasattr(prof, "perfil") or prof.perfil.role != "docente":
-                raise forms.ValidationError("El usuario seleccionado no tiene rol de Docente.")
+        if prof and (not hasattr(prof, "perfil") or prof.perfil.role != Perfil.ROLE_DOCENTE):
+            raise forms.ValidationError("El usuario seleccionado no tiene rol de Docente.")
         return prof
 
     def clean(self):
@@ -173,12 +184,38 @@ class CursoForm(forms.ModelForm):
         return cleaned
 
 
+# 3.3) Curso: asignar Asignaturas (checkboxes)
+class CursoAsignaturasForm(forms.ModelForm):
+    asignaturas = forms.ModelMultipleChoiceField(
+        queryset=Asignatura.objects.select_related("profesor").order_by("nombre"),
+        required=False,
+        widget=CheckboxSelectMultiple,
+        label="Asignaturas del curso",
+    )
+
+    class Meta:
+        model = Curso
+        fields = ["asignaturas"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        def etiqueta(a: Asignatura):
+            if a.profesor:
+                prof = (a.profesor.get_full_name() or a.profesor.username).strip()
+                return f"{a.nombre} — {prof}"
+            return a.nombre
+
+        self.fields["asignaturas"].label_from_instance = etiqueta
+
+
+# 3.4) Curso: editar datos + asignaturas (checkboxes)
 class CursoEditForm(forms.ModelForm):
     asignaturas = forms.ModelMultipleChoiceField(
         queryset=Asignatura.objects.all(),
         required=False,
         widget=CheckboxSelectMultiple,
-        label="Asignaturas"
+        label="Asignaturas",
     )
 
     class Meta:
@@ -188,7 +225,62 @@ class CursoEditForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["asignaturas"].label_from_instance = (
+            lambda a: f"Asignatura: {a.nombre}"
+        )
 
-        def label_asignatura(a: Asignatura):
-            return f"Asignatura: {a.nombre}"
-        self.fields["asignaturas"].label_from_instance = label_asignatura
+
+# =========================================================
+# 4) Docente ↔ Curso (asignación 1 a 1 por fila)
+# =========================================================
+class DocenteCursoForm(forms.ModelForm):
+    class Meta:
+        model = DocenteCurso
+        fields = ["docente", "curso"]
+        labels = {"docente": "Docente", "curso": "Curso"}
+        widgets = {
+            "docente": forms.Select(attrs={"data-placeholder": "Seleccione un docente"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Solo usuarios con rol DOCENTE y activos
+        self.fields["docente"].queryset = (
+            User.objects.filter(is_active=True, perfil__role=Perfil.ROLE_DOCENTE)
+            .order_by("first_name", "last_name", "username")
+        )
+
+        # Mostrar "Nombre Apellido (username)" en el combo
+        self.fields["docente"].label_from_instance = (
+            lambda u: f"{(u.get_full_name() or u.username).strip()} ({u.username})"
+        )
+
+    def clean_docente(self):
+        u = self.cleaned_data.get("docente")
+        if not u:
+            return u
+        if not hasattr(u, "perfil") or u.perfil.role != Perfil.ROLE_DOCENTE:
+            raise forms.ValidationError("El usuario seleccionado no tiene rol de Docente.")
+        return u
+
+
+
+class AsignarProfesorJefeForm(forms.Form):
+    curso = forms.ModelChoiceField(
+        queryset=Curso.objects.all().order_by('año', 'nombre'),
+        label="Curso",
+        widget=forms.Select(attrs={"class": "form-select"})
+    )
+    docente = forms.ModelChoiceField(
+        queryset=User.objects.filter(perfil__role='docente').order_by('username'),
+        label="Docente (profesor jefe)",
+        widget=forms.Select(attrs={"class": "form-select"})
+    )
+
+    def __init__(self, *args, **kwargs):
+        # opcional: recibir curso inicial para preselección
+        initial_curso = kwargs.pop("initial_curso", None)
+        super().__init__(*args, **kwargs)
+        if initial_curso:
+            self.fields["curso"].initial = initial_curso

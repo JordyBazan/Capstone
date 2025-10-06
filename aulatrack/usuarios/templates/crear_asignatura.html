@@ -20,6 +20,10 @@
       <label class="label" for="{{ form.descripcion.id_for_label }}">Descripción</label>
       {{ form.descripcion }}
     </div>
+    <div class="field">
+      <label class="label" for="{{ form.profesor.id_for_label }}">Docente a cargo</label>
+      {{ form.profesor }}
+    </div>
     <div class="actions">
       <button class="btn primary" type="submit">Guardar</button>
       <a class="btn" href="{% url 'home' %}">Cancelar</a>

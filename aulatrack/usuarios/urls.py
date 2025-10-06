@@ -1,4 +1,4 @@
-
+# urls.py
 from django.urls import path
 from django.contrib.auth.views import LogoutView
 from .views import (
@@ -10,26 +10,49 @@ from . import views
 
 urlpatterns = [
 
+    # =============================
     # Páginas principales
+    # =============================
     path('', home, name='home'),
-    path('curso/<int:curso_id>/', views.curso, name='curso'), #REVISAR
-    path("asistencia/<int:curso_id>/", views.asistencia, name="asistencia"), #REVISAR
+    path('curso/<int:curso_id>/', views.curso, name='curso'),
+    path('asistencia/<int:curso_id>/', views.asistencia, name='asistencia'),
     path('notas/<int:curso_id>/', views.notas, name='notas'),
     path('anotaciones/', anotaciones, name='anotaciones'),
     path('reportes/', reportes, name='reportes'),
 
+    # =============================
     # Autenticación
+    # =============================
     path('login/', MiLoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('registro/', registro, name='registro'),
 
-    # Administración académica
-    path('asignar-docente-curso/', asignar_docente_curso, name='asignar_docente_curso'),
-    path('crear-curso/', crear_curso, name='crear_curso'),
-    path('crear-asignatura/', crear_asignatura, name='crear_asignatura'),
-
-    # CRUD de cursos
+    # =============================
+    # Gestión Académica: Cursos
+    # =============================
     path('cursos/', views.cursos_lista, name='cursos_lista'),
+    path('cursos/crear/', crear_curso, name='crear_curso'),
     path('cursos/<int:pk>/editar/', views.curso_editar, name='curso_editar'),
     path('cursos/<int:pk>/eliminar/', views.curso_eliminar, name='curso_eliminar'),
+    path('cursos/<int:curso_id>/asignaturas/', views.asignar_asignaturas_curso, name='asignar_asignaturas_curso'),
+
+    path(
+        'cursos/<int:curso_id>/asignaturas/<int:asignatura_id>/quitar/',
+        views.curso_quitar_asignatura,
+        name='curso_quitar_asignatura'
+    ),
+
+    path('cursos/asignar-docente/', asignar_docente_curso, name='asignar_docente_curso'),
+
+    # =============================
+    # Gestión Académica: Asignaturas
+    # =============================
+    path('asignaturas/', views.asignatura_list, name='asignatura_list'),
+    path('asignaturas/crear/', crear_asignatura, name='asignatura_crear'),
+    path('asignaturas/<int:pk>/editar/', views.asignatura_editar, name='asignatura_editar'),
+    path('asignaturas/<int:pk>/eliminar/', views.asignatura_eliminar, name='asignatura_eliminar'),
+
+    path('crear-asignatura/', crear_asignatura, name='crear_asignatura'),
+    path("asignar-profesor-jefe/", views.asignar_profesor_jefe, name="asignar_profesor_jefe"),
+
 ]

@@ -7,6 +7,9 @@
 {% endblock %}
 
 {% block content %}
+<!-- ============================ -->
+<!-- Encabezado: Cursos           -->
+<!-- ============================ -->
 <div class="page-head">
   <h1>Cursos</h1>
   <div class="hint">Gestiona todos los cursos</div>
@@ -21,7 +24,6 @@
         <th>Sala</th>
         <th>Asignaturas</th>
         <th>Profesor Jefe</th>
-        <th>Docentes asignados</th>
         <th>Acciones</th>
       </tr>
     </thead>
@@ -38,7 +40,16 @@
               <div class="chips">
                 {% for a in asigns %}
                   <span class="chip" title="{{ a.descripcion|default:'Sin descripción' }}">
-                    {{ a.nombre }}{% if a.profesor %} — {{ a.profesor.username }}{% endif %}
+                    <a class="chip-label" href="{% url 'asignatura_editar' a.id %}">
+                      {{ a.nombre }}
+                    </a>
+                    <form method="post"
+                          action="{% url 'curso_quitar_asignatura' c.id a.id %}"
+                          class="chip-remove js-delete-form"
+                          data-confirm="¿Quitar «{{ a.nombre }}» del curso {{ c }}?">
+                      {% csrf_token %}
+                      <button type="submit" class="chip-x" aria-label="Quitar asignatura">×</button>
+                    </form>
                   </span>
                 {% endfor %}
               </div>
@@ -48,22 +59,28 @@
           {% endwith %}
         </td>
 
-        <td>{{ c.profesor_jefe|default:"—" }}</td>
-
         <td>
-          {% with docentes=docentes_por_curso|get_item:c.id %}
-            {% if docentes %}{{ docentes|join:", " }}{% else %}—{% endif %}
-          {% endwith %}
+          {% if c.profesor_jefe %}
+            {{ c.profesor_jefe.get_full_name|default:c.profesor_jefe.username }}
+          {% else %}—{% endif %}
         </td>
 
         <td class="cell-actions">
           <a class="link" href="{% url 'curso_editar' c.id %}">Editar</a>
-          <a class="link" href="{% url 'curso_eliminar' c.id %}">Eliminar</a>
-          <a class="link" href="{% url 'asignar_docente_curso' %}?curso={{ c.id }}">Asignar docentes</a>
+
+          <!-- Eliminar curso con confirmación -->
+          <form method="post" action="{% url 'curso_eliminar' c.id %}"
+                class="js-delete-form"
+                data-confirm="¿Eliminar el curso '{{ c }}'? Esta acción no se puede deshacer.">
+            {% csrf_token %}
+            <button type="submit" class="link link-danger" style="background:none;border:none;padding:0;">Eliminar</button>
+          </form>
+
+          <a class="link" href="{% url 'asignar_asignaturas_curso' c.id %}">Asignar asignaturas</a>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="7">No hay cursos.</td></tr>
+      <tr><td colspan="6">No hay cursos.</td></tr>
       {% endfor %}
     </tbody>
   </table>
@@ -71,9 +88,17 @@
 
 <br>
 
-<div class="page-head">
-  <h1>Asignaturas</h1>
-  <div class="hint">Listado de todas las asignaturas creadas</div>
+<!-- ============================ -->
+<!-- Encabezado: Asignaturas      -->
+<!-- ============================ -->
+<div class="page-head flex-between">
+  <div>
+    <h1>Asignaturas</h1>
+    <div class="hint">Listado de todas las asignaturas creadas</div>
+  </div>
+  <div>
+    <a class="btn" href="{% url 'asignatura_crear' %}">+ Crear asignatura</a>
+  </div>
 </div>
 
 <div class="table-wrap">
@@ -82,6 +107,8 @@
       <tr>
         <th>Nombre</th>
         <th>Descripción</th>
+        <th>Profesor</th>
+        <th style="width:1%;">Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -89,11 +116,37 @@
       <tr>
         <td>{{ a.nombre }}</td>
         <td>{{ a.descripcion|default:"—" }}</td>
+        <td>
+          {% if a.profesor %}
+            {{ a.profesor.get_full_name|default:a.profesor.username }}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td class="cell-actions">
+          <a class="link" href="{% url 'asignatura_editar' a.id %}">Editar</a>
+          <form method="post" action="{% url 'asignatura_eliminar' a.id %}"
+                class="js-delete-form"
+                data-confirm="¿Eliminar la asignatura '{{ a.nombre }}'?">
+            {% csrf_token %}
+            <button type="submit" class="link link-danger" style="background:none;border:none;padding:0;">Eliminar</button>
+          </form>
+        </td>
       </tr>
       {% empty %}
-      <tr><td colspan="3">No hay asignaturas creadas.</td></tr>
+      <tr><td colspan="4">No hay asignaturas creadas.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+
+<!-- Confirmación genérica -->
+<script>
+  document.addEventListener('click', function(e) {
+    const form = e.target.closest('.js-delete-form');
+    if (!form) return;
+    const msg = form.getAttribute('data-confirm') || '¿Seguro que deseas continuar?';
+    if (!confirm(msg)) e.preventDefault();
+  });
+</script>
 {% endblock %}
