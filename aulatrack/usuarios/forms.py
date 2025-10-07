@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.forms import CheckboxSelectMultiple
 from django.db.models.functions import Lower
 
-from .models import Curso, Asignatura, DocenteCurso, Perfil
+from .models import Curso, Asignatura, Perfil
 
 
 # =========================================================
@@ -233,36 +233,6 @@ class CursoEditForm(forms.ModelForm):
 # =========================================================
 # 4) Docente ↔ Curso (asignación 1 a 1 por fila)
 # =========================================================
-class DocenteCursoForm(forms.ModelForm):
-    class Meta:
-        model = DocenteCurso
-        fields = ["docente", "curso"]
-        labels = {"docente": "Docente", "curso": "Curso"}
-        widgets = {
-            "docente": forms.Select(attrs={"data-placeholder": "Seleccione un docente"}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # Solo usuarios con rol DOCENTE y activos
-        self.fields["docente"].queryset = (
-            User.objects.filter(is_active=True, perfil__role=Perfil.ROLE_DOCENTE)
-            .order_by("first_name", "last_name", "username")
-        )
-
-        # Mostrar "Nombre Apellido (username)" en el combo
-        self.fields["docente"].label_from_instance = (
-            lambda u: f"{(u.get_full_name() or u.username).strip()} ({u.username})"
-        )
-
-    def clean_docente(self):
-        u = self.cleaned_data.get("docente")
-        if not u:
-            return u
-        if not hasattr(u, "perfil") or u.perfil.role != Perfil.ROLE_DOCENTE:
-            raise forms.ValidationError("El usuario seleccionado no tiene rol de Docente.")
-        return u
 
 
 

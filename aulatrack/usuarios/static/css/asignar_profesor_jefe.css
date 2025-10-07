@@ -1,0 +1,35 @@
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 0.95rem;
+  border-radius: 10px;
+  border: 1px solid #000000;
+  background: #974be4;
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer; /* cambia el cursor al pasar el mouse */
+  transition: background 0.3s ease, transform 0.2s ease; /* animaciones suaves */
+}
+
+.btn-primary:hover {
+  background: #7a36c8; /* color más oscuro al pasar el mouse */
+  transform: scale(1.05); /* pequeño efecto de “zoom” */
+}
+
+.form-row input,
+.form-row select {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+  cursor: pointer; /* opcional si quieres que cambie el cursor */
+}
+
+.form-row input:hover,
+.form-row select:hover,
+.form-row input:focus,
+.form-row select:focus {
+  transform: scale(1.02); /* pequeño efecto de zoom */
+  box-shadow: 0 0 5px rgba(151, 75, 228, 0.5); /* sombra ligera */
+  border-color: #974be4; /* cambia el borde suavemente */
+}

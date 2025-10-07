@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block topbar %}
-<input class="search" type="date" aria-label="Fecha de asistencia" />
+
 <button class="topCta">Guardar asistencia</button>
 {% endblock %}
 
@@ -16,6 +16,12 @@
 <h2 class="sectionTitle">Asistencia</h2>
 <p class="hint">Registro de Asistencia de alumnos</p>
 <div class="divider"></div>
+
+<form method="GET" action="">
+  <label for="fecha">Filtrar por fecha:</label>
+  <input type="date" id="fecha" name="fecha" value="{{ request.GET.fecha }}">
+  <button type="submit">Filtrar</button>
+</form>
 
 <table>
   <thead>
@@ -29,11 +35,21 @@
     <tr>
       <td>{{ alumno.nombres }} {{ alumno.apellidos }}</td>
       <td>
-        <select name="estado_{{ alumno.id }}">
-          <option value="presente">Presente</option>
-          <option value="ausente">Ausente</option>
-          <option value="justificado">Justificado</option>
-        </select>
+      <div>
+        <label>
+          <input type="radio" name="estado_{{ alumno.id }}" value="presente">
+          Presente
+        </label>
+        <label>
+          <input type="radio" name="estado_{{ alumno.id }}" value="ausente">
+          Ausente
+        </label>
+        <label>
+          <input type="radio" name="estado_{{ alumno.id }}" value="justificado">
+          Justificado
+        </label>
+      </div>
+
       </td>
     </tr>
     {% empty %}

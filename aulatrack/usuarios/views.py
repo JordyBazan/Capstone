@@ -16,7 +16,7 @@ from .models import Perfil, DocenteCurso
 
 # Formularios
 from .forms import (
-    RegistroForm, LoginForm, DocenteCursoForm,
+    RegistroForm, LoginForm, 
     CursoEditForm, CursoForm, AsignaturaForm, CursoAsignaturasForm, AsignarProfesorJefeForm
 )
 from django.db.models import Q

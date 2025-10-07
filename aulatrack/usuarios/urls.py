@@ -42,7 +42,6 @@ urlpatterns = [
         name='curso_quitar_asignatura'
     ),
 
-    path('cursos/asignar-docente/', asignar_docente_curso, name='asignar_docente_curso'),
 
     # =============================
     # Gestión Académica: Asignaturas
