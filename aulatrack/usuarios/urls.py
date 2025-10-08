@@ -3,7 +3,7 @@ from django.urls import path
 from django.contrib.auth.views import LogoutView
 from .views import (
     MiLoginView, registro, home, curso, asistencia,
-    notas, anotaciones, reportes, asignar_docente_curso,
+    notas, anotaciones, reportes, 
     crear_curso, crear_asignatura
 )
 from . import views
@@ -52,6 +52,9 @@ urlpatterns = [
     path('asignaturas/<int:pk>/eliminar/', views.asignatura_eliminar, name='asignatura_eliminar'),
 
     path('crear-asignatura/', crear_asignatura, name='crear_asignatura'),
-    path("asignar-profesor-jefe/", views.asignar_profesor_jefe, name="asignar_profesor_jefe"),
+    path("asignar-profesor-jefe/", views.asignar_profesor_jefe, name="asignar_profesor_jefe"),         
+    path("cursos/set-pj/", views.asignar_profesor_jefe_inline, name="asignar_profesor_jefe_inline"),   
+
+    path('cursos/export/pdf/', views.cursos_export_pdf, name='cursos_export_pdf'),
 
 ]

@@ -125,3 +125,71 @@
   .courses{ grid-template-columns: 1fr; }
   .courseCard{ padding-bottom:64px; }
 }
+
+/* =========================
+   FIX: Filtro de orden (z-index + colores)
+   ========================= */
+.filter-bar{
+  position: relative;      /* contexto propio */
+  z-index: 9999;           /* por encima de .courseCard y sus ::before */
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: .6rem;
+  margin: .75rem 0 1rem;
+  background: #fff;        /* evita que se transparenten overlays */
+}
+
+.filter-bar label{
+  color: #5b647a;
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+
+.filter-bar select{
+  padding: .4rem .6rem;
+  border-radius: 10px;
+  border: 1px solid rgba(2,6,23,.12);
+  font-size: .95rem;
+  background: #fff !important;
+  color: #111827 !important;
+  /* mejora accesibilidad */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: auto;
+}
+
+.filter-bar option{
+  background: #fff !important;
+  color: #111827 !important;
+}
+
+.filter-bar select:focus{
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(168,85,247,.35);
+  border-color: rgba(124,58,237,.55);
+}
+
+
+.courseCard.is-mi-curso{
+  box-shadow: 0 18px 36px rgba(17,24,39,.18), 0 6px 14px rgba(17,24,39,.10);
+  border-color: rgba(255,255,255,.65);
+}
+.courseCard.is-mi-curso::after{
+  background: linear-gradient(to bottom, rgba(255,255,255,.18), transparent 45%);
+}
+
+.badge-mi-curso{
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .28rem .6rem;
+  font-size: .8rem; font-weight: 900; letter-spacing: .2px;
+  color: #0b1220;
+  background: #f8fafc;
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 9999px;
+  box-shadow: 0 4px 12px rgba(2,6,23,.25);
+}
+.badge-mi-curso::before{
+  content: "★"; font-size: .85rem; line-height: 1;
+}

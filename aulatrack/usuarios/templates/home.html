@@ -13,28 +13,48 @@
   <div class="hint">Acceso rápido a los cursos asignados</div>
 </div>
 
-<!-- ===== Cursos asignados al docente ===== -->
-<div class="courses">
-  {% if cursos_asignados %}
-    {% for asignacion in cursos_asignados %}
-      <article class="courseCard" tabindex="0">
-        <span class="badge">{{ asignacion.curso.año|default:asignacion.año }}</span>
+<div class="filter-bar">
+  <form method="get">
+    <label for="ordenar">Ordenar por:</label>
+    <select name="ordenar" id="ordenar" onchange="this.form.submit()">
+      <option value="basico_asc" {% if request.GET.ordenar == 'basico_asc' or not request.GET.ordenar %}selected{% endif %}>
+        Básico (1° → 8°)
+      </option>
+      <option value="basico_desc" {% if request.GET.ordenar == 'basico_desc' %}selected{% endif %}>
+        Básico (8° → 1°)
+      </option>
+      <option value="nombre_asc" {% if request.GET.ordenar == 'nombre_asc' %}selected{% endif %}>
+        Nombre (A → Z)
+      </option>
+    </select>
+  </form>
+</div>
 
-        <div class="title">{{ asignacion.curso.nombre|default:asignacion.nombre }}</div>
-        <div class="meta">Aula {{ asignacion.curso.sala|default:asignacion.sala }}</div>
+<!-- ===== Tus cursos (docente) ===== -->
+<div class="courses">
+  {% if cursos_docente %}
+    {% for c in cursos_docente %}
+      <article class="courseCard {% if c.profesor_jefe_id == request.user.id %}is-mi-curso{% endif %}" tabindex="0">
+        <span class="badge">{{ c.año }}</span>
+
+        {# Distintivo si el usuario es profesor jefe de este curso #}
+        {% if c.profesor_jefe_id == request.user.id %}
+          <span class="badge-mi-curso" aria-label="Eres profesor jefe de este curso">Mi curso</span>
+        {% endif %}
+
+        <div class="title">{{ c.nombre }}</div>
+        <div class="meta">Aula {{ c.sala }}</div>
 
         <div class="meta">Profesor Jefe:
-          {% if asignacion.curso.profesor_jefe %}
-            {{ asignacion.curso.profesor_jefe.username }}
-          {% elif asignacion.profesor_jefe %}
-            {{ asignacion.profesor_jefe.username }}
+          {% if c.profesor_jefe %}
+            {{ c.profesor_jefe.username }}{% if c.profesor_jefe_id == request.user.id %} (tú){% endif %}
           {% else %}
             Sin asignar
           {% endif %}
         </div>
 
         <div class="actions">
-          <a href="{% url 'curso' asignacion.curso.id|default:asignacion.id %}" class="btn btn-primary">Entrar</a>
+          <a href="{% url 'curso' c.id %}" class="btn btn-primary">Entrar</a>
         </div>
       </article>
     {% endfor %}
@@ -43,7 +63,6 @@
   {% endif %}
 </div>
 
-<!-- ===== Vista UTP: todos los cursos ===== -->
 {% if user.perfil.role == 'utp' %}
   <div style="margin-top: 8px;">
     <div class="sectionTitle">Todos los cursos</div>

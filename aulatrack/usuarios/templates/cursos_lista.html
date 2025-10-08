@@ -7,12 +7,27 @@
 {% endblock %}
 
 {% block content %}
+{% if messages %}
+<ul class="messages">
+  {% for message in messages %}
+    <li class="msg {{ message.tags }}">{{ message }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
 <!-- ============================ -->
 <!-- Encabezado: Cursos           -->
 <!-- ============================ -->
-<div class="page-head">
-  <h1>Cursos</h1>
-  <div class="hint">Gestiona todos los cursos</div>
+<div class="page-head flex-between">
+  <div>
+    <h1>Cursos</h1>
+    <div class="hint">Gestiona todos los cursos</div>
+  </div>
+  <div class="head-actions">
+    <a class="btn" href="{% url 'asignatura_crear' %}">+ Crear asignatura</a>
+    <a class="btn" href="{% url 'crear_curso' %}">+ Crear curso</a>
+    <a class="btn-prim" href="{% url 'cursos_export_pdf' %}">Exportar PDF</a>
+  </div>
 </div>
 
 <div class="table-wrap">
@@ -39,10 +54,17 @@
             {% if asigns %}
               <div class="chips">
                 {% for a in asigns %}
-                  <span class="chip" title="{{ a.descripcion|default:'Sin descripción' }}">
-                    <a class="chip-label" href="{% url 'asignatura_editar' a.id %}">
-                      {{ a.nombre }}
-                    </a>
+                  <span class="chip"
+                        title="{{ a.nombre }}{% if a.profesor %} ({{ a.profesor.get_full_name|default:a.profesor.username }}){% endif %}">
+                    <span class="chip-text">
+                      <a class="chip-label" href="{% url 'asignatura_editar' a.id %}">
+                        {{ a.nombre }}
+                      </a>
+                      {% if a.profesor %}
+                        <span class="chip-sub">({{ a.profesor.get_full_name|default:a.profesor.username }})</span>
+                      {% endif %}
+                    </span>
+
                     <form method="post"
                           action="{% url 'curso_quitar_asignatura' c.id a.id %}"
                           class="chip-remove js-delete-form"
@@ -60,9 +82,27 @@
         </td>
 
         <td>
+          {# Mostrar actual #}
           {% if c.profesor_jefe %}
-            {{ c.profesor_jefe.get_full_name|default:c.profesor_jefe.username }}
-          {% else %}—{% endif %}
+            <div>{{ c.profesor_jefe.get_full_name|default:c.profesor_jefe.username }}</div>
+          {% else %}
+            <div class="muted">—</div>
+          {% endif %}
+
+          {# Cambiar/Limpiar PJ inline #}
+          <form method="post" action="{% url 'asignar_profesor_jefe' %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="curso_id" value="{{ c.id }}">
+            <select name="profesor_jefe" class="mini-select">
+              <option value="">— Sin PJ —</option>
+              {% for d in docentes %}
+                <option value="{{ d.id }}" {% if c.profesor_jefe_id == d.id %}selected{% endif %}>
+                  {{ d.get_full_name|default:d.username }}
+                </option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn mini">Guardar</button>
+          </form>
         </td>
 
         <td class="cell-actions">

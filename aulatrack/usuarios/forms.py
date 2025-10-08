@@ -1,11 +1,13 @@
 # =========================================================
 # Importaciones
 # =========================================================
+from pyexpat.errors import messages
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.forms import CheckboxSelectMultiple
 from django.db.models.functions import Lower
+from django.shortcuts import get_object_or_404, redirect, redirect
 
 from .models import Curso, Asignatura, Perfil
 
@@ -209,26 +211,10 @@ class CursoAsignaturasForm(forms.ModelForm):
         self.fields["asignaturas"].label_from_instance = etiqueta
 
 
-# 3.4) Curso: editar datos + asignaturas (checkboxes)
 class CursoEditForm(forms.ModelForm):
-    asignaturas = forms.ModelMultipleChoiceField(
-        queryset=Asignatura.objects.all(),
-        required=False,
-        widget=CheckboxSelectMultiple,
-        label="Asignaturas",
-    )
-
     class Meta:
         model = Curso
-        fields = ["año", "nombre", "sala", "asignaturas"]
-        labels = {"año": "Año", "nombre": "Nombre", "sala": "Sala"}
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["asignaturas"].label_from_instance = (
-            lambda a: f"Asignatura: {a.nombre}"
-        )
-
+        fields = ['año', 'nombre', 'sala'] 
 
 # =========================================================
 # 4) Docente ↔ Curso (asignación 1 a 1 por fila)
@@ -254,3 +240,30 @@ class AsignarProfesorJefeForm(forms.Form):
         super().__init__(*args, **kwargs)
         if initial_curso:
             self.fields["curso"].initial = initial_curso
+
+from django.views.decorators.http import require_POST
+from django.core.exceptions import PermissionDenied
+get_object_or_404, redirect, messages
+
+
+@require_POST
+def asignar_profesor_jefe(request):
+    if getattr(request.user.perfil, 'role', None) != 'utp':
+        raise PermissionDenied("Solo UTP puede asignar profesor jefe.")
+
+    curso_id = request.POST.get('curso_id')
+    pj_id = request.POST.get('profesor_jefe')  
+
+    curso = get_object_or_404(Curso, pk=curso_id)
+
+    if pj_id:
+        pj = get_object_or_404(User, pk=pj_id, perfil__role='docente')
+        curso.profesor_jefe = pj
+        msg = f"Profesor Jefe asignado: {pj.get_full_name() or pj.username}"
+    else:
+        curso.profesor_jefe = None
+        msg = "Profesor Jefe eliminado."
+
+    curso.save(update_fields=['profesor_jefe'])
+    messages.success(request, msg)
+    return redirect('curso_editar', pk=curso.pk)

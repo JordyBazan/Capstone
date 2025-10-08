@@ -1,0 +1,170 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>{{ titulo }}</title>
+  <link rel="stylesheet" href="{% static 'pdf/informe_cursos.css' %}">
+</head>
+<body>
+
+  <!-- Portada -->
+  <section class="cover">
+    <div class="cover-title">{{ titulo }}</div>
+    <div class="cover-sub">Panorama general de cursos, asignaturas y dotación docente</div>
+    <div class="cover-meta">
+      Generado: {{ generado|date:"d/m/Y H:i" }} · Usuario: {{ usuario.get_full_name|default:usuario.username }}
+    </div>
+    <hr class="rule" />
+  </section>
+
+  <!-- Resumen Ejecutivo -->
+  <section class="section">
+    <div class="h1">1. Resumen ejecutivo</div>
+    <div class="kpis">
+      <div class="kpi"><div class="k">Cursos</div><div class="v">{{ total_cursos }}</div></div>
+      <div class="kpi"><div class="k">Alumnos</div><div class="v">{{ total_alumnos }}</div></div>
+      <div class="kpi"><div class="k">Asignaturas distintas</div><div class="v">{{ asignaturas_distintas }}</div></div>
+      <div class="kpi"><div class="k">Relaciones curso-asignatura</div><div class="v">{{ total_asignaturas_matriz }}</div></div>
+      <div class="kpi"><div class="k">% cursos con PJ</div><div class="v">{{ pct_con_pj }}%</div></div>
+      <div class="kpi"><div class="k">% cursos con asignaturas</div><div class="v">{{ pct_con_asignaturas }}%</div></div>
+    </div>
+    <p class="muted">
+      “Asignaturas distintas” es el conteo único de asignaturas ofrecidas.
+      “Relaciones curso-asignatura” contabiliza la asignación de ramos a cursos (una asignatura puede estar en múltiples cursos).
+    </p>
+  </section>
+
+  <!-- Distribución y Tops -->
+  <section class="section">
+    <div class="h1">2. Distribución y principales actores</div>
+
+    <div class="h2">2.1 Distribución por nivel</div>
+    <ul class="list">
+      <li>Básico: <b>{{ dist_basico }}</b></li>
+      <li>Medio: <b>{{ dist_medio }}</b></li>
+      <li>Otros: <b>{{ dist_otros }}</b></li>
+    </ul>
+
+    <div class="h2">2.2 Profesores Jefe con más cursos</div>
+    {% if top_pj %}
+      <ul class="list">
+        {% for nombre, cnt in top_pj %}
+          <li>{{ nombre }} — <b>{{ cnt }}</b> curso(s)</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">No hay profesores jefe asignados.</p>
+    {% endif %}
+
+    <div class="h2">2.3 Asignaturas más presentes</div>
+    {% if top_asignaturas %}
+      <ul class="list">
+        {% for asig, cnt in top_asignaturas %}
+          <li>{{ asig }} — <b>{{ cnt }}</b> curso(s)</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">Sin datos de asignaturas.</p>
+    {% endif %}
+  </section>
+
+  <!-- Alertas -->
+  <section class="section">
+    <div class="h1">3. Alertas y brechas</div>
+    {% if cursos_sin_pj or cursos_sin_asignaturas or asignaturas_sin_prof %}
+      {% if cursos_sin_pj %}
+        <div class="h2">3.1 Cursos sin Profesor Jefe ({{ cursos_sin_pj|length }})</div>
+        <ul class="list">
+          {% for c in cursos_sin_pj %}
+            <li>{{ c.año }} {{ c.nombre }} (Sala {{ c.sala }})</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if cursos_sin_asignaturas %}
+        <div class="h2">3.2 Cursos sin asignaturas ({{ cursos_sin_asignaturas|length }})</div>
+        <ul class="list">
+          {% for c in cursos_sin_asignaturas %}
+            <li>{{ c.año }} {{ c.nombre }} (Sala {{ c.sala }})</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if asignaturas_sin_prof %}
+        <div class="h2">3.3 Asignaturas sin profesor</div>
+        <ul class="list">
+          {% for nombre in asignaturas_sin_prof %}
+            <li>{{ nombre }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% else %}
+      <p class="muted">Sin alertas relevantes.</p>
+    {% endif %}
+  </section>
+
+  <!-- Listado Detallado -->
+  <section class="section">
+    <div class="h1">4. Detalle de cursos</div>
+    <table>
+      <thead>
+        <tr>
+          <th class="nowrap">Año</th>
+          <th>Nombre</th>
+          <th class="nowrap">Sala</th>
+          <th class="right nowrap"># Asig.</th>
+          <th class="right nowrap"># Alumn.</th>
+          <th>Profesor Jefe</th>
+          <th>Asignaturas (con docente)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in cursos %}
+        <tr>
+          <td class="nowrap">{{ c.año }}</td>
+          <td class="wrap">{{ c.nombre }}</td>
+          <td class="nowrap">{{ c.sala }}</td>
+          <td class="right">{{ c.num_asignaturas }}</td>
+          <td class="right">{{ c.num_alumnos }}</td>
+          <td class="wrap">
+            {% if c.profesor_jefe %}
+              {{ c.profesor_jefe.get_full_name|default:c.profesor_jefe.username }}
+            {% else %}
+              <span class="badge warn">Sin PJ</span>
+            {% endif %}
+          </td>
+          <td class="wrap">
+            {% with asigns=c.asignaturas.all %}
+              {% if asigns %}
+                <span class="chips">
+                  {% for a in asigns %}
+                    <span class="chip">
+                      {{ a.nombre }}{% if a.profesor %} ({{ a.profesor.get_full_name|default:a.profesor.username }}){% endif %}
+                    </span>
+                  {% endfor %}
+                </span>
+              {% else %}
+                <span class="muted">—</span>
+              {% endif %}
+            {% endwith %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Anexo -->
+  <section class="section">
+    <div class="h1">5. Anexo</div>
+    <div class="h2">5.1 Metodología</div>
+    <p class="muted">
+      “Asignaturas distintas” cuenta la oferta única de asignaturas.
+      “Relaciones curso-asignatura” contabiliza la matriz de asignación entre cursos y asignaturas.
+      La distribución por nivel se determina con reglas textuales sobre “Año/Nombre” (p. ej., “Básico”, “Medio”).
+    </p>
+  </section>
+
+</body>
+</html>

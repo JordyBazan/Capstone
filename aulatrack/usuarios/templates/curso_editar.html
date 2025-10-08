@@ -1,39 +1,149 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}Editar curso{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/curso_editar.css' %}">{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/curso_editar.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="page-head">
-  <h1>Editar curso: {{ curso.año }} {{ curso.nombre }}</h1>
-  <div class="hint">Actualiza datos del curso</div>
+  <div>
+    <h1>Editar curso: {{ curso.año }} {{ curso.nombre }}</h1>
+    <div class="hint">Actualiza datos del curso</div>
+  </div>
 </div>
 
-<form method="post" class="form-card">
-  {% csrf_token %}
-  <div class="form-grid">
-    <div class="form-row">
-      <label class="label" for="{{ form.año.id_for_label }}">Año</label>
-      {{ form.año }}
-    </div>
-    <div class="form-row">
-      <label class="label" for="{{ form.nombre.id_for_label }}">Nombre</label>
-      {{ form.nombre }}
-    </div>
-    <div class="form-row">
-      <label class="label" for="{{ form.sala.id_for_label }}">Sala</label>
-      {{ form.sala }}
-    </div>
-    
-    <div class="form-row full">
-      <label class="label" for="{{ form.asignaturas.id_for_label }}">Asignaturas</label>
-      {{ form.asignaturas }}
-    </div>
+<div class="layout">
+  <div class="col col-main">
+    <form method="post" class="form-card">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="label" for="{{ form.año.id_for_label }}">Año</label>
+          {{ form.año }}
+        </div>
+        <div class="form-row">
+          <label class="label" for="{{ form.nombre.id_for_label }}">Nombre</label>
+          {{ form.nombre }}
+        </div>
+        <div class="form-row">
+          <label class="label" for="{{ form.sala.id_for_label }}">Sala</label>
+          {{ form.sala }}
+        </div>
+      </div>
+
+      
+
+      <div class="form-actions">
+        <button class="btn primary" type="submit">Guardar</button>
+        <a class="btn" href="{% url 'cursos_lista' %}">Cancelar</a>
+      </div>
+    </form>
   </div>
 
-  <div class="form-actions">
-    <button class="btn primary" type="submit">Guardar</button>
-    <a class="btn" href="{% url 'cursos_lista' %}">Cancelar</a>
-  </div>
-</form>
+  {% if user.perfil.role == 'utp' %}
+  <aside class="col col-side">
+    <section class="card">
+      <div class="card-head">
+        <h2 class="card-title">Resumen del curso</h2>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><div class="k">Asignaturas</div><div class="v">{{ curso.asignaturas.count }}</div></div>
+        <div class="kpi"><div class="k">Alumnos</div><div class="v">{{ curso.alumno_set.count }}</div></div>
+        <div class="kpi"><div class="k">Sala</div><div class="v">{{ curso.sala|default:"—" }}</div></div>
+      </div>
+      <div class="meta">
+        <div><span class="muted">Profesor Jefe:</span>
+          {% if curso.profesor_jefe %}
+            {{ curso.profesor_jefe.get_full_name|default:curso.profesor_jefe.username }}
+          {% else %}
+            <span class="badge warn">Sin PJ</span>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2 class="card-title">Profesor Jefe</h2>
+      </div>
+      <div class="card-body">
+        {% if docentes %}
+          {# usa la vista inline para cambiar PJ sin salir #}
+          <form method="post" action="{% url 'asignar_profesor_jefe_inline' %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="curso_id" value="{{ curso.id }}">
+            <select name="profesor_jefe" class="mini-select">
+              <option value="">— Sin PJ —</option>
+              {% for d in docentes %}
+                <option value="{{ d.id }}" {% if curso.profesor_jefe_id == d.id %}selected{% endif %}>
+                  {{ d.get_full_name|default:d.username }}
+                </option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn mini">Guardar</button>
+          </form>
+        {% else %}
+          <p class="muted">No se cargó la lista de docentes. (Pásala en el contexto como <code>docentes</code>).</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2 class="card-title">Asignaturas vinculadas</h2>
+        <a class="btn tiny" href="{% url 'asignar_asignaturas_curso' curso.id %}">+ Asignar</a>
+      </div>
+      <div class="card-body">
+        {% with asigns=curso.asignaturas.all %}
+          {% if asigns %}
+            <div class="chips">
+              {% for a in asigns %}
+                <span class="chip"
+                      title="{{ a.nombre }}{% if a.profesor %} ({{ a.profesor.get_full_name|default:a.profesor.username }}){% endif %}">
+                  <span class="chip-text">
+                    <a class="chip-label" href="{% url 'asignatura_editar' a.id %}">{{ a.nombre }}</a>
+                    {% if a.profesor %}
+                      <span class="chip-sub">({{ a.profesor.get_full_name|default:a.profesor.username }})</span>
+                    {% endif %}
+                  </span>
+                  <form method="post"
+                        action="{% url 'curso_quitar_asignatura' curso.id a.id %}"
+                        class="chip-remove js-delete-form"
+                        data-confirm="¿Quitar «{{ a.nombre }}» del curso {{ curso.año }} {{ curso.nombre }}?">
+                    {% csrf_token %}
+                    <button type="submit" class="chip-x" aria-label="Quitar asignatura">×</button>
+                  </form>
+                </span>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="muted">Este curso aún no tiene asignaturas.</p>
+          {% endif %}
+        {% endwith %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2 class="card-title">Accesos rápidos</h2>
+      </div>
+      <div class="quick-links">
+        <a class="q-link" href="{% url 'asistencia' curso.id %}">Asistencia</a>
+        <a class="q-link" href="{% url 'notas' curso.id %}">Notas</a>
+        <a class="q-link" href="{% url 'reportes' %}">Reportes</a>
+      </div>
+    </section>
+  </aside>
+  {% endif %}
+</div>
+
+<script>
+  document.addEventListener('click', function(e) {
+    const form = e.target.closest('.js-delete-form');
+    if (!form) return;
+    const msg = form.getAttribute('data-confirm') || '¿Seguro que deseas continuar?';
+    if (!confirm(msg)) e.preventDefault();
+  });
+</script>
 {% endblock %}
