@@ -9,7 +9,7 @@ from django.forms import CheckboxSelectMultiple
 from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404, redirect, redirect
 
-from .models import Curso, Asignatura, Perfil
+from .models import Curso, Asignatura, Perfil, Alumno
 
 
 # =========================================================
@@ -267,3 +267,16 @@ def asignar_profesor_jefe(request):
     curso.save(update_fields=['profesor_jefe'])
     messages.success(request, msg)
     return redirect('curso_editar', pk=curso.pk)
+
+
+# =========================================================
+# 5) Alumno
+# =========================================================
+
+class AlumnoForm(forms.ModelForm):
+    class Meta:
+        model = Alumno
+        fields = ['rut', 'nombres', 'apellidos', 'fecha_nacimiento', 'contacto_emergencia', 'curso']
+        widgets = {
+            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
+        }

@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Agregar Alumno{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/crear_curso.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Agregar Alumno</h1>
+  <div class="hint">Completa los datos del nuevo alumno</div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert {% if message.tags %}{{ message.tags }}{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if form.non_field_errors %}
+    <div class="alert error">
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+
+  <form method="post" class="form-card">
+    {% csrf_token %}
+    <div class="grid">
+      <div class="field">
+        <label class="label" for="{{ form.rut.id_for_label }}">RUT</label>
+        {{ form.rut }}
+        {{ form.rut.errors }}
+      </div>
+
+      <div class="field">
+        <label class="label" for="{{ form.nombres.id_for_label }}">Nombres</label>
+        {{ form.nombres }}
+        {{ form.nombres.errors }}
+      </div>
+
+      <div class="field">
+        <label class="label" for="{{ form.apellidos.id_for_label }}">Apellidos</label>
+        {{ form.apellidos }}
+        {{ form.apellidos.errors }}
+      </div>
+
+      <div class="field">
+        <label class="label" for="{{ form.fecha_nacimiento.id_for_label }}">Fecha de Nacimiento</label>
+        {{ form.fecha_nacimiento }}
+        {{ form.fecha_nacimiento.errors }}
+      </div>
+
+      <div class="field">
+        <label class="label" for="{{ form.contacto_emergencia.id_for_label }}">Contacto de Emergencia</label>
+        {{ form.contacto_emergencia }}
+        {{ form.contacto_emergencia.errors }}
+      </div>
+
+      <div class="field full">
+        <label class="label" for="{{ form.curso.id_for_label }}">Curso</label>
+        {{ form.curso }}
+        {{ form.curso.errors }}
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" type="submit">Guardar</button>
+      <a class="btn" href="{% url 'cursos_lista' %}">Volver</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

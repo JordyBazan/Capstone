@@ -57,4 +57,12 @@ urlpatterns = [
 
     path('cursos/export/pdf/', views.cursos_export_pdf, name='cursos_export_pdf'),
 
+
+
+    # =============================
+    # Gestión Académica: Cursos
+    # =============================
+    
+    path('alumnos/nuevo/', views.agregar_alumno, name='agregar_alumno'),
+
 ]

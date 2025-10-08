@@ -25,7 +25,7 @@ from .models import Perfil, DocenteCurso, Alumno, Curso, Asignatura, Nota
 # Formularios
 from .forms import (
     RegistroForm, LoginForm,
-    CursoForm, AsignaturaForm, CursoAsignaturasForm, AsignarProfesorJefeForm,CursoEditForm
+    CursoForm, AsignaturaForm, CursoAsignaturasForm, AsignarProfesorJefeForm,CursoEditForm, AlumnoForm
 )
 
 # =========================================================
@@ -258,6 +258,24 @@ def asignar_asignaturas_curso(request, curso_id):
         form = CursoAsignaturasForm(instance=curso)
 
     return render(request, "asignar_asignaturas_curso.html", {"curso": curso, "form": form})
+
+# =========================================================
+# Crear Alumno
+# =========================================================
+
+@login_required
+def agregar_alumno(request):
+    if request.method == 'POST':
+        form = AlumnoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Alumno agregado correctamente.")
+            return redirect('agregar_alumno')  # o 'lista_alumnos', si tienes una lista
+    else:
+        form = AlumnoForm()
+    
+    return render(request, 'agregar_alumno.html', {'form': form})
+
 
 
 @user_passes_test(es_utp)
