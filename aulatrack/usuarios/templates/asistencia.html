@@ -8,7 +8,6 @@
 {% endblock %}
 
 {% block topbar %}
-
 <button class="topCta">Guardar asistencia</button>
 {% endblock %}
 
@@ -26,6 +25,7 @@
 <table>
   <thead>
     <tr>
+      <th>Número</th>
       <th>Alumno</th>
       <th>Estado</th>
     </tr>
@@ -33,28 +33,28 @@
   <tbody>
     {% for alumno in alumnos %}
     <tr>
+      <td>{{ forloop.counter }}</td> <!-- Muestra el número de lista -->
       <td>{{ alumno.nombres }} {{ alumno.apellidos }}</td>
       <td>
-      <div>
-        <label>
-          <input type="radio" name="estado_{{ alumno.id }}" value="presente">
-          Presente
-        </label>
-        <label>
-          <input type="radio" name="estado_{{ alumno.id }}" value="ausente">
-          Ausente
-        </label>
-        <label>
-          <input type="radio" name="estado_{{ alumno.id }}" value="justificado">
-          Justificado
-        </label>
-      </div>
-
+        <div>
+          <label>
+            <input type="radio" name="estado_{{ alumno.id }}" value="presente">
+            Presente
+          </label>
+          <label>
+            <input type="radio" name="estado_{{ alumno.id }}" value="ausente">
+            Ausente
+          </label>
+          <label>
+            <input type="radio" name="estado_{{ alumno.id }}" value="justificado">
+            Justificado
+          </label>
+        </div>
       </td>
     </tr>
     {% empty %}
     <tr>
-      <td colspan="2">No hay alumnos registrados</td>
+      <td colspan="3">No hay alumnos registrados</td>
     </tr>
     {% endfor %}
   </tbody>

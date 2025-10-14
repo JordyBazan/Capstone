@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.functions import Lower
+from django.core.validators import RegexValidator
+
 
 
 
@@ -40,18 +42,45 @@ class DocenteCurso(models.Model):
 
 # Create your models here.-------------------------------------------------
 
+
+# VALIRDAR FORMATO RUT Y TELEFONO.-----------------
+
+rut_validator = RegexValidator(
+    regex=r'^\d{1,2}\.?\d{3}\.?\d{3}-[\dkK]$',
+    message="El RUT debe tener un formato válido, por ejemplo: 12.345.678-9 o 12345678-9"
+)
+
+telefono_validator = RegexValidator(
+    regex=r'^\+?56\d{9}$',
+    message="El número debe tener el formato chileno, por ejemplo: +56912345678"
+)
+
+
+
 class Alumno(models.Model):
-    rut = models.CharField(max_length=12, unique=True)
+    rut = models.CharField(
+        max_length=12,
+        unique=True,
+        validators=[rut_validator],
+        help_text="Formato: 12.345.678-9 o 12345678-9"
+    )
     nombres = models.CharField(max_length=100)
     apellidos = models.CharField(max_length=100)
     fecha_nacimiento = models.DateField()
-    contacto_emergencia = models.CharField(max_length=15)
+    contacto_emergencia = models.CharField(
+        max_length=15,
+        validators=[telefono_validator],
+        help_text="Formato: +569XXXXXXXX"
+    )
     curso = models.ForeignKey("Curso", on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"{self.nombres} {self.apellidos} - ({self.rut})"
+
     class Meta:
-        ordering = ['apellidos', 'nombres']  # Ordenar por apellidos, luego por nombres
+        ordering = ['apellidos', 'nombres']
+
+
 
 class Asignatura(models.Model):
     nombre = models.CharField(max_length=30)
