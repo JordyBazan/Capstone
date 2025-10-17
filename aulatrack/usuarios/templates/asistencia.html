@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% load custom_tags %}
+
 {% block title %}AulaTrack - Asistencia{% endblock %}
 
 {% block extra_css %}
@@ -8,55 +10,59 @@
 {% endblock %}
 
 {% block topbar %}
-<button class="topCta">Guardar asistencia</button>
+<button form="form-asistencia" class="topCta" type="submit">Guardar asistencia</button>
 {% endblock %}
 
 {% block content %}
 <h2 class="sectionTitle">Asistencia</h2>
-<p class="hint">Registro de Asistencia de alumnos</p>
+<p class="hint">Registro de asistencia de alumnos</p>
 <div class="divider"></div>
 
-<form method="GET" action="">
-  <label for="fecha">Filtrar por fecha:</label>
-  <input type="date" id="fecha" name="fecha" value="{{ request.GET.fecha }}">
-  <button type="submit">Filtrar</button>
+<form method="POST" id="form-asistencia">
+  {% csrf_token %}
+  
+  <label for="fecha">Fecha:</label>
+  <input type="date" id="fecha" name="fecha" value="{{ request.GET.fecha|default:today }}">
+  
+  <table>
+    <thead>
+      <tr>
+        <th>N°</th>
+        <th>Alumno</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for alumno in alumnos %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ alumno.nombres }} {{ alumno.apellidos }}</td>
+        <td>
+          <div>
+  <label>
+    <input type="radio" name="estado_{{ alumno.id }}" value="presente"
+           {% if estados|get_item:alumno.id == "presente" %}checked{% endif %}>
+    Presente
+  </label>
+  <label>
+    <input type="radio" name="estado_{{ alumno.id }}" value="ausente"
+           {% if estados|get_item:alumno.id == "ausente" %}checked{% endif %}>
+    Ausente
+  </label>
+  <label>
+    <input type="radio" name="estado_{{ alumno.id }}" value="justificado"
+           {% if estados|get_item:alumno.id == "justificado" %}checked{% endif %}>
+    Justificado
+  </label>
+</div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="3">No hay alumnos registrados</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </form>
-
-<table>
-  <thead>
-    <tr>
-      <th>Número</th>
-      <th>Alumno</th>
-      <th>Estado</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for alumno in alumnos %}
-    <tr>
-      <td>{{ forloop.counter }}</td> <!-- Muestra el número de lista -->
-      <td>{{ alumno.nombres }} {{ alumno.apellidos }}</td>
-      <td>
-        <div>
-          <label>
-            <input type="radio" name="estado_{{ alumno.id }}" value="presente">
-            Presente
-          </label>
-          <label>
-            <input type="radio" name="estado_{{ alumno.id }}" value="ausente">
-            Ausente
-          </label>
-          <label>
-            <input type="radio" name="estado_{{ alumno.id }}" value="justificado">
-            Justificado
-          </label>
-        </div>
-      </td>
-    </tr>
-    {% empty %}
-    <tr>
-      <td colspan="3">No hay alumnos registrados</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
 {% endblock %}

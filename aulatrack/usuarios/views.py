@@ -5,6 +5,10 @@ import re
 from io import BytesIO
 from collections import Counter
 
+from datetime import date
+from django.contrib import messages
+
+
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -20,7 +24,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 # Modelos
-from .models import Perfil, DocenteCurso, Alumno, Curso, Asignatura, Nota
+from .models import Perfil, DocenteCurso, Alumno, Curso, Asignatura, Nota, Asistencia
 
 # Formularios
 from .forms import (
@@ -275,6 +279,12 @@ def agregar_alumno(request):
         form = AlumnoForm()
     
     return render(request, 'agregar_alumno.html', {'form': form})
+
+
+
+
+
+
 
 
 
@@ -544,3 +554,119 @@ def cursos_export_pdf(request):
         resp = HttpResponse(pdf_bytes, content_type="application/pdf")
         resp["Content-Disposition"] = 'attachment; filename="informe_cursos.pdf"'
         return resp
+
+
+
+
+
+
+
+
+# =========================================================
+# Guardar Asistencia
+# =========================================================
+
+from datetime import date
+
+def asistencia(request, curso_id):
+    curso = get_object_or_404(Curso, id=curso_id)
+    alumnos = Alumno.objects.filter(curso=curso).order_by('apellidos', 'nombres')
+
+    if request.method == 'POST':
+        fecha_str = request.POST.get('fecha')
+        if fecha_str:
+            fecha = date.fromisoformat(fecha_str)
+        else:
+            fecha = date.today()
+
+        for alumno in alumnos:
+            estado = request.POST.get(f"estado_{alumno.id}")
+            if estado:
+                Asistencia.objects.update_or_create(
+                    alumno=alumno,
+                    curso=curso,
+                    fecha=fecha,
+                    defaults={'estado': estado}
+                )
+
+        messages.success(request, "Asistencia guardada correctamente.")
+        return redirect('asistencia', curso_id=curso.id)
+
+    # Filtrado por fecha (GET)
+    fecha_filtrada = request.GET.get('fecha')
+    if fecha_filtrada:
+        asistencias = Asistencia.objects.filter(curso=curso, fecha=fecha_filtrada)
+    else:
+        asistencias = Asistencia.objects.filter(curso=curso, fecha=date.today())
+
+    estados = {a.alumno.id: a.estado for a in asistencias}
+
+    return render(request, 'asistencia.html', {
+        'curso': curso,
+        'alumnos': alumnos,
+        'estados': estados,
+        'today': date.today(),
+    })
+
+
+
+# =========================================================
+# Notas
+# =========================================================
+
+from django.db.models import Avg
+
+
+@login_required
+def libro_notas(request, curso_id, asignatura_id):
+    curso = get_object_or_404(Curso, id=curso_id)
+    asignatura = get_object_or_404(Asignatura, id=asignatura_id)
+    alumnos = Alumno.objects.filter(curso=curso)
+
+    # ✅ Si el formulario fue enviado (nueva evaluación)
+    if request.method == "POST":
+        evaluacion = request.POST.get("evaluacion")
+        if evaluacion:
+            for alumno in alumnos:
+                valor = request.POST.get(f"nota_{alumno.id}")
+                if valor:
+                    Nota.objects.create(
+                        valor=float(valor),
+                        evaluacion=evaluacion,
+                        alumno=alumno,
+                        asignatura=asignatura,
+                        profesor=request.user
+                    )
+            return redirect('libro_notas', curso_id=curso.id, asignatura_id=asignatura.id)
+
+    # ✅ Obtener todas las notas del curso y asignatura
+    notas_por_alumno = {}
+    for alumno in alumnos:
+        notas = Nota.objects.filter(alumno=alumno, asignatura=asignatura)
+        promedio = notas.aggregate(promedio=Avg('valor'))['promedio']
+        notas_por_alumno[alumno] = {
+            'notas': notas,
+            'promedio': round(promedio, 1) if promedio else None
+        }
+
+    context = {
+        'curso': curso,
+        'asignatura': asignatura,
+        'alumnos': alumnos,
+        'notas_por_alumno': notas_por_alumno,
+    }
+    return render(request, 'notas.html', context)
+
+
+from django.shortcuts import render, get_object_or_404
+from .models import Curso, Asignatura
+
+def seleccionar_asignatura(request, curso_id):
+    curso = get_object_or_404(Curso, id=curso_id)
+    asignaturas = Asignatura.objects.filter(curso=curso)
+
+    context = {
+        'curso': curso,
+        'asignaturas': asignaturas
+    }
+    return render(request, 'seleccionar_asignatura.html', context)
