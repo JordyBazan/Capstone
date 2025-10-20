@@ -16,10 +16,15 @@ urlpatterns = [
     path('', home, name='home'),
     path('curso/<int:curso_id>/', views.curso, name='curso'),
     path('asistencia/<int:curso_id>/', views.asistencia, name='asistencia'),
+    
+
 
 
     path('curso/<int:curso_id>/notas/', views.seleccionar_asignatura, name='notas'),
     path('curso/<int:curso_id>/asignatura/<int:asignatura_id>/notas/', views.libro_notas, name='libro_notas'),
+    path('curso/<int:curso_id>/asignatura/<int:asignatura_id>/notas/', views.libro_notas, name='libro_notas'),
+
+
 
 
     path('anotaciones/', anotaciones, name='anotaciones'),

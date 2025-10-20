@@ -128,6 +128,7 @@ class Nota(models.Model):
     asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE)
     profesor = models.ForeignKey(User, on_delete=models.CASCADE)
     ultima_actualizacion = models.DateTimeField(auto_now=True)
+    numero = models.PositiveSmallIntegerField()
 
     def __str__(self):
         return f"{self.evaluacion} - {self.valor} ({self.alumno})"

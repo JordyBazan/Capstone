@@ -615,58 +615,58 @@ def asistencia(request, curso_id):
 # =========================================================
 
 from django.db.models import Avg
-
-
 @login_required
-def libro_notas(request, curso_id, asignatura_id):
-    curso = get_object_or_404(Curso, id=curso_id)
-    asignatura = get_object_or_404(Asignatura, id=asignatura_id)
-    alumnos = Alumno.objects.filter(curso=curso)
-
-    # ✅ Si el formulario fue enviado (nueva evaluación)
-    if request.method == "POST":
-        evaluacion = request.POST.get("evaluacion")
-        if evaluacion:
-            for alumno in alumnos:
-                valor = request.POST.get(f"nota_{alumno.id}")
-                if valor:
-                    Nota.objects.create(
-                        valor=float(valor),
-                        evaluacion=evaluacion,
-                        alumno=alumno,
-                        asignatura=asignatura,
-                        profesor=request.user
-                    )
-            return redirect('libro_notas', curso_id=curso.id, asignatura_id=asignatura.id)
-
-    # ✅ Obtener todas las notas del curso y asignatura
-    notas_por_alumno = {}
-    for alumno in alumnos:
-        notas = Nota.objects.filter(alumno=alumno, asignatura=asignatura)
-        promedio = notas.aggregate(promedio=Avg('valor'))['promedio']
-        notas_por_alumno[alumno] = {
-            'notas': notas,
-            'promedio': round(promedio, 1) if promedio else None
-        }
-
-    context = {
-        'curso': curso,
-        'asignatura': asignatura,
-        'alumnos': alumnos,
-        'notas_por_alumno': notas_por_alumno,
-    }
-    return render(request, 'notas.html', context)
-
-
-from django.shortcuts import render, get_object_or_404
-from .models import Curso, Asignatura
-
 def seleccionar_asignatura(request, curso_id):
     curso = get_object_or_404(Curso, id=curso_id)
     asignaturas = Asignatura.objects.filter(curso=curso)
-
     context = {
         'curso': curso,
         'asignaturas': asignaturas
     }
     return render(request, 'seleccionar_asignatura.html', context)
+
+
+
+
+def libro_notas(request, curso_id, asignatura_id):
+    curso = get_object_or_404(Curso, id=curso_id)
+    asignatura = get_object_or_404(Asignatura, id=asignatura_id)
+    alumnos = Alumno.objects.filter(curso=curso)
+    columnas_notas = range(1, 11)
+
+    # --- GUARDAR CAMBIOS ---
+    if request.method == 'POST':
+        for alumno in alumnos:
+            for i in columnas_notas:
+                key = f'nota_{alumno.id}_{i}'
+                valor = request.POST.get(key)
+                if valor:
+                    valor = float(valor)
+                    nota, created = Nota.objects.get_or_create(
+                        alumno=alumno,
+                        asignatura=asignatura,
+                        numero=i,
+                        defaults={'valor': valor, 'profesor': request.user}
+                    )
+
+        return redirect('libro_notas', curso_id=curso.id, asignatura_id=asignatura.id)
+
+    # Construir el diccionario de notas y promedios
+    notas_por_alumno = {}
+    for alumno in alumnos:
+        notas = Nota.objects.filter(alumno=alumno, asignatura=asignatura).order_by('numero')
+        promedio = notas.aggregate(Avg('valor'))['valor__avg']
+        notas_por_alumno[alumno] = {
+            'notas': [n.valor for n in notas],
+            'promedio': round(promedio, 1) if promedio else None
+        }
+
+    context = {
+        'curso': curso,
+        'profesor': request.user,
+        'asignatura': asignatura,
+        'alumnos': alumnos,
+        'notas_por_alumno': notas_por_alumno,
+        'columnas_notas': columnas_notas,
+    }
+    return render(request, 'notas.html', context)

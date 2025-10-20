@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Perfil, Alumno, Asignatura, Curso,
-    Asistencia, Anotacion, DocenteCurso
+    Asistencia, Anotacion, DocenteCurso, Nota
 )
 
 @admin.register(Perfil)
@@ -47,3 +47,12 @@ class DocenteCursoAdmin(admin.ModelAdmin):
     list_display = ("docente", "curso")
     list_filter = ("docente", "curso")
     search_fields = ("docente__username", "curso__nombre")
+
+
+
+
+@admin.register(Nota)
+class NotaAdmin(admin.ModelAdmin):
+    list_display = ('alumno', 'asignatura', 'numero', 'valor', 'profesor')
+    list_filter = ('asignatura', 'profesor')
+    search_fields = ('alumno__nombre', 'asignatura__nombre')
