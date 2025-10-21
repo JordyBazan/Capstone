@@ -389,6 +389,9 @@ def asignar_profesor_jefe_inline(request):
 # =========================================================
 # Exportación PDF (WeasyPrint si está disponible, ReportLab como fallback)
 # =========================================================
+
+
+
 @user_passes_test(es_utp)
 def cursos_export_pdf(request):
     cursos = (
@@ -628,13 +631,17 @@ def seleccionar_asignatura(request, curso_id):
 
 
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from .models import Curso, Asignatura, Alumno, Nota
+
+@login_required
 def libro_notas(request, curso_id, asignatura_id):
     curso = get_object_or_404(Curso, id=curso_id)
     asignatura = get_object_or_404(Asignatura, id=asignatura_id)
     alumnos = Alumno.objects.filter(curso=curso)
     columnas_notas = range(1, 11)
 
-    # --- GUARDAR CAMBIOS ---
     if request.method == 'POST':
         for alumno in alumnos:
             for i in columnas_notas:
@@ -642,31 +649,34 @@ def libro_notas(request, curso_id, asignatura_id):
                 valor = request.POST.get(key)
                 if valor:
                     valor = float(valor)
-                    nota, created = Nota.objects.get_or_create(
+                    Nota.objects.update_or_create(
                         alumno=alumno,
                         asignatura=asignatura,
                         numero=i,
                         defaults={'valor': valor, 'profesor': request.user}
                     )
-
         return redirect('libro_notas', curso_id=curso.id, asignatura_id=asignatura.id)
 
-    # Construir el diccionario de notas y promedios
     notas_por_alumno = {}
     for alumno in alumnos:
-        notas = Nota.objects.filter(alumno=alumno, asignatura=asignatura).order_by('numero')
-        promedio = notas.aggregate(Avg('valor'))['valor__avg']
+        notas_queryset = Nota.objects.filter(alumno=alumno, asignatura=asignatura)
+        notas_dict = {n.numero: n.valor for n in notas_queryset}
+        notas_lista = [notas_dict.get(i, None) for i in columnas_notas]
+
+        notas_validas = [v for v in notas_lista if v is not None]
+        promedio = round(sum(notas_validas)/len(notas_validas), 1) if notas_validas else None
+
         notas_por_alumno[alumno] = {
-            'notas': [n.valor for n in notas],
-            'promedio': round(promedio, 1) if promedio else None
+            'notas': notas_lista,
+            'promedio': promedio
         }
 
     context = {
         'curso': curso,
-        'profesor': request.user,
         'asignatura': asignatura,
         'alumnos': alumnos,
         'notas_por_alumno': notas_por_alumno,
         'columnas_notas': columnas_notas,
     }
+
     return render(request, 'notas.html', context)

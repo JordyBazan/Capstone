@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_tags %}
 
 {% block content %}
 <h2 class="sectionTitle">{{ asignatura.nombre }} - {{ curso.año }} {{ curso.nombre }}</h2>
@@ -25,17 +24,11 @@
         <tr>
           <td style="text-align:left;">{{ alumno.nombres }} {{ alumno.apellidos }}</td>
 
-          {% for i in columnas_notas %}
+          {% for nota in data.notas %}
             <td>
-              {% if data.notas|length >= i %}
-                <input type="number" step="0.1" min="1.0" max="7.0"
-                       name="nota_{{ alumno.id }}_{{ i }}"
-                       value="{{ data.notas|slice:":i"|last }}">
-              {% else %}
-                <input type="number" step="0.1" min="1.0" max="7.0"
-                       name="nota_{{ alumno.id }}_{{ i }}"
-                       placeholder="-">
-              {% endif %}
+              <input type="number" step="0.1" min="1.0" max="7.0"
+                     name="nota_{{ alumno.id }}_{{ forloop.counter }}"
+                     value="{{ nota }}">
             </td>
           {% endfor %}
 
@@ -54,6 +47,7 @@
 
   <button type="submit" class="btn-primary">Guardar</button>
 </form>
+
 
 <style>
   .grades-scroll {
