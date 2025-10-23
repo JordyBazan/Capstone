@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static dict_extras %}
 
-{% block title %}Cursos (UTP){% endblock %}
+{% block title %}Gestión Académica{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/cursos_lista.css' %}">
 {% endblock %}
@@ -16,15 +16,26 @@
 {% endif %}
 
 <!-- ============================ -->
-<!-- Encabezado: Cursos           -->
+<!-- Paginación superior          -->
 <!-- ============================ -->
+<div class="page-head flex-between">
+  <div>
+    <a class="page-btn {% if page == '1' %}active{% endif %}" href="?page=1">Cursos</a>
+    <a class="page-btn {% if page == '2' %}active{% endif %}" href="?page=2">Asignaturas</a>
+    <a class="page-btn {% if page == '3' %}active{% endif %}" href="?page=3">Alumnos</a>
+  </div>
+</div>
+
+<!-- ============================ -->
+<!-- Página 1: Cursos -->
+<!-- ============================ -->
+{% if page == '1' %}
 <div class="page-head flex-between">
   <div>
     <h1>Cursos</h1>
     <div class="hint">Gestiona todos los cursos</div>
   </div>
   <div class="head-actions">
-    <a class="btn" href="{% url 'asignatura_crear' %}">+ Crear asignatura</a>
     <a class="btn" href="{% url 'crear_curso' %}">+ Crear curso</a>
     <a class="btn-prim" href="{% url 'cursos_export_pdf' %}">Exportar PDF</a>
   </div>
@@ -34,10 +45,12 @@
   <table class="table">
     <thead>
       <tr>
+        <th>#</th>
         <th>Año</th>
         <th>Nombre</th>
         <th>Sala</th>
         <th>Asignaturas</th>
+        <th>Total alumnos</th>
         <th>Profesor Jefe</th>
         <th>Acciones</th>
       </tr>
@@ -45,6 +58,7 @@
     <tbody>
       {% for c in cursos %}
       <tr>
+        <td>{{ forloop.counter }}</td>
         <td>{{ c.año }}</td>
         <td>{{ c.nombre }}</td>
         <td>{{ c.sala }}</td>
@@ -57,18 +71,10 @@
                   <span class="chip"
                         title="{{ a.nombre }}{% if a.profesor %} ({{ a.profesor.get_full_name|default:a.profesor.username }}){% endif %}">
                     <span class="chip-text">
-                      <a class="chip-label" href="{% url 'asignatura_editar' a.id %}">
-                        {{ a.nombre }}
-                      </a>
-                      {% if a.profesor %}
-                        <span class="chip-sub">({{ a.profesor.get_full_name|default:a.profesor.username }})</span>
-                      {% endif %}
+                      <a class="chip-label" href="{% url 'asignatura_editar' a.id %}">{{ a.nombre }}</a>
+                      {% if a.profesor %}<span class="chip-sub">({{ a.profesor.get_full_name|default:a.profesor.username }})</span>{% endif %}
                     </span>
-
-                    <form method="post"
-                          action="{% url 'curso_quitar_asignatura' c.id a.id %}"
-                          class="chip-remove js-delete-form"
-                          data-confirm="¿Quitar «{{ a.nombre }}» del curso {{ c }}?">
+                    <form method="post" action="{% url 'curso_quitar_asignatura' c.id a.id %}" class="chip-remove js-delete-form" data-confirm="¿Quitar «{{ a.nombre }}» del curso {{ c }}?">
                       {% csrf_token %}
                       <button type="submit" class="chip-x" aria-label="Quitar asignatura">×</button>
                     </form>
@@ -82,23 +88,24 @@
         </td>
 
         <td>
-          {# Mostrar actual #}
+          <a href="?page=3&curso={{ c.id }}" class="link">
+            {{ c.num_alumnos }}
+          </a>
+        </td>
+
+        <td>
           {% if c.profesor_jefe %}
             <div>{{ c.profesor_jefe.get_full_name|default:c.profesor_jefe.username }}</div>
           {% else %}
             <div class="muted">—</div>
           {% endif %}
-
-          {# Cambiar/Limpiar PJ inline #}
           <form method="post" action="{% url 'asignar_profesor_jefe' %}" class="inline-form">
             {% csrf_token %}
             <input type="hidden" name="curso_id" value="{{ c.id }}">
             <select name="profesor_jefe" class="mini-select">
               <option value="">— Sin PJ —</option>
               {% for d in docentes %}
-                <option value="{{ d.id }}" {% if c.profesor_jefe_id == d.id %}selected{% endif %}>
-                  {{ d.get_full_name|default:d.username }}
-                </option>
+                <option value="{{ d.id }}" {% if c.profesor_jefe_id == d.id %}selected{% endif %}>{{ d.get_full_name|default:d.username }}</option>
               {% endfor %}
             </select>
             <button type="submit" class="btn mini">Guardar</button>
@@ -107,86 +114,135 @@
 
         <td class="cell-actions">
           <a class="link" href="{% url 'curso_editar' c.id %}">Editar</a>
-
-          <!-- Eliminar curso con confirmación -->
-          <form method="post" action="{% url 'curso_eliminar' c.id %}"
-                class="js-delete-form"
-                data-confirm="¿Eliminar el curso '{{ c }}'? Esta acción no se puede deshacer.">
+          <form method="post" action="{% url 'curso_eliminar' c.id %}" class="js-delete-form" data-confirm="¿Eliminar el curso '{{ c }}'? Esta acción no se puede deshacer.">
             {% csrf_token %}
             <button type="submit" class="link link-danger" style="background:none;border:none;padding:0;">Eliminar</button>
           </form>
-
           <a class="link" href="{% url 'asignar_asignaturas_curso' c.id %}">Asignar asignaturas</a>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="6">No hay cursos.</td></tr>
+      <tr><td colspan="8">No hay cursos.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
-
-<br>
+{% endif %}
 
 <!-- ============================ -->
-<!-- Encabezado: Asignaturas      -->
+<!-- Página 2: Asignaturas -->
 <!-- ============================ -->
+{% if page == '2' %}
+<div class="page-head flex-between">
+    <div>
+      <h1>Asignaturas</h1>
+      <div class="hint">Listado de todas las asignaturas creadas</div>
+    </div>
+    <div>
+      <a class="btn" href="{% url 'asignatura_crear' %}">+ Crear asignatura</a>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Profesor</th>
+          <th style="width:1%;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in asignaturas %}
+        <tr>
+          <td>{{ a.nombre }}</td>
+          <td>{{ a.descripcion|default:"—" }}</td>
+          <td>{% if a.profesor %}{{ a.profesor.get_full_name|default:a.profesor.username }}{% else %}—{% endif %}</td>
+          <td class="cell-actions">
+            <a class="link" href="{% url 'asignatura_editar' a.id %}">Editar</a>
+            <form method="post" action="{% url 'asignatura_eliminar' a.id %}" class="js-delete-form"
+                  data-confirm="¿Eliminar la asignatura '{{ a.nombre }}'?">
+              {% csrf_token %}
+              <button type="submit" class="link link-danger" style="background:none;border:none;padding:0;">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">No hay asignaturas creadas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+
+<!-- ============================ -->
+<!-- Página 3: Alumnos -->
+<!-- ============================ -->
+{% if page == '3' %}
 <div class="page-head flex-between">
   <div>
-    <h1>Asignaturas</h1>
-    <div class="hint">Listado de todas las asignaturas creadas</div>
+    <h1>Alumnos</h1>
+    <div class="hint">Listado de todos los alumnos con sus cursos</div>
   </div>
   <div>
-    <a class="btn" href="{% url 'asignatura_crear' %}">+ Crear asignatura</a>
+    <a class="btn" href="{% url 'agregar_alumno' %}">+ Agregar alumno</a>
   </div>
+</div>
+
+<div class="filter-bar">
+  <form method="get">
+    <input type="hidden" name="page" value="3">
+    <label for="curso">Filtrar por curso:</label>
+    <select name="curso" id="curso" onchange="this.form.submit()">
+      <option value="">Todos los cursos</option>
+      {% for c in cursos_alumno %}
+        <option value="{{ c.id }}" {% if curso_seleccionado == c.id %}selected{% endif %}>
+          {{ c.nombre }} ({{ c.num_alumnos }} alumnos)
+        </option>
+      {% endfor %}
+    </select>
+  </form>
 </div>
 
 <div class="table-wrap">
   <table class="table">
     <thead>
       <tr>
-        <th>Nombre</th>
-        <th>Descripción</th>
-        <th>Profesor</th>
-        <th style="width:1%;">Acciones</th>
+        <th>#</th>
+        <th>RUT</th>
+        <th>Nombres</th>
+        <th>Apellidos</th>
+        <th>Curso</th>
+        <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
-      {% for a in asignaturas %}
-      <tr>
-        <td>{{ a.nombre }}</td>
-        <td>{{ a.descripcion|default:"—" }}</td>
-        <td>
-          {% if a.profesor %}
-            {{ a.profesor.get_full_name|default:a.profesor.username }}
-          {% else %}
-            —
-          {% endif %}
-        </td>
-        <td class="cell-actions">
-          <a class="link" href="{% url 'asignatura_editar' a.id %}">Editar</a>
-          <form method="post" action="{% url 'asignatura_eliminar' a.id %}"
-                class="js-delete-form"
-                data-confirm="¿Eliminar la asignatura '{{ a.nombre }}'?">
-            {% csrf_token %}
-            <button type="submit" class="link link-danger" style="background:none;border:none;padding:0;">Eliminar</button>
-          </form>
-        </td>
-      </tr>
+      {% for alumno in alumnos %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ alumno.rut }}</td>
+          <td>{{ alumno.nombres }}</td>
+          <td>{{ alumno.apellidos }}</td>
+          <td>{% if alumno.curso %}{{ alumno.curso.nombre }}{% else %}—{% endif %}</td>
+          <td class="cell-actions">
+            <a class="link" href="{% url 'editar_alumno' alumno.id %}">Editar</a>
+          </td>
+        </tr>
       {% empty %}
-      <tr><td colspan="4">No hay asignaturas creadas.</td></tr>
+        <tr><td colspan="6">No hay alumnos.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+{% endif %}
 
-<!-- Confirmación genérica -->
 <script>
-  document.addEventListener('click', function(e) {
-    const form = e.target.closest('.js-delete-form');
-    if (!form) return;
-    const msg = form.getAttribute('data-confirm') || '¿Seguro que deseas continuar?';
-    if (!confirm(msg)) e.preventDefault();
-  });
+document.addEventListener('click', function(e) {
+  const form = e.target.closest('.js-delete-form');
+  if (!form) return;
+  const msg = form.getAttribute('data-confirm') || '¿Seguro que deseas continuar?';
+  if (!confirm(msg)) e.preventDefault();
+});
 </script>
 {% endblock %}

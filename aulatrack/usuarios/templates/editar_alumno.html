@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar Alumno{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/cursos_lista.css' %}">
+{% endblock %}
+
+{% block content %}
+<h1>Editar Alumno</h1>
+
+<form method="post">
+  {% csrf_token %}
+  <div>
+    <label for="rut">RUT:</label>
+    <input type="text" id="rut" name="rut" value="{{ alumno.rut }}">
+  </div>
+
+  <div>
+    <label for="nombres">Nombres:</label>
+    <input type="text" id="nombres" name="nombres" value="{{ alumno.nombres }}">
+  </div>
+
+  <div>
+    <label for="apellidos">Apellidos:</label>
+    <input type="text" id="apellidos" name="apellidos" value="{{ alumno.apellidos }}">
+  </div>
+
+  <div>
+    <label for="curso">Curso:</label>
+    <select id="curso" name="curso">
+      <option value="">— Sin curso —</option>
+      {% for c in cursos %}
+        <option value="{{ c.id }}" {% if alumno.curso and alumno.curso.id == c.id %}selected{% endif %}>
+          {{ c.nombre }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="margin-top:1rem;">
+    <button type="submit" class="btn">Guardar cambios</button>
+    <a href="{% url 'cursos_lista' %}?page=2" class="btn">Cancelar</a>
+  </div>
+</form>
+
+{% endblock %}

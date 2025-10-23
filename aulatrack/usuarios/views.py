@@ -22,6 +22,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator
+from django.urls import reverse
 
 # Modelos
 from .models import Perfil, DocenteCurso, Alumno, Curso, Asignatura, Nota, Asistencia, Anotacion
@@ -195,26 +197,42 @@ def crear_asignatura(request):
     return render(request, "crear_asignatura.html", {"form": form})
 
 
+
+
+
 @user_passes_test(es_utp)
 def cursos_lista(request):
+    page = request.GET.get('page', '1')
+    curso_id = request.GET.get('curso')
+
     cursos = (
         Curso.objects
         .select_related("profesor_jefe")
         .prefetch_related("asignaturas", "asignaturas__profesor")
         .annotate(
             num_asignaturas=Count("asignaturas", distinct=True),
-            num_alumnos=Count("alumno", distinct=True),   # reverse FK: Alumno.curso
+            num_alumnos=Count("alumno", distinct=True),
         )
         .order_by("año", "nombre")
     )
-    asignaturas = Asignatura.objects.all().order_by("nombre")
+    asignaturas = Asignatura.objects.select_related("profesor").all().order_by("nombre")
     docentes = User.objects.filter(perfil__role="docente").order_by("first_name", "last_name", "username")
 
-    return render(request, "cursos_lista.html", {
-        "cursos": cursos,
-        "asignaturas": asignaturas,
-        "docentes": docentes,
-    })
+    alumnos = Alumno.objects.select_related('curso').order_by('curso__año', 'curso__nombre', 'apellidos', 'nombres')
+    if curso_id:
+        alumnos = alumnos.filter(curso_id=curso_id)
+
+    context = {
+        'page': page,
+        'cursos': cursos,
+        'asignaturas': asignaturas,
+        'docentes': docentes,
+        'alumnos': alumnos,
+        'cursos_alumno': cursos, 
+        'curso_seleccionado': int(curso_id) if curso_id else None,
+    }
+
+    return render(request, "cursos_lista.html", context)
 
 
 @user_passes_test(es_utp)
@@ -733,4 +751,24 @@ def anotaciones_alumno(request, alumno_id):
         'promedio': promedio,
         'porcentaje_asistencia': porcentaje_asistencia,
         'anotaciones': anotaciones
+    })
+
+@user_passes_test(es_utp)
+def editar_alumno(request, alumno_id):
+    alumno = get_object_or_404(Alumno, pk=alumno_id)
+    cursos = Curso.objects.all().order_by('año', 'nombre')
+
+    if request.method == 'POST':
+        alumno.rut = request.POST.get('rut')
+        alumno.nombres = request.POST.get('nombres')
+        alumno.apellidos = request.POST.get('apellidos')
+        curso_id = request.POST.get('curso')
+        alumno.curso = Curso.objects.get(pk=curso_id) if curso_id else None
+        alumno.save()
+        messages.success(request, f'Alumno {alumno.nombres} actualizado correctamente.')
+        return redirect(f"{reverse('cursos_lista')}?page=2&curso={alumno.curso.id if alumno.curso else ''}")
+
+    return render(request, 'editar_alumno.html', {
+        'alumno': alumno,
+        'cursos': cursos,
     })
