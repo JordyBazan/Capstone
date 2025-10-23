@@ -24,7 +24,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 # Modelos
-from .models import Perfil, DocenteCurso, Alumno, Curso, Asignatura, Nota, Asistencia
+from .models import Perfil, DocenteCurso, Alumno, Curso, Asignatura, Nota, Asistencia, Anotacion
 
 # Formularios
 from .forms import (
@@ -680,3 +680,57 @@ def libro_notas(request, curso_id, asignatura_id):
     }
 
     return render(request, 'notas.html', context)
+
+
+# =========================================================
+# Anotaciones
+# =========================================================
+
+@login_required
+def anotaciones_curso(request, curso_id):
+    curso = get_object_or_404(Curso, id=curso_id)
+    alumnos = Alumno.objects.filter(curso=curso).order_by('apellidos', 'nombres')
+
+    return render(request, 'anotaciones_lista.html', {
+        'curso': curso,
+        'alumnos': alumnos
+    })
+
+
+
+
+@login_required
+def anotaciones_alumno(request, alumno_id):
+    alumno = get_object_or_404(Alumno, id=alumno_id)
+    curso = alumno.curso
+
+    # Calcular promedio de notas del alumno
+    promedio = Nota.objects.filter(alumno=alumno).aggregate(Avg('valor'))['valor__avg'] or 0
+
+    # Calcular porcentaje de asistencia
+    total_asistencias = Asistencia.objects.filter(alumno=alumno).count()
+    presentes = Asistencia.objects.filter(alumno=alumno, estado='presente').count()
+    porcentaje_asistencia = round((presentes / total_asistencias * 100), 1) if total_asistencias > 0 else 0
+
+    # Anotaciones del alumno
+    anotaciones = Anotacion.objects.filter(alumno=alumno).order_by('-fecha')
+
+    # Guardar nueva anotación
+    if request.method == 'POST':
+        texto = request.POST.get('texto')
+        if texto:
+            Anotacion.objects.create(
+                texto=texto,
+                alumno=alumno,
+                profesor=request.user
+            )
+            messages.success(request, "Anotación agregada correctamente.")
+            return redirect('anotaciones_alumno', alumno_id=alumno.id)
+
+    return render(request, 'anotaciones.html', {
+        'alumno': alumno,
+        'curso': curso,
+        'promedio': promedio,
+        'porcentaje_asistencia': porcentaje_asistencia,
+        'anotaciones': anotaciones
+    })

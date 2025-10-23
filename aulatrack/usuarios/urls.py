@@ -27,7 +27,12 @@ urlpatterns = [
 
 
 
-    path('anotaciones/', anotaciones, name='anotaciones'),
+    path('anotaciones/<int:curso_id>/', views.anotaciones_curso, name='anotaciones_curso'),
+    path('anotaciones/alumno/<int:alumno_id>/', views.anotaciones_alumno, name='anotaciones_alumno'),
+
+
+
+    
     path('reportes/', reportes, name='reportes'),
 
     # =============================

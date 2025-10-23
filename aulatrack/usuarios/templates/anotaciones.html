@@ -1,32 +1,41 @@
 {% extends "base.html" %}
 {% load static %}
-
-{% block title %}AulaTrack - Anotaciones{% endblock %}
+{% block title %}{{ alumno.nombres }} {{ alumno.apellidos }} - Anotaciones{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/Anotaciones.css' %}">
-{% endblock %}
-
-{% block topbar %}
-<input class="search" placeholder="Buscar alumno…" aria-label="Buscar alumno" />
-<button class="topCta">Nueva anotación</button>
+<link rel="stylesheet" href="{% static 'css/anotaciones.css' %}">
 {% endblock %}
 
 {% block content %}
-<h2 class="sectionTitle">Anotaciones</h2>
-<p class="hint">Observaciones y reportes de conducta</p>
+<h2 class="sectionTitle">{{ alumno.nombres }} {{ alumno.apellidos }}</h2>
+<p class="hint">{{ curso.nombre }} | RUT: {{ alumno.rut }} | Contacto emergencia: {{ alumno.contacto_emergencia }}</p>
 <div class="divider"></div>
 
-<div class="curso-options">
-  <div class="curso-card op-anotaciones">
-    <h3>María Pérez</h3>
-    <p>Observación positiva: participación destacada.</p>
-    <a href="#">Ver detalle</a>
-  </div>
-  <div class="curso-card op-anotaciones">
-    <h3>Juan Soto</h3>
-    <p>Observación: llegó atrasado.</p>
-    <a href="#">Ver detalle</a>
-  </div>
+<div class="info-grid">
+  <p><strong>Promedio general:</strong> {{ promedio|floatformat:1 }}</p>
+  <p><strong>Asistencia:</strong> {{ porcentaje_asistencia }}%</p>
 </div>
+
+<h3>Anotaciones</h3>
+<ul class="notes-list">
+  {% for anotacion in anotaciones %}
+    <li>
+      <div class="note">
+        <span class="date">{{ anotacion.fecha }}</span>
+        <p>{{ anotacion.texto }}</p>
+        <span class="profesor">Por: {{ anotacion.profesor.first_name }} {{ anotacion.profesor.last_name }}</span>
+      </div>
+    </li>
+  {% empty %}
+    <p>No hay anotaciones registradas.</p>
+  {% endfor %}
+</ul>
+
+<form method="post">
+  {% csrf_token %}
+  <textarea name="texto" rows="3" placeholder="Escribe una nueva anotación..."></textarea>
+  <button type="submit" class="btn primary">Agregar anotación</button>
+</form>
+
+<a href="{% url 'anotaciones_curso' curso.id %}" class="btn">Volver al curso</a>
 {% endblock %}

@@ -1,57 +1,170 @@
-/* === Anotaciones (fondo blanco + lista vertical) === */
-
-/* Tema claro solo para esta vista */
-.main{ background:#ffffff; color:#0f172a; }
-.main h1, .main h2, .main h3{ color:#111827; }
-.main .sectionTitle{ color:#111827; }
-.main .hint{ color:#64748b; }
-.main .divider{ background:#e5e7eb; }
-
-/* Controles claros dentro de .main */
-.main .input, .main select{
-  background:#f1f5f9; border:1px solid #e5e7eb; color:#0f172a;
-  padding:.6rem .75rem; border-radius:10px; outline:0;
-  transition:border .2s, box-shadow .2s, background .2s;
-}
-.main .input::placeholder{ color:#6b7280; }
-.main .input:focus, .main select:focus{
-  border-color:var(--brand-600); box-shadow:0 0 0 3px var(--ring);
+/* ======= ESTRUCTURA GENERAL ======= */
+body {
+  background-color: #fafaff;
+  color: #222;
+  font-family: "Inter", sans-serif;
 }
 
-/* Tablas claras (si se usan) */
-.main table{ width:100%; border-collapse:collapse; border-radius:12px; overflow:hidden; background:transparent; }
-.main thead th{
-  background:#f8fafc; color:#0f172a; text-align:left;
-  padding:.85rem; border-bottom:1px solid #e5e7eb; font-weight:700;
-}
-.main tbody td{ padding:.8rem; border-bottom:1px solid #e5e7eb; color:#0f172a; }
-.main tbody tr:hover{ background:#f9fafb; }
-
-/* ===== Lista vertical (una card por fila) ===== */
-.curso-options{
-  width:100%;
-  display:flex;                 
-  flex-direction:column;        
-  gap:14px;
-  align-items:stretch;          
-  justify-content:flex-start;   
+/* ======= TÍTULOS ======= */
+.sectionTitle {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #3d2db5;
+  margin-bottom: 0.2em;
 }
 
-.op-anotaciones{
-  width:100%;                   
-  background:#ffffff;
-  border:1px solid #323865;     
-  border-left:6px solid var(--brand-600);
-  border-radius:16px;
-  padding:16px;
-  color:#0f172a;
+.hint {
+  color: #666;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
 }
-.op-anotaciones h3{ margin:0 0 6px; font-weight:800; color:#111827; }
-.op-anotaciones p{ color:#475569; }
-.op-anotaciones a{
-  display:inline-flex; margin-top:10px; background:#111827; color:#fff;
-  padding:.45rem .8rem; border-radius:10px;
+
+.divider {
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(to right, #7b5bff, transparent);
+  margin: 1.2rem 0;
 }
-.op-anotaciones a:hover{ background:#0b1220; }
 
+/* ======= TABLAS ======= */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
 
+th {
+  background-color: #7b5bff;
+  color: white;
+  text-align: left;
+  padding: 12px 15px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  font-size: 0.95rem;
+}
+
+tr:hover {
+  background-color: #f6f4ff;
+  transition: 0.3s;
+}
+
+/* ======= BOTONES ======= */
+.btn {
+  display: inline-block;
+  text-decoration: none;
+  background: #7b5bff;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  background: #5c40e0;
+  transform: scale(1.03);
+}
+
+.btn.primary {
+  background: #7b5bff;
+}
+
+.btn.danger {
+  background: #e94d4d;
+}
+
+/* ======= INFORMACIÓN DE ALUMNO ======= */
+.info-grid {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.info-grid p {
+  background: #fff;
+  padding: 10px 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* ======= ANOTACIONES ======= */
+.notes-list {
+  list-style: none;
+  padding: 0;
+}
+
+.note {
+  background: #ffffff;
+  border-left: 5px solid #7b5bff;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.note .date {
+  display: block;
+  font-size: 0.85rem;
+  color: #7b5bff;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.note p {
+  margin: 5px 0;
+  line-height: 1.4;
+  color: #333;
+}
+
+.note .profesor {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* ======= FORMULARIO ======= */
+form {
+  margin-top: 1.5rem;
+}
+
+textarea {
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+textarea:focus {
+  border-color: #7b5bff;
+  outline: none;
+  box-shadow: 0 0 4px rgba(123, 91, 255, 0.3);
+}
+
+button {
+  background-color: #7b5bff;
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  margin-top: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background-color: #5c40e0;
+  transform: scale(1.03);
+}
