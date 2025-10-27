@@ -22,7 +22,7 @@
 <form method="POST" id="form-asistencia">
   {% csrf_token %}
   
-  <label for="fecha">Fecha:</label>
+  <label for="fecha">Filtrar por fecha:</label>
   <input type="date" id="fecha" name="fecha" value="{{ request.GET.fecha|default:today }}">
   
   <table>

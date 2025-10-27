@@ -1,3 +1,4 @@
+
 /* === AulaTrack · Base Theme (Dark + Purple) === */
 :root{
   /* Brand */
@@ -28,7 +29,7 @@ body{
   margin:0;
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
   color:var(--txt-200);
-  background:var(--bg-900);
+  background: var(--bg-900);
 }
 
 /* Links & headings */

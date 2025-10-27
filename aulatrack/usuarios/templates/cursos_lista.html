@@ -23,6 +23,7 @@
     <a class="page-btn {% if page == '1' %}active{% endif %}" href="?page=1">Cursos</a>
     <a class="page-btn {% if page == '2' %}active{% endif %}" href="?page=2">Asignaturas</a>
     <a class="page-btn {% if page == '3' %}active{% endif %}" href="?page=3">Alumnos</a>
+    <a class="page-btn {% if page == '3' %}active{% endif %}" href="?page=4">Docentes</a>
   </div>
 </div>
 
@@ -204,6 +205,7 @@
     </select>
   </form>
 </div>
+<br>
 
 <div class="table-wrap">
   <table class="table">
@@ -227,10 +229,75 @@
           <td>{% if alumno.curso %}{{ alumno.curso.nombre }}{% else %}—{% endif %}</td>
           <td class="cell-actions">
             <a class="link" href="{% url 'editar_alumno' alumno.id %}">Editar</a>
+
+            <a class="link link-danger" href="{% url 'eliminar_alumno' alumno.id %}" 
+            onclick="return confirm('¿Estás seguro de que deseas eliminar a este alumno?');">
+              Eliminar
+            </a>
           </td>
         </tr>
       {% empty %}
         <tr><td colspan="6">No hay alumnos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- ============================ -->
+<!-- Página 4: Docentes
+<!-- ============================ -->
+{% if page == '4' %}
+<div class="page-head flex-between">
+  <div>
+    <h1>Docentes</h1>
+    <div class="hint">Listado de todos los docentes registrados en el sistema</div>
+  </div>
+  <div>
+    <a class="btn" href="{% url 'registro' %}">+ Agregar docente</a>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <form method="get">
+    <input type="hidden" name="page" value="4">
+    <label for="rol">Filtrar por rol:</label>
+    <select name="rol" id="rol" onchange="this.form.submit()">
+      <option value="">Todos los roles</option>
+      {% for key, value in roles %}
+        <option value="{{ key }}" {% if rol_seleccionado == key %}selected{% endif %}>
+          {{ value }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+  <br>
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Usuario</th>
+        <th>Correo electrónico</th>
+        <th>Rol</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for docente in docentes %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ docente.username }}</td>
+          <td>{{ docente.email }}</td>
+          <td>{{ docente.perfil.get_role_display }}</td>
+          <td class="cell-actions">
+            <a class="link" href="#">Editar</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">No hay docentes registrados.</td></tr>
       {% endfor %}
     </tbody>
   </table>

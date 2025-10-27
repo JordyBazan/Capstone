@@ -7,11 +7,6 @@
 <link rel="stylesheet" href="{% static 'css/curso.css' %}">
 {% endblock %}
 
-{% block topbar %}
-<input class="search" placeholder="Buscar curso…" aria-label="Buscar" />
-<button class="topCta">+ Nuevo curso (Solo Admin)</button>
-{% endblock %}
-
 {% block content %}
 <h2 class="sectionTitle">{{ curso.año }} {{ curso.nombre }} - {{ curso.sala }}</h2>
 <p class="hint">Aula X</p>

@@ -50,6 +50,7 @@ urlpatterns = [
     path('cursos/<int:pk>/editar/', views.curso_editar, name='curso_editar'),
     path('cursos/<int:pk>/eliminar/', views.curso_eliminar, name='curso_eliminar'),
     path('cursos/<int:curso_id>/asignaturas/', views.asignar_asignaturas_curso, name='asignar_asignaturas_curso'),
+    path('alumnos/eliminar/<int:id>/', views.eliminar_alumno, name='eliminar_alumno'),
 
     path(
         'cursos/<int:curso_id>/asignaturas/<int:asignatura_id>/quitar/',

@@ -772,3 +772,19 @@ def editar_alumno(request, alumno_id):
         'alumno': alumno,
         'cursos': cursos,
     })
+
+def lista_docentes(request):
+    rol_seleccionado = request.GET.get('rol', '')
+    docentes = User.objects.filter(perfil__role=rol_seleccionado) if rol_seleccionado else User.objects.all()
+    roles = Perfil.ROLE_CHOICES
+    return render(request, 'tu_template.html', {
+        'page': '4',
+        'docentes': docentes,
+        'roles': roles,
+        'rol_seleccionado': rol_seleccionado,
+    })
+
+def eliminar_alumno(request, id):
+    alumno = get_object_or_404(Alumno, id=id)
+    alumno.delete()
+    return redirect('cursos_lista')
