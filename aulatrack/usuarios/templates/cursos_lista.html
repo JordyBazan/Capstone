@@ -279,7 +279,7 @@
     <thead>
       <tr>
         <th>#</th>
-        <th>Usuario</th>
+        <th>Nombre</th>
         <th>Correo electrónico</th>
         <th>Rol</th>
         <th>Acciones</th>
@@ -289,7 +289,7 @@
       {% for docente in docentes %}
         <tr>
           <td>{{ forloop.counter }}</td>
-          <td>{{ docente.username }}</td>
+          <td>{{ docente.get_full_name|default:docente.username }}</td>
           <td>{{ docente.email }}</td>
           <td>{{ docente.perfil.get_role_display }}</td>
           <td class="cell-actions">
@@ -303,7 +303,6 @@
   </table>
 </div>
 {% endif %}
-
 <script>
 document.addEventListener('click', function(e) {
   const form = e.target.closest('.js-delete-form');

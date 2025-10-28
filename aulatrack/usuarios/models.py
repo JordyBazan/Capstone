@@ -5,7 +5,13 @@ from django.core.validators import RegexValidator
 
 
 
-
+class Usuario(models.Model):
+    nombres = models.CharField(max_length=100)
+    apellidos = models.CharField(max_length=100)
+    rut = models.CharField(max_length=12, unique=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    email = models.EmailField(unique=True)
+    password = models.CharField(max_length=128)
 
 # --- NUEVO: Perfil con rol ---
 class Perfil(models.Model):

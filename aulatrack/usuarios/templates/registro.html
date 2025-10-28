@@ -9,35 +9,47 @@
 <main>
   <h1>Registro</h1>
 
-  <form method="post" novalidate>
-    {% csrf_token %}
+  <div class="div" style="text-align: center;  align-items: center; justify-content: center; display: flex;">
 
-    {% if form.non_field_errors %}
-      <div>{{ form.non_field_errors }}</div>
-    {% endif %}
+    <form method="post" novalidate>
+      {% csrf_token %}
+  
+      {% if form.non_field_errors %}
+        <div>{{ form.non_field_errors }}</div>
+      {% endif %}
+      
+      <label for="{{ form.nombres.id_for_label }}">Nombres *</label>
+      {{ form.nombres }}
+      {{ form.nombres.errors }}
 
-    <label for="{{ form.username.id_for_label }}">Usuario *</label>
-    {{ form.username }}
-    {{ form.username.errors }}
+      <label for="{{ form.apellidos.id_for_label }}">Apellidos *</label>
+      {{ form.apellidos }}
+      {{ form.apellidos.errors }}
 
-    <label for="{{ form.email.id_for_label }}">Correo electrónico *</label>
-    {{ form.email }}
-    {{ form.email.errors }}
+      <label for="{{ form.username.id_for_label }}">Usuario *</label>
+      {{ form.username }}
+      {{ form.username.errors }}
+  
+      <label for="{{ form.email.id_for_label }}">Correo electrónico *</label>
+      {{ form.email }}
+      {{ form.email.errors }}
+  
+      <label for="{{ form.role.id_for_label }}">Rol *</label>
+      {{ form.role }}
+      {{ form.role.errors }}
+  
+      <label for="{{ form.password1.id_for_label }}">Contraseña *</label>
+      {{ form.password1 }}
+      {{ form.password1.errors }}
+  
+      <label for="{{ form.password2.id_for_label }}">Confirmar contraseña *</label>
+      {{ form.password2 }}
+      {{ form.password2.errors }}
+      <br>
+  
+      <button class="btn-1" type="submit">Registrarse</button>
+    </form>
+  </div>
 
-    <label for="{{ form.role.id_for_label }}">Rol *</label>
-    {{ form.role }}
-    {{ form.role.errors }}
-
-    <label for="{{ form.password1.id_for_label }}">Contraseña *</label>
-    {{ form.password1 }}
-    {{ form.password1.errors }}
-
-    <label for="{{ form.password2.id_for_label }}">Confirmar contraseña *</label>
-    {{ form.password2 }}
-    {{ form.password2.errors }}
-    <br>
-
-    <button class="btn-1" type="submit">Registrarse</button>
-  </form>
 </main>
 {% endblock %}

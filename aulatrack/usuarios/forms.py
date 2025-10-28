@@ -40,6 +40,21 @@ class LoginForm(AuthenticationForm):
 # 2) Registro
 # =========================================================
 class RegistroForm(UserCreationForm):
+    nombres = forms.CharField(
+        label="Nombres",
+        widget=forms.TextInput(attrs={"placeholder": "Ej: Juan Carlos"}),
+        error_messages={"required": "El campo Nombres es obligatorio."}
+    )
+    apellidos = forms.CharField(
+        label="Apellidos",
+        widget=forms.TextInput(attrs={"placeholder": "Ej: López Pérez"}),
+        error_messages={"required": "El campo Apellidos es obligatorio."}
+    )
+    rut = forms.CharField(
+        label="RUT",
+        widget=forms.TextInput(attrs={"placeholder": "Ej: 12345678-9"}),
+        error_messages={"required": "El campo RUT es obligatorio."}
+    )
     username = forms.CharField(
         label="Usuario",
         widget=forms.TextInput(attrs={"placeholder": "Ej: jlopez"}),
