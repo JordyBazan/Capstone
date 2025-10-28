@@ -1,55 +1,49 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/registro.css' %}">
-{% endblock %}
+{% block title %}Registro{% endblock %}
 
 {% block content %}
-<main>
-  <h1>Registro</h1>
+<h2>Crear cuenta</h2>
 
-  <div class="div" style="text-align: center;  align-items: center; justify-content: center; display: flex;">
+<form method="post">
+    {% csrf_token %}
+    <p>
+        <label for="id_username">Nombre de usuario:</label>
+        {{ form.username }}
+    </p>
+    <p>
+        <label for="id_nombres">Nombres:</label>
+        {{ form.nombres }}
+    </p>
+    <p>
+        <label for="id_apellidos">Apellidos:</label>
+        {{ form.apellidos }}
+    </p>
+    <p>
+        <label for="id_rut">RUT:</label>
+        {{ form.rut }}
+    </p>
+    <p>
+        <label for="id_email">Email:</label>
+        {{ form.email }}
+    </p>
+    <p>
+        <label for="id_role">Rol:</label>
+        {{ form.role }}
+    </p>
+    <p>
+        <label for="id_password1">Contraseña:</label>
+        {{ form.password1 }}
+    </p>
+    <p>
+        <label for="id_password2">Confirmar contraseña:</label>
+        {{ form.password2 }}
+    </p>
 
-    <form method="post" novalidate>
-      {% csrf_token %}
-  
-      {% if form.non_field_errors %}
-        <div>{{ form.non_field_errors }}</div>
-      {% endif %}
-      
-      <label for="{{ form.nombres.id_for_label }}">Nombres *</label>
-      {{ form.nombres }}
-      {{ form.nombres.errors }}
+    <button type="submit">Registrarse</button>
+</form>
 
-      <label for="{{ form.apellidos.id_for_label }}">Apellidos *</label>
-      {{ form.apellidos }}
-      {{ form.apellidos.errors }}
+<p>¿Ya tienes cuenta? <a href="{% url 'login' %}">Inicia sesión aquí</a></p>
 
-      <label for="{{ form.username.id_for_label }}">Usuario *</label>
-      {{ form.username }}
-      {{ form.username.errors }}
-  
-      <label for="{{ form.email.id_for_label }}">Correo electrónico *</label>
-      {{ form.email }}
-      {{ form.email.errors }}
-  
-      <label for="{{ form.role.id_for_label }}">Rol *</label>
-      {{ form.role }}
-      {{ form.role.errors }}
-  
-      <label for="{{ form.password1.id_for_label }}">Contraseña *</label>
-      {{ form.password1 }}
-      {{ form.password1.errors }}
-  
-      <label for="{{ form.password2.id_for_label }}">Confirmar contraseña *</label>
-      {{ form.password2 }}
-      {{ form.password2.errors }}
-      <br>
-  
-      <button class="btn-1" type="submit">Registrarse</button>
-    </form>
-  </div>
-
-</main>
 {% endblock %}

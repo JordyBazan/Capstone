@@ -9,107 +9,56 @@ from django.forms import CheckboxSelectMultiple
 from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404, redirect, redirect
 
-from .models import Curso, Asignatura, Perfil, Alumno
-
+from .models import Curso, Asignatura, Usuario, Alumno
 
 # =========================================================
 # 1) Autenticación
 # =========================================================
+from django.contrib.auth import get_user_model
+
+Usuario = get_user_model()  
+
 class LoginForm(AuthenticationForm):
     username = forms.CharField(
         label="Usuario",
-        widget=forms.TextInput(attrs={
-            "autofocus": True,
-            "placeholder": "Tu nombre de usuario"
-        }),
-        error_messages={"required": "El campo Usuario es obligatorio."}
+        widget=forms.TextInput(attrs={"autofocus": True, "placeholder": "Tu nombre de usuario"})
     )
     password = forms.CharField(
         label="Contraseña",
-        widget=forms.PasswordInput(attrs={"placeholder": "••••••••"}),
-        error_messages={"required": "La contraseña es obligatoria."}
+        widget=forms.PasswordInput(attrs={"placeholder": "••••••••"})
     )
-
-    error_messages = {
-        "invalid_login": "Usuario o contraseña incorrectos. Intenta nuevamente.",
-        "inactive": "Esta cuenta está inactiva.",
-    }
 
 
 # =========================================================
 # 2) Registro
 # =========================================================
+from django.contrib.auth.hashers import make_password
+from .models import Usuario
+
+
 class RegistroForm(UserCreationForm):
-    nombres = forms.CharField(
-        label="Nombres",
-        widget=forms.TextInput(attrs={"placeholder": "Ej: Juan Carlos"}),
-        error_messages={"required": "El campo Nombres es obligatorio."}
-    )
-    apellidos = forms.CharField(
-        label="Apellidos",
-        widget=forms.TextInput(attrs={"placeholder": "Ej: López Pérez"}),
-        error_messages={"required": "El campo Apellidos es obligatorio."}
-    )
-    rut = forms.CharField(
-        label="RUT",
-        widget=forms.TextInput(attrs={"placeholder": "Ej: 12345678-9"}),
-        error_messages={"required": "El campo RUT es obligatorio."}
-    )
-    username = forms.CharField(
-        label="Usuario",
-        widget=forms.TextInput(attrs={"placeholder": "Ej: jlopez"}),
-        error_messages={"required": "El campo Usuario es obligatorio."}
-    )
-    email = forms.EmailField(
-        required=True,
-        label="Correo electrónico",
-        widget=forms.EmailInput(attrs={"placeholder": "ejemplo@correo.com"}),
-        error_messages={
-            "required": "El correo electrónico es obligatorio.",
-            "invalid": "Ingresa un correo electrónico válido."
-        }
-    )
-    password1 = forms.CharField(
-        label="Contraseña",
-        widget=forms.PasswordInput(attrs={"placeholder": "Mínimo 8 caracteres"}),
-        error_messages={"required": "Debes ingresar una contraseña."}
-    )
-    password2 = forms.CharField(
-        label="Confirmar contraseña",
-        widget=forms.PasswordInput(attrs={"placeholder": "Repite tu contraseña"}),
-        error_messages={"required": "Debes confirmar tu contraseña."}
-    )
-    role = forms.ChoiceField(
-        choices=Perfil.ROLE_CHOICES,
-        label="Rol",
-        error_messages={"required": "Debes seleccionar un rol."}
-    )
-
     class Meta:
-        model = User
-        fields = ("username", "email", "password1", "password2", "role")
-        help_texts = {f: "" for f in ("username", "password1", "password2")}
-        error_messages = {
-            "username": {
-                "unique": "Este nombre de usuario ya está en uso.",
-                "required": "El campo Usuario es obligatorio.",
-            },
+        model = Usuario
+        fields = [
+            'username',
+            'nombres',
+            'apellidos',
+            'rut',
+            'email',
+            'role',
+            'password1',
+            'password2',
+        ]
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'nombres': forms.TextInput(attrs={'class': 'form-control'}),
+            'apellidos': forms.TextInput(attrs={'class': 'form-control'}),
+            'rut': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'role': forms.Select(attrs={'class': 'form-select'}),
+            'password1': forms.PasswordInput(attrs={'class': 'form-control'}),
+            'password2': forms.PasswordInput(attrs={'class': 'form-control'}),
         }
-
-    def clean_email(self):
-        email = self.cleaned_data.get("email")
-        if User.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError("Este correo ya está registrado.")
-        return email
-
-    def clean(self):
-        cleaned = super().clean()
-        p1, p2 = cleaned.get("password1"), cleaned.get("password2")
-        if p1 and p2 and p1 != p2:
-            self.add_error("password2", "Las contraseñas no coinciden.")
-        return cleaned
-
-
 # =========================================================
 # 3) Gestión Académica
 # =========================================================
@@ -119,26 +68,32 @@ class AsignaturaForm(forms.ModelForm):
         model = Asignatura
         fields = ["nombre", "descripcion", "profesor"]
         labels = {
-            "nombre": "Nombre",
+            "nombre": "Nombre de la asignatura",
             "descripcion": "Descripción",
-            "profesor": "Docente a cargo",
+            "profesor": "Profesor",
         }
         widgets = {
-            "nombre": forms.TextInput(attrs={"placeholder": "Ej. Matemática"}),
-            "descripcion": forms.Textarea(attrs={"placeholder": "Breve descripción…", "rows": 4}),
+            "nombre": forms.TextInput(attrs={"placeholder": "Ej: Matemáticas"}),
+            "descripcion": forms.Textarea(attrs={"placeholder": "Breve descripción"}),
             "profesor": forms.Select(attrs={"data-placeholder": "Seleccione un docente"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Solo profesores activos con rol docente
         self.fields["profesor"].queryset = (
-            User.objects.filter(perfil__role=Perfil.ROLE_DOCENTE, is_active=True)
-            .order_by("first_name", "last_name")
+            Usuario.objects.filter(is_active=True, role=Usuario.ROLE_DOCENTE)
+            .order_by("nombres", "apellidos", "username")
         )
-        self.fields["profesor"].label_from_instance = (
-            lambda u: f"{(u.get_full_name() or u.username).strip()} ({u.username})"
+        self.fields["profesor"].label_from_instance = lambda u: (
+            f"{u.get_full_name()} ({u.username})".strip() if u.get_full_name() else f"{u.username}"
         )
 
+    def clean_profesor(self):
+        prof = self.cleaned_data.get("profesor")
+        if prof and prof.role != Usuario.ROLE_DOCENTE:
+            raise forms.ValidationError("El usuario seleccionado no tiene rol de Docente.")
+        return prof
 
 # 3.2) Curso (crear)
 class CursoForm(forms.ModelForm):
@@ -160,18 +115,19 @@ class CursoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Usar el modelo Usuario y filtrar por rol DOCENTE
         self.fields["profesor_jefe"].queryset = (
-            User.objects.filter(is_active=True, perfil__role=Perfil.ROLE_DOCENTE)
-            .order_by('first_name', 'last_name', 'username')
+            Usuario.objects.filter(is_active=True, role=Usuario.ROLE_DOCENTE)
+            .order_by('nombres', 'apellidos', 'username')
         )
+        # Mostrar nombre completo y username
         self.fields["profesor_jefe"].label_from_instance = (
-            lambda u: f"{u.get_full_name()} ({u.username})".strip()
-            if u.get_full_name() else f"{u.username}"
+            lambda u: f"{u.get_full_name()} ({u.username})".strip() if u.get_full_name() else f"{u.username}"
         )
 
     def clean_profesor_jefe(self):
         prof = self.cleaned_data.get("profesor_jefe")
-        if prof and (not hasattr(prof, "perfil") or prof.perfil.role != Perfil.ROLE_DOCENTE):
+        if prof and prof.role != Usuario.ROLE_DOCENTE:
             raise forms.ValidationError("El usuario seleccionado no tiene rol de Docente.")
         return prof
 
@@ -199,7 +155,6 @@ class CursoForm(forms.ModelForm):
             if dup:
                 self.add_error(None, "Ya existe un curso con el mismo Año, Nombre y Sala.")
         return cleaned
-
 
 # 3.3) Curso: asignar Asignaturas (checkboxes)
 class CursoAsignaturasForm(forms.ModelForm):
@@ -244,13 +199,12 @@ class AsignarProfesorJefeForm(forms.Form):
         widget=forms.Select(attrs={"class": "form-select"})
     )
     docente = forms.ModelChoiceField(
-        queryset=User.objects.filter(perfil__role='docente').order_by('username'),
+        queryset=Usuario.objects.filter(role='docente').order_by('username'),
         label="Docente (profesor jefe)",
         widget=forms.Select(attrs={"class": "form-select"})
     )
 
     def __init__(self, *args, **kwargs):
-        # opcional: recibir curso inicial para preselección
         initial_curso = kwargs.pop("initial_curso", None)
         super().__init__(*args, **kwargs)
         if initial_curso:
@@ -263,7 +217,7 @@ get_object_or_404, redirect, messages
 
 @require_POST
 def asignar_profesor_jefe(request):
-    if getattr(request.user.perfil, 'role', None) != 'utp':
+    if getattr(request.user.usuario, 'role', None) != 'utp':
         raise PermissionDenied("Solo UTP puede asignar profesor jefe.")
 
     curso_id = request.POST.get('curso_id')
@@ -272,7 +226,7 @@ def asignar_profesor_jefe(request):
     curso = get_object_or_404(Curso, pk=curso_id)
 
     if pj_id:
-        pj = get_object_or_404(User, pk=pj_id, perfil__role='docente')
+        pj = get_object_or_404(User, pk=pj_id, usuario__role='docente')
         curso.profesor_jefe = pj
         msg = f"Profesor Jefe asignado: {pj.get_full_name() or pj.username}"
     else:

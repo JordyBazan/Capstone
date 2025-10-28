@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-i0zs+wbc0rtgz)&-5a!ft(=slfrh29@5n5vxg3+#m@ra9dquf1
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
+ 
 
 # Application definition
 
@@ -40,14 +40,16 @@ INSTALLED_APPS = [
     'usuarios'
 ]
 
+AUTH_USER_MODEL = "usuarios.Usuario"
+
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
+LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
-LOGIN_URL = 'login'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

@@ -1,38 +1,44 @@
-# urls.py
+# usuarios/urls.py
 from django.urls import path
 from django.contrib.auth.views import LogoutView
+from . import views  
+from django.views.generic.base import RedirectView
+
 from .views import (
-    MiLoginView, registro, home, curso, asistencia,
-    notas, anotaciones, reportes, 
-    crear_curso, crear_asignatura
+    home, curso, asistencia, seleccionar_asignatura, libro_notas,
+    anotaciones_curso, anotaciones_alumno, reportes,
+    crear_curso, crear_asignatura,
+    curso_editar, curso_eliminar, asignar_asignaturas_curso,
+    curso_quitar_asignatura, cursos_export_pdf,
+    asignatura_list, asignatura_editar, asignatura_eliminar,
+    asignar_profesor_jefe, asignar_profesor_jefe_inline,
+    agregar_alumno, editar_alumno, cursos_lista, MiLoginView, registro
 )
-from . import views
 
 urlpatterns = [
-
     # =============================
     # Páginas principales
     # =============================
-    path('', home, name='home'),
-    path('curso/<int:curso_id>/', views.curso, name='curso'),
-    path('asistencia/<int:curso_id>/', views.asistencia, name='asistencia'),
-    
+    path('', home, name='home'),          
+    path('home/', home, name='home_page'), 
 
+    # =============================
+    # Cursos
+    # =============================
+    path('curso/<int:curso_id>/', curso, name='curso'),
+    path('asistencia/<int:curso_id>/', asistencia, name='asistencia'),
+    path('curso/<int:curso_id>/notas/', seleccionar_asignatura, name='notas'),
+    path('curso/<int:curso_id>/asignatura/<int:asignatura_id>/notas/', libro_notas, name='libro_notas'),
 
+    # =============================
+    # Anotaciones
+    # =============================
+    path('anotaciones/<int:curso_id>/', anotaciones_curso, name='anotaciones_curso'),
+    path('anotaciones/alumno/<int:alumno_id>/', anotaciones_alumno, name='anotaciones_alumno'),
 
-    path('curso/<int:curso_id>/notas/', views.seleccionar_asignatura, name='notas'),
-    path('curso/<int:curso_id>/asignatura/<int:asignatura_id>/notas/', views.libro_notas, name='libro_notas'),
-    path('curso/<int:curso_id>/asignatura/<int:asignatura_id>/notas/', views.libro_notas, name='libro_notas'),
-
-
-
-
-    path('anotaciones/<int:curso_id>/', views.anotaciones_curso, name='anotaciones_curso'),
-    path('anotaciones/alumno/<int:alumno_id>/', views.anotaciones_alumno, name='anotaciones_alumno'),
-
-
-
-    
+    # =============================
+    # Reportes
+    # =============================
     path('reportes/', reportes, name='reportes'),
 
     # =============================
@@ -45,43 +51,30 @@ urlpatterns = [
     # =============================
     # Gestión Académica: Cursos
     # =============================
-    path('cursos/', views.cursos_lista, name='cursos_lista'),
+    path('cursos/', cursos_lista, name='cursos_lista'),
     path('cursos/crear/', crear_curso, name='crear_curso'),
-    path('cursos/<int:pk>/editar/', views.curso_editar, name='curso_editar'),
-    path('cursos/<int:pk>/eliminar/', views.curso_eliminar, name='curso_eliminar'),
-    path('cursos/<int:curso_id>/asignaturas/', views.asignar_asignaturas_curso, name='asignar_asignaturas_curso'),
-    path('alumnos/eliminar/<int:id>/', views.eliminar_alumno, name='eliminar_alumno'),
-
-    path(
-        'cursos/<int:curso_id>/asignaturas/<int:asignatura_id>/quitar/',
-        views.curso_quitar_asignatura,
-        name='curso_quitar_asignatura'
-    ),
+    path('cursos/<int:pk>/editar/', curso_editar, name='curso_editar'),
+    path('cursos/<int:pk>/eliminar/', curso_eliminar, name='curso_eliminar'),
+    path('cursos/<int:curso_id>/asignaturas/', asignar_asignaturas_curso, name='asignar_asignaturas_curso'),
+    path('cursos/<int:curso_id>/asignaturas/<int:asignatura_id>/quitar/', curso_quitar_asignatura, name='curso_quitar_asignatura'),
+    path('cursos/export/pdf/', cursos_export_pdf, name='cursos_export_pdf'),
+    path('mis_cursos/', RedirectView.as_view(pattern_name='home_page', permanent=False)),
 
 
     # =============================
     # Gestión Académica: Asignaturas
     # =============================
-    path('asignaturas/', views.asignatura_list, name='asignatura_list'),
-    path('asignaturas/crear/', crear_asignatura, name='asignatura_crear'),
-    path('asignaturas/<int:pk>/editar/', views.asignatura_editar, name='asignatura_editar'),
-    path('asignaturas/<int:pk>/eliminar/', views.asignatura_eliminar, name='asignatura_eliminar'),
-
-    path('crear-asignatura/', crear_asignatura, name='crear_asignatura'),
-    path("asignar-profesor-jefe/", views.asignar_profesor_jefe, name="asignar_profesor_jefe"),         
-    path("cursos/set-pj/", views.asignar_profesor_jefe_inline, name="asignar_profesor_jefe_inline"),   
-
-    path('cursos/export/pdf/', views.cursos_export_pdf, name='cursos_export_pdf'),
-
-
+    path('asignaturas/', asignatura_list, name='asignatura_list'),
+    path('asignaturas/crear/', crear_asignatura, name='crear_asignatura'),
+    path('asignaturas/<int:pk>/editar/', asignatura_editar, name='asignatura_editar'),
+    path('asignaturas/<int:pk>/eliminar/', asignatura_eliminar, name='asignatura_eliminar'),
+    path('asignar-profesor-jefe/', asignar_profesor_jefe, name='asignar_profesor_jefe'),
+    path('cursos/set-pj/', asignar_profesor_jefe_inline, name='asignar_profesor_jefe_inline'),
 
     # =============================
-    # Gestión Académica: Cursos
+    # Gestión Académica: Alumnos
     # =============================
-    
-    path('alumnos/nuevo/', views.agregar_alumno, name='agregar_alumno'),
-
-    path('asistencia/<int:curso_id>/', views.asistencia, name='asistencia'),
-    path('alumnos/<int:alumno_id>/editar/', views.editar_alumno, name='editar_alumno'),
-
+    path('alumnos/nuevo/', agregar_alumno, name='agregar_alumno'),
+    path('alumnos/<int:alumno_id>/editar/', editar_alumno, name='editar_alumno'),
+    path('alumnos/eliminar/<int:id>/', views.eliminar_alumno, name='eliminar_alumno'),
 ]

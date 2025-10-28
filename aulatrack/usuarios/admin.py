@@ -1,14 +1,27 @@
 from django.contrib import admin
 from .models import (
-    Perfil, Alumno, Asignatura, Curso,
+    Usuario, Alumno, Asignatura, Curso,
     Asistencia, Anotacion, DocenteCurso, Nota
 )
 
-@admin.register(Perfil)
-class PerfilAdmin(admin.ModelAdmin):
-    list_display = ("user", "role")
+@admin.register(Usuario)
+class UsuarioAdmin(admin.ModelAdmin):
+    list_display = ("username", "rut", "email", "role")
     list_filter = ("role",)
-    search_fields = ("user__username", "user__email")
+    search_fields = ("username", "rut", "email")
+
+    def has_view_permission(self, request, obj=None):
+        return True
+
+    def has_change_permission(self, request, obj=None):
+        return True
+
+    def has_delete_permission(self, request, obj=None):
+        return True
+
+    def has_add_permission(self, request):
+        return True
+
 
 @admin.register(Alumno)
 class AlumnoAdmin(admin.ModelAdmin):
@@ -19,15 +32,14 @@ class AlumnoAdmin(admin.ModelAdmin):
 @admin.register(Asignatura)
 class AsignaturaAdmin(admin.ModelAdmin):
     list_display = ("nombre", "profesor")
-    search_fields = ("nombre", "profesor__username")
+    search_fields = ("nombre",)
     list_filter = ("profesor",)
 
 @admin.register(Curso)
 class CursoAdmin(admin.ModelAdmin):
     list_display = ("año", "nombre", "sala", "profesor_jefe")
-    search_fields = ("año", "nombre", "sala", "profesor_jefe__username")
+    search_fields = ("año", "nombre", "sala")
     list_filter = ("año",)
-
 
 @admin.register(Asistencia)
 class AsistenciaAdmin(admin.ModelAdmin):
@@ -41,18 +53,14 @@ class AnotacionAdmin(admin.ModelAdmin):
     list_filter = ("profesor", "fecha")
     search_fields = ("alumno__nombres", "alumno__apellidos", "texto")
 
-
 @admin.register(DocenteCurso)
 class DocenteCursoAdmin(admin.ModelAdmin):
     list_display = ("docente", "curso")
     list_filter = ("docente", "curso")
-    search_fields = ("docente__username", "curso__nombre")
-
-
-
+    search_fields = ("curso__nombre",)
 
 @admin.register(Nota)
 class NotaAdmin(admin.ModelAdmin):
     list_display = ('alumno', 'asignatura', 'numero', 'valor', 'profesor')
     list_filter = ('asignatura', 'profesor')
-    search_fields = ('alumno__nombre', 'asignatura__nombre')
+    search_fields = ('alumno__nombres', 'alumno__apellidos', 'asignatura__nombre')

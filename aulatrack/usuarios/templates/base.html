@@ -1,7 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>{% block title %}AulaTrack{% endblock %}</title>
@@ -9,64 +9,67 @@
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     {% block extra_css %}{% endblock %}
-  </head>
-  <body>
-    <main class="app">
-      <aside class="sidebar" aria-label="Barra lateral">
+</head>
+<body>
+<main class="app">
+    <aside class="sidebar" aria-label="Barra lateral">
         <div class="sidebar-top">
-          <div class="brand">
-            <div class="logo" aria-hidden="true">AT</div>
-            <div class="name">AulaTrack</div>
-          </div>
+            <div class="brand">
+                <div class="logo" aria-hidden="true">AT</div>
+                <div class="name">AulaTrack</div>
+            </div>
 
-          <div class="profile" aria-label="Perfil usuario">
-            <div class="avatar" aria-hidden="true">
-              {{ user.username|slice:":2"|upper }}
+            {% if user.is_authenticated %}
+            <div class="profile" aria-label="Perfil usuario">
+                <div class="avatar" aria-hidden="true">
+                    {{ user.username|slice:":2"|upper }}
+                </div>
+                <div>
+                    <div class="docente">{{ user.username }}</div>
+                    <div class="rol">{{ user.role|title|default:"Sin rol" }}</div>
+                </div>
             </div>
-            <div>
-              <div class="docente">{{ user.username }}</div>
-              <div class="rol">{{ user.perfil.role|title|default:"Sin rol" }}</div>
-            </div>
-          </div>
 
-          <nav aria-label="Menú principal" class="menu">
-            <div class="nav-section">
-              <h4>Cursos</h4>
-              <ul>
-                <li><a href="{% url 'home' %}">Tus cursos</a></li>
-                {% if user.perfil.role == "utp" %}
-                  <li><a href="{% url 'cursos_lista' %}">Gestionar cursos</a></li>
-                  <li><a href="{% url 'crear_curso' %}">Crear curso</a></li>
-                  <li><a href="{% url 'crear_asignatura' %}">Crear asignatura</a></li>
-                  <li><a href="{% url 'asignar_profesor_jefe' %}">Asignar profesor jefe</a></li>
-                  <li><a href="{% url 'agregar_alumno' %}">Agregar alumno</a></li>
-                {% endif %}
-              </ul>
+            <nav aria-label="Menú principal" class="menu">
+                <div class="nav-section">
+                    <h4>Cursos</h4>
+                    <ul>
+                        <li><a href="{% url 'home_page' %}">Tus cursos</a></li>
+                        {% if user.role == "utp" %}
+                            <li><a href="{% url 'cursos_lista' %}">Gestionar cursos</a></li>
+                            <li><a href="{% url 'crear_curso' %}">Crear curso</a></li>
+                            <li><a href="{% url 'crear_asignatura' %}">Crear asignatura</a></li>
+                            <li><a href="{% url 'asignar_profesor_jefe' %}">Asignar profesor jefe</a></li>
+                            <li><a href="{% url 'agregar_alumno' %}">Agregar alumno</a></li>
+                        {% elif user.role == "docente" %}
+                            <li><a href="{% url 'home_page' %}">Mis cursos</a></li>
+                        {% elif user.role == "alumno" %}
+                            <li><a href="{% url 'inicio' %}">Mi inicio</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </nav>
+
+            <div class="logout">
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-btn">Cerrar sesión</button>
+                </form>
             </div>
-          </nav>
+            {% endif %}
         </div>
+    </aside>
 
-        {% if user.is_authenticated %}
-        <div class="logout">
-          <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="logout-btn">Cerrar sesión</button>
-          </form>
-        </div>
-        {% endif %}
-      </aside>
-
-      <section class="main">
+    <section class="main">
         <header class="topbar">
-          {% block topbar %}{% endblock %}
+            {% block topbar %}{% endblock %}
         </header>
         <div class="content">
-          {% block content %}{% endblock %}
+            {% block content %}{% endblock %}
         </div>
-      </section>
-    </main>
-  </body>
+    </section>
+</main>
+</body>
 </html>

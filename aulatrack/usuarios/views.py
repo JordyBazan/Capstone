@@ -26,7 +26,7 @@ from django.core.paginator import Paginator
 from django.urls import reverse
 
 # Modelos
-from .models import Perfil, DocenteCurso, Alumno, Curso, Asignatura, Nota, Asistencia, Anotacion
+from .models import Alumno, Curso, Asignatura, Nota, Asistencia, Anotacion,Usuario
 
 # Formularios
 from .forms import (
@@ -37,9 +37,10 @@ from .forms import (
 # =========================================================
 # Utilidades / Permisos
 # =========================================================
-def es_utp(user):
-    return user.is_authenticated and hasattr(user, "perfil") and user.perfil.role == "utp"
 
+
+def es_utp(user):
+    return hasattr(user, 'role') and user.role == 'utp'
 # =========================================================
 # Helper de orden por grado (1º→8º Básico, luego Medio, etc.)
 # =========================================================
@@ -57,6 +58,7 @@ def _clave_grado(nombre: str):
 # =========================================================
 # Páginas principales
 # =========================================================
+@login_required
 def home(request):
     user = request.user
     ordenar = request.GET.get("ordenar") or "basico_asc"
@@ -64,8 +66,8 @@ def home(request):
     cursos_docente = None
     cursos_todos = None
 
-    # ----- DOCENTE: cursos donde es PJ, dicta una asignatura o tiene DocenteCurso
-    if hasattr(user, "perfil") and user.perfil.role == "docente":
+    # Cursos de docentes
+    if user.role == "docente":
         ids = set()
         ids.update(Curso.objects.filter(profesor_jefe=user).values_list("id", flat=True))
         ids.update(Curso.objects.filter(docentecurso__docente=user).values_list("id", flat=True))
@@ -77,6 +79,7 @@ def home(request):
             .prefetch_related("asignaturas")
             .distinct()
         )
+
         if ordenar == "basico_asc":
             cursos_docente.sort(key=lambda c: _clave_grado(c.nombre))
         elif ordenar == "basico_desc":
@@ -84,13 +87,14 @@ def home(request):
         elif ordenar == "nombre_asc":
             cursos_docente.sort(key=lambda c: (c.nombre or "").lower())
 
-    # ----- UTP: todos los cursos
-    if hasattr(user, "perfil") and user.perfil.role == "utp":
+    # Cursos para UTP (todos)
+    if user.role == "utp":
         cursos_todos = list(
             Curso.objects.all()
             .select_related("profesor_jefe")
             .prefetch_related("asignaturas")
         )
+
         if ordenar == "basico_asc":
             cursos_todos.sort(key=lambda c: _clave_grado(c.nombre))
         elif ordenar == "basico_desc":
@@ -102,6 +106,7 @@ def home(request):
         "cursos_docente": cursos_docente,
         "cursos_todos": cursos_todos,
     })
+
 
 
 @login_required
@@ -141,67 +146,83 @@ def reportes(request):
 # =========================================================
 # Autenticación (Login / Registro)
 # =========================================================
+from django.contrib.auth import authenticate, login, logout
+from django.views.generic.edit import CreateView
+from django.urls import reverse_lazy
+from .forms import RegistroForm
+
+
 class MiLoginView(LoginView):
-    template_name = "login.html"
+    template_name = 'login.html'
     authentication_form = LoginForm
     redirect_authenticated_user = True
 
-    def form_invalid(self, form):
-        messages.error(self.request, "Credenciales inválidas. Verifica tus datos.")
-        return super().form_invalid(form)
+    def get_success_url(self):
+        user = self.request.user
+        if hasattr(user, 'role'):   # tu campo es 'role', no 'rol'
+            if user.role == 'utp':
+                return '/cursos/'
+            elif user.role == 'docente':
+                return '/mis_cursos/'
+            elif user.role == 'alumno':
+                return '/inicio/'
+        return '/home/'
 
 
 def registro(request):
-    if request.method == "POST":
+    if request.method == 'POST':
         form = RegistroForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            Perfil.objects.create(user=user, role=form.cleaned_data["role"])
-            messages.success(request, "¡Cuenta creada con éxito! Ya puedes ingresar.")
-            auth_login(request, user)
-            return redirect("home")
-        messages.error(request, "Revisa los campos e intenta de nuevo.")
+            form.save()
+            return redirect('usuarios:login')
     else:
         form = RegistroForm()
-    return render(request, "registro.html", {"form": form})
+    return render(request, 'registro.html', {'form': form})
 
 
-# =========================================================
-# UTP - Gestión académica
-# =========================================================
-@user_passes_test(es_utp)
-def crear_curso(request):
-    if request.method == "POST":
-        form = CursoForm(request.POST)
+def login_view(request):
+    if request.user.is_authenticated:
+        # Si ya está logueado, redirige según el rol
+        if hasattr(user, 'rol'):
+            if user.rol == 'utp':
+                return redirect('cursos_lista')
+            elif user.rol == 'docente':
+                return redirect('mis_cursos')
+            elif user.rol == 'alumno':
+                return redirect('inicio')
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = LoginForm(request, data=request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Curso creado correctamente.")
-            return redirect("cursos_lista")
-        messages.error(request, "Revisa los errores del formulario.")
+            user = form.get_user()
+            login(request, user)
+            # Redirigir después del login según el rol
+            if hasattr(user, 'rol'):
+                if user.rol == 'utp':
+                    return redirect('cursos_lista') 
+                elif user.rol == 'docente':
+                    return redirect('mis_cursos')
+                elif user.rol == 'alumno':
+                    return redirect('inicio')
+            return redirect('home')
     else:
-        form = CursoForm()
-    return render(request, "crear_curso.html", {"form": form})
+        form = LoginForm()
+    return render(request, 'login.html', {'form': form})
 
 
-@user_passes_test(es_utp)
-def crear_asignatura(request):
-    if request.method == "POST":
-        form = AsignaturaForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Asignatura creada con éxito.")
-            return redirect("cursos_lista")
-        messages.error(request, "Revisa los errores del formulario.")
-    else:
-        form = AsignaturaForm()
-    return render(request, "crear_asignatura.html", {"form": form})
+def logout_view(request):
+    logout(request)
+    return redirect('login')
 
 
+from django.http import HttpResponseForbidden
 
-
-
-@user_passes_test(es_utp)
+@login_required
 def cursos_lista(request):
+    if request.user.role != 'utp':
+        return HttpResponseForbidden("No tienes permisos para ver esta página.")
+
     page = request.GET.get('page', '1')
     curso_id = request.GET.get('curso')
 
@@ -216,7 +237,7 @@ def cursos_lista(request):
         .order_by("año", "nombre")
     )
     asignaturas = Asignatura.objects.select_related("profesor").all().order_by("nombre")
-    docentes = User.objects.filter(perfil__role="docente").order_by("first_name", "last_name", "username")
+    docentes = Usuario.objects.filter(role="docente").order_by("first_name", "last_name", "username")
 
     alumnos = Alumno.objects.select_related('curso').order_by('curso__año', 'curso__nombre', 'apellidos', 'nombres')
     if curso_id:
@@ -235,11 +256,54 @@ def cursos_lista(request):
     return render(request, "cursos_lista.html", context)
 
 
+
+
+
+
+
+
+
+# =========================================================
+# UTP - Gestión académica
+# =========================================================
+@user_passes_test(es_utp)
+def crear_curso(request):
+    if request.method == "POST":
+        form = CursoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Curso creado correctamente.")
+            return redirect("home_page")
+        messages.error(request, "Revisa los errores del formulario.")
+    else:
+        form = CursoForm()
+    return render(request, "crear_curso.html", {"form": form})
+
+@user_passes_test(es_utp)
+def crear_asignatura(request):
+    if request.method == "POST":
+        form = AsignaturaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Asignatura creada con éxito.")
+            return redirect("cursos_lista")
+        messages.error(request, "Revisa los errores del formulario.")
+    else:
+        form = AsignaturaForm()
+    return render(request, "crear_asignatura.html", {"form": form})
+
+
+
+
+
+
+
+
 @user_passes_test(es_utp)
 def curso_editar(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
     form = CursoEditForm(request.POST or None, instance=curso)
-    docentes = User.objects.filter(perfil__role='docente').order_by('first_name','last_name','username')
+    docentes = Usuario.objects.filter(role=Usuario.ROLE_DOCENTE).order_by('first_name','last_name','username')
 
     if form.is_valid():
         form.save()
@@ -776,7 +840,7 @@ def editar_alumno(request, alumno_id):
 def lista_docentes(request):
     rol_seleccionado = request.GET.get('rol', '')
     docentes = User.objects.filter(perfil__role=rol_seleccionado) if rol_seleccionado else User.objects.all()
-    roles = Perfil.ROLE_CHOICES
+    roles = Usuario.ROLE_CHOICES
     return render(request, 'tu_template.html', {
         'page': '4',
         'docentes': docentes,

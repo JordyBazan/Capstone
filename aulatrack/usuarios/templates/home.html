@@ -8,8 +8,6 @@
 {% endblock %}
 
 {% block content %}
- 
-
 <div class="filter-bar">
   <form method="get">
     <label for="ordenar">Ordenar por:</label>
@@ -35,7 +33,6 @@
       <article class="courseCard {% if c.profesor_jefe_id == request.user.id %}is-mi-curso{% endif %}" tabindex="0">
         <span class="badge">{{ c.año }}</span>
 
-        {# Distintivo si el usuario es profesor jefe de este curso #}
         {% if c.profesor_jefe_id == request.user.id %}
           <span class="badge-mi-curso" aria-label="Eres profesor jefe de este curso">Mi curso</span>
         {% endif %}
@@ -56,12 +53,13 @@
         </div>
       </article>
     {% endfor %}
-  {% elif user.perfil.role == 'docente' %}
+  {% elif user.role == 'docente' %}
     <p class="muted">No tienes cursos asignados.</p>
   {% endif %}
 </div>
 
-{% if user.perfil.role == 'utp' %}
+<!-- ===== Vista UTP ===== -->
+{% if user.role == 'utp' %}
   <div style="margin-top: 8px;">
     <div class="sectionTitle">Todos los cursos</div>
     <div class="hint">Vista de UTP: gestión de todos los cursos</div>
@@ -93,6 +91,14 @@
     {% else %}
       <p class="muted">No hay cursos creados.</p>
     {% endif %}
+  </div>
+{% endif %}
+
+<!-- ===== Usuarios sin rol ===== -->
+{% if not user.role %}
+  <div class="no-role" style="margin-top: 20px; text-align:center;">
+    <div class="sectionTitle">Sin Rol Asignado</div>
+    <p class="muted">No tienes un rol asignado aún. Contacta al administrador del sistema para que te asigne uno.</p>
   </div>
 {% endif %}
 {% endblock %}
