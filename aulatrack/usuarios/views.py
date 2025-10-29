@@ -362,7 +362,7 @@ def agregar_alumno(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Alumno agregado correctamente.")
-            return redirect('agregar_alumno')  # o 'lista_alumnos', si tienes una lista
+            return redirect('usuarios:cursos_lista')  # o 'lista_alumnos', si tienes una lista
     else:
         form = AlumnoForm()
     
@@ -404,7 +404,7 @@ def asignatura_editar(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, "Asignatura actualizada correctamente.")
-            return redirect("cursos_lista")
+            return redirect("usuarios:cursos_lista")
         messages.error(request, "Revisa los errores del formulario.")
     else:
         form = AsignaturaForm(instance=asignatura)
@@ -848,7 +848,7 @@ def editar_alumno(request, alumno_id):
 def eliminar_alumno(request, id):
     alumno = get_object_or_404(Alumno, id=id)
     alumno.delete()
-    return redirect('cursos_lista')
+    return redirect('usuarios:cursos_lista')
 
 
 
@@ -874,3 +874,35 @@ def gestion_usuario(request):
     }
 
     return render(request, "gestion_usuario.html", context)
+
+def eliminar_usuario(request, id):
+    usuario = get_object_or_404(Usuario, id=id)
+    usuario.delete()
+    messages.success(request, "Usuario eliminado correctamente.")
+    return redirect('usuarios:gestion_usuario')
+
+def editar_usuario(request, id):
+    # Obtiene el usuario específico
+    usuario = get_object_or_404(Usuario, id=id)
+    roles = Usuario.ROLE_CHOICES  # Tus roles definidos en el modelo
+
+    if request.method == 'POST':
+        # Actualiza los campos con los datos enviados por el formulario
+        usuario.nombres = request.POST.get('nombres')
+        usuario.apellidos = request.POST.get('apellidos')
+        usuario.email = request.POST.get('email')
+        usuario.rut = request.POST.get('rut')
+
+        nuevo_role = request.POST.get('role')
+        if nuevo_role in dict(roles):
+            usuario.role = nuevo_role
+
+        usuario.save()
+        messages.success(request, "Usuario actualizado correctamente.")
+        return redirect('usuarios:gestion_usuario')  # O tu vista de listado
+
+    # Si es GET, muestra el formulario con los datos actuales del usuario
+    return render(request, 'editar_usuario.html', {
+        'usuario': usuario,
+        'roles': roles,
+    })

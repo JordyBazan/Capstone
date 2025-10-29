@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
 {% load static dict_extras %}
 {% block title %}Gestión de Usuarios{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/cursos_lista.css' %}">
+{% endblock %}
 
 {% block content %}
 
@@ -53,7 +56,12 @@
           <td>{{ usuario.email }}</td>
           <td>{{ usuario.get_role_display }}</td>
           <td class="cell-actions">
-            <a class="link" href="#">Editar</a>
+            <a class="link" href="{% url 'usuarios:editar_usuario' usuario.id %}">Editar</a>
+            <a class="link text-danger"
+              href="{% url 'usuarios:eliminar_usuario' usuario.id %}"
+              onclick="return confirm('¿Estás seguro de que deseas eliminar este usuario?');">
+              Eliminar
+            </a>
           </td>
         </tr>
       {% empty %}
