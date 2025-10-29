@@ -20,7 +20,8 @@ urlpatterns = [
     # Páginas principales
     # =============================
     path('', home, name='home'),          
-    path('home/', home, name='home_page'), 
+    path('home/', home, name='home_page'),
+
 
     # =============================
     # Cursos
@@ -77,4 +78,12 @@ urlpatterns = [
     path('alumnos/nuevo/', agregar_alumno, name='agregar_alumno'),
     path('alumnos/<int:alumno_id>/editar/', editar_alumno, name='editar_alumno'),
     path('alumnos/eliminar/<int:id>/', views.eliminar_alumno, name='eliminar_alumno'),
+
+    # =============================
+    # Gestión Académica: Usuarios
+    # =============================
+    #path('usuarios/', views.usuario_list, name='usuario_list'),
+    #path('usuarios/<int:pk>/editar/', views.usuario_editar, name='usuario_editar'),
+    #path('usuarios/<int:pk>/eliminar/', views.usuario_eliminar, name='usuario_eliminar'),
+    path('gestion_usuario/', views.gestion_usuario, name='gestion_usuario'),
 ]

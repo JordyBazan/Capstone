@@ -43,6 +43,7 @@
                             <li><a href="{% url 'crear_asignatura' %}">Crear asignatura</a></li>
                             <li><a href="{% url 'asignar_profesor_jefe' %}">Asignar profesor jefe</a></li>
                             <li><a href="{% url 'agregar_alumno' %}">Agregar alumno</a></li>
+                            <li><a href="{% url 'gestion_usuario' %}">Gestion de Usuarios</a>
                         {% elif user.role == "docente" %}
                             <li><a href="{% url 'home_page' %}">Mis cursos</a></li>
                         {% elif user.role == "alumno" %}

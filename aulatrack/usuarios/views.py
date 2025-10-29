@@ -837,18 +837,34 @@ def editar_alumno(request, alumno_id):
         'cursos': cursos,
     })
 
-def lista_docentes(request):
-    rol_seleccionado = request.GET.get('rol', '')
-    docentes = User.objects.filter(perfil__role=rol_seleccionado) if rol_seleccionado else User.objects.all()
-    roles = Usuario.ROLE_CHOICES
-    return render(request, 'tu_template.html', {
-        'page': '4',
-        'docentes': docentes,
-        'roles': roles,
-        'rol_seleccionado': rol_seleccionado,
-    })
+
 
 def eliminar_alumno(request, id):
     alumno = get_object_or_404(Alumno, id=id)
     alumno.delete()
     return redirect('cursos_lista')
+
+
+
+def gestion_usuario(request):
+    if request.user.role != 'utp':
+        return HttpResponseForbidden("No tienes permisos para ver esta página.")
+
+    # Obtener rol seleccionado desde el filtro
+    rol_seleccionado = request.GET.get('rol', '')
+
+    # Obtener todos los usuarios o filtrar por rol
+    usuarios_filtrados = Usuario.objects.all().order_by('nombres', 'apellidos')
+    if rol_seleccionado:
+        usuarios_filtrados = usuarios_filtrados.filter(role=rol_seleccionado)
+
+    # Opciones de rol para el select
+    roles = Usuario.ROLE_CHOICES
+
+    context = {
+        'usuarios_filtrados': usuarios_filtrados,
+        'roles': roles,
+        'rol_seleccionado': rol_seleccionado,
+    }
+
+    return render(request, "gestion_usuario.html", context)

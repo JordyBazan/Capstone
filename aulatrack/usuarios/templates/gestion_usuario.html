@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static dict_extras %}
+{% block title %}Gestión de Usuarios{% endblock %}
+
+{% block content %}
+
+<div class="page-head flex-between">
+  <div>
+    <h1>Usuarios</h1>
+    <div class="hint">Listado de todos los usuarios registrados en el sistema</div>
+  </div>
+  <div>
+    <a class="btn" href="{% url 'registro' %}">+ Agregar usuario</a>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <form method="get">
+    <input type="hidden" name="page" value="4">
+    <label for="rol">Filtrar por rol:</label>
+    <select name="rol" id="rol" onchange="this.form.submit()">
+      <option value="">Todos los roles</option>
+      {% for key, value in roles %}
+        <option value="{{ key }}" {% if rol_seleccionado == key %}selected{% endif %}>
+          {{ value }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+  <br>
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nombre</th>
+        <th>Apellido</th>
+        <th>RUT</th>
+        <th>Correo electrónico</th>
+        <th>Rol</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for usuario in usuarios_filtrados %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ usuario.nombres }}</td>
+          <td>{{ usuario.apellidos }}</td>
+          <td>{{ usuario.rut }}</td>
+          <td>{{ usuario.email }}</td>
+          <td>{{ usuario.get_role_display }}</td>
+          <td class="cell-actions">
+            <a class="link" href="#">Editar</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7">No hay usuarios registrados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
