@@ -22,7 +22,7 @@
   <div class="curso-card op-notas">
     <h3>{{ asignatura.nombre }}</h3>
     <p>Ver y registrar notas</p>
-    <a href="{% url 'libro_notas' curso.id asignatura.id %}" class="cta">Entrar</a>
+    <a href="{% url 'usuarios:libro_notas' curso.id asignatura.id %}" class="cta">Entrar</a>
   </div>
   {% empty %}
   <p>No hay asignaturas registradas para este curso.</p>

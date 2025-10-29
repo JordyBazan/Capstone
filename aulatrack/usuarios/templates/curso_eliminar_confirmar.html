@@ -11,7 +11,7 @@
   <form method="post" class="actions">
     {% csrf_token %}
     <button class="btn danger" type="submit">Sí, eliminar</button>
-    <a class="btn ghost" href="{% url 'cursos_lista' %}">Cancelar</a>
+    <a class="btn ghost" href="{% url 'usuarios:cursos_lista' %}">Cancelar</a>
   </form>
 </div>
 {% endblock %}

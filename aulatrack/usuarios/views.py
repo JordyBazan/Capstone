@@ -169,12 +169,18 @@ class MiLoginView(LoginView):
         return '/home/'
 
 
+
 def registro(request):
     if request.method == 'POST':
         form = RegistroForm(request.POST)
         if form.is_valid():
             form.save()
+            messages.success(request, "Cuenta creada correctamente. Ya puedes iniciar sesión.")
             return redirect('usuarios:login')
+        else:
+            # 👇 Esto mostrará en la consola por qué no valida
+            print(" ERRORES DEL FORMULARIO:", form.errors)
+            messages.error(request, "Revisa los campos e intenta nuevamente.")
     else:
         form = RegistroForm()
     return render(request, 'registro.html', {'form': form})
@@ -273,7 +279,7 @@ def crear_curso(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Curso creado correctamente.")
-            return redirect("home_page")
+            return redirect("usuarios:home_page")
         messages.error(request, "Revisa los errores del formulario.")
     else:
         form = CursoForm()
@@ -323,7 +329,7 @@ def curso_eliminar(request, pk):
     if request.method == "POST":
         curso.delete()
         messages.success(request, "Curso eliminado.")
-        return redirect("cursos_lista")
+        return redirect("usuarios:cursos_lista")
     return render(request, "curso_eliminar_confirmar.html", {"curso": curso})
 
 
@@ -675,7 +681,7 @@ def asistencia(request, curso_id):
                 )
 
         messages.success(request, "Asistencia guardada correctamente.")
-        return redirect('asistencia', curso_id=curso.id)
+        return redirect('usuarios:asistencia', curso_id=curso.id)
 
     # Filtrado por fecha (GET)
     fecha_filtrada = request.GET.get('fecha')

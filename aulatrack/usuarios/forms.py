@@ -59,6 +59,18 @@ class RegistroForm(UserCreationForm):
             'password1': forms.PasswordInput(attrs={'class': 'form-control'}),
             'password2': forms.PasswordInput(attrs={'class': 'form-control'}),
         }
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        # Esto asegura que los campos extra se guarden bien
+        user.nombres = self.cleaned_data.get('nombres')
+        user.apellidos = self.cleaned_data.get('apellidos')
+        user.rut = self.cleaned_data.get('rut')
+        user.email = self.cleaned_data.get('email')
+        user.role = self.cleaned_data.get('role')
+        if commit:
+            user.save()
+        return user
 # =========================================================
 # 3) Gestión Académica
 # =========================================================

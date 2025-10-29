@@ -15,13 +15,15 @@ from .views import (
     agregar_alumno, editar_alumno, cursos_lista, MiLoginView, registro
 )
 
+# 👇 AGREGA ESTA LÍNEA
+app_name = 'usuarios'
+
 urlpatterns = [
     # =============================
     # Páginas principales
     # =============================
     path('', home, name='home'),          
     path('home/', home, name='home_page'),
-
 
     # =============================
     # Cursos
@@ -59,8 +61,7 @@ urlpatterns = [
     path('cursos/<int:curso_id>/asignaturas/', asignar_asignaturas_curso, name='asignar_asignaturas_curso'),
     path('cursos/<int:curso_id>/asignaturas/<int:asignatura_id>/quitar/', curso_quitar_asignatura, name='curso_quitar_asignatura'),
     path('cursos/export/pdf/', cursos_export_pdf, name='cursos_export_pdf'),
-    path('mis_cursos/', RedirectView.as_view(pattern_name='home_page', permanent=False)),
-
+    path("mis_cursos/", RedirectView.as_view(pattern_name="usuarios:home_page"), name="mis_cursos"),
 
     # =============================
     # Gestión Académica: Asignaturas
@@ -82,8 +83,5 @@ urlpatterns = [
     # =============================
     # Gestión Académica: Usuarios
     # =============================
-    #path('usuarios/', views.usuario_list, name='usuario_list'),
-    #path('usuarios/<int:pk>/editar/', views.usuario_editar, name='usuario_editar'),
-    #path('usuarios/<int:pk>/eliminar/', views.usuario_eliminar, name='usuario_eliminar'),
     path('gestion_usuario/', views.gestion_usuario, name='gestion_usuario'),
 ]

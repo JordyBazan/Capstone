@@ -35,7 +35,7 @@
 
     <div class="actions">
       <button type="submit" class="btn-primary">Asignar</button>
-      <a href="{% url 'cursos_lista' %}" class="btn-secondary">Volver</a>
+      <a href="{% url 'usuarios:cursos_lista' %}" class="btn-secondary">Volver</a>
     </div>
   </form>
 </div>
@@ -62,7 +62,7 @@
             <td>{{ c.nombre }}</td>
             <td>{{ c.sala }}</td>
             <td>{{ c.profesor_jefe.username|default:"—" }}</td>
-            <td><a href="{% url 'asignar_profesor_jefe' %}?curso={{ c.id }}" class="chip">Editar</a></td>
+            <td><a href="{% url 'usuarios:asignar_profesor_jefe' %}?curso={{ c.id }}" class="chip">Editar</a></td>
           </tr>
         {% empty %}
           <tr>

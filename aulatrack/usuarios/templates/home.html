@@ -49,7 +49,7 @@
         </div>
 
         <div class="actions">
-          <a href="{% url 'curso' c.id %}" class="btn btn-primary">Entrar</a>
+          <a href="{% url 'usuarios:curso' c.id %}" class="btn btn-primary">Entrar</a>
         </div>
       </article>
     {% endfor %}
@@ -82,9 +82,9 @@
           </div>
 
           <div class="actions">
-            <a href="{% url 'curso' curso.id %}" class="btn btn-primary">Entrar</a>
-            <a href="{% url 'curso_editar' curso.id %}" class="btn btn-ghost">Editar</a>
-            <a href="{% url 'curso_eliminar' curso.id %}" class="btn btn-danger">Eliminar</a>
+            <a href="{% url 'usuarios:curso' curso.id %}" class="btn btn-primary">Entrar</a>
+            <a href="{% url 'usuarios:curso_editar' curso.id %}" class="btn btn-ghost">Editar</a>
+            <a href="{% url 'usuarios:curso_eliminar' curso.id %}" class="btn btn-danger">Eliminar</a>
           </div>
         </article>
       {% endfor %}

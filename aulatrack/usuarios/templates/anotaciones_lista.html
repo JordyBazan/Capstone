@@ -24,7 +24,7 @@
     <tr>
       <td>{{ forloop.counter }}</td>
       <td>{{ alumno.nombres }} {{ alumno.apellidos }}</td>
-      <td><a href="{% url 'anotaciones_alumno' alumno.id %}" class="btn primary">Ver Detalles</a></td>
+      <td><a href="{% url 'usuarios:anotaciones_alumno' alumno.id %}" class="btn primary">Ver Detalles</a></td>
     </tr>
     {% empty %}
     <tr><td colspan="3">No hay alumnos registrados.</td></tr>
