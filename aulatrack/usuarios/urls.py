@@ -43,6 +43,7 @@ urlpatterns = [
     # Reportes
     # =============================
     path('reportes/', reportes, name='reportes'),
+    path("historial_admin/", views.historial_acciones_admin, name="historial_admin"),
 
     # =============================
     # Autenticación

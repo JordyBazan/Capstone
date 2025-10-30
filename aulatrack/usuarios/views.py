@@ -24,6 +24,9 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.urls import reverse
+from django.contrib.admin.models import LogEntry
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.decorators import user_passes_test
 
 # Modelos
 from .models import Alumno, Curso, Asignatura, Nota, Asistencia, Anotacion,Usuario
@@ -1047,4 +1050,37 @@ def editar_usuario(request, id):
     return render(request, 'editar_usuario.html', {
         'usuario': usuario,
         'roles': roles,
+    })
+
+
+@user_passes_test(es_utp)
+def historial_acciones_admin(request):
+    """Vista para mostrar el historial de acciones del panel admin."""
+    log_entries = (
+        LogEntry.objects.select_related("user", "content_type")
+        .order_by("-action_time")
+    )
+
+    # Filtros opcionales
+    accion = request.GET.get("accion")
+    usuario_id = request.GET.get("usuario")
+    modelo = request.GET.get("modelo")
+
+    if accion:
+        log_entries = log_entries.filter(action_flag=int(accion))
+    if usuario_id:
+        log_entries = log_entries.filter(user_id=usuario_id)
+    if modelo:
+        log_entries = log_entries.filter(content_type__model=modelo.lower())
+
+    usuarios = Usuario.objects.all().order_by("first_name", "last_name")
+    modelos = ContentType.objects.values_list("model", flat=True).distinct().order_by("model")
+
+    return render(request, "historial_admin.html", {
+        "log_entries": log_entries,
+        "usuarios": usuarios,
+        "modelos": modelos,
+        "accion_filtrada": accion,
+        "usuario_filtrado": int(usuario_id) if usuario_id else None,
+        "modelo_filtrado": modelo,
     })

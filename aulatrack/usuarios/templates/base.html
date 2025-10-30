@@ -46,6 +46,7 @@
                             <li><a href="{% url 'usuarios:asignar_profesor_jefe' %}">Asignar profesor jefe</a></li>
                             <li><a href="{% url 'usuarios:agregar_alumno' %}">Agregar alumno</a></li>
                             <li><a href="{% url 'usuarios:gestion_usuario' %}">Gestión de usuarios</a></li>
+                            <li><a href="{% url 'usuarios:historial_admin' %}">Historial de cambios</a></li>
 
                         {% elif user.role == "docente" %}
                             <li><a href="{% url 'usuarios:home_page' %}">Mis cursos</a></li>
