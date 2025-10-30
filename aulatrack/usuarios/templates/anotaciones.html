@@ -36,6 +36,9 @@
   <textarea name="texto" rows="3" placeholder="Escribe una nueva anotación..."></textarea>
   <button type="submit" class="btn primary">Agregar anotación</button>
 </form>
+<br>
+<a href="{% url 'usuarios:reporte_alumno' alumno.id %}" class="btn primary">Descargar reporte académico</a>
+<br>
 
-<a href="{% url 'anotaciones_curso' curso.id %}" class="btn">Volver al curso</a>
+<a href="{% url 'usuarios:anotaciones_curso' curso.id %}" class="btn">Volver al curso</a>
 {% endblock %}

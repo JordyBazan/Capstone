@@ -62,6 +62,7 @@ urlpatterns = [
     path('cursos/<int:curso_id>/asignaturas/<int:asignatura_id>/quitar/', curso_quitar_asignatura, name='curso_quitar_asignatura'),
     path('cursos/export/pdf/', cursos_export_pdf, name='cursos_export_pdf'),
     path("mis_cursos/", RedirectView.as_view(pattern_name="usuarios:home_page"), name="mis_cursos"),
+    path("reporte_alumno/<int:alumno_id>/pdf/", views.reporte_alumno, name="reporte_alumno"),
 
     # =============================
     # Gestión Académica: Asignaturas

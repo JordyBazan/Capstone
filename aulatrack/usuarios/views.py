@@ -292,7 +292,7 @@ def crear_asignatura(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Asignatura creada con éxito.")
-            return redirect("cursos_lista")
+            return redirect("usuarios:cursos_lista")
         messages.error(request, "Revisa los errores del formulario.")
     else:
         form = AsignaturaForm()
@@ -314,7 +314,7 @@ def curso_editar(request, pk):
     if form.is_valid():
         form.save()
         messages.success(request, "Curso actualizado.")
-        return redirect('cursos_lista')
+        return redirect('usuarios:cursos_lista')
 
     return render(request, 'curso_editar.html', {
         'curso': curso,
@@ -344,7 +344,7 @@ def asignar_asignaturas_curso(request, curso_id):
         if form.is_valid():
             form.save()
             messages.success(request, f"Asignaturas actualizadas para {curso}.")
-            return redirect("cursos_lista")
+            return redirect("usuarios:cursos_lista")
         messages.error(request, "Revisa los errores del formulario.")
     else:
         form = CursoAsignaturasForm(instance=curso)
@@ -418,7 +418,7 @@ def asignatura_eliminar(request, pk):
     if request.method == "POST":
         asignatura.delete()
         messages.success(request, "Asignatura eliminada.")
-        return redirect("cursos_lista")
+        return redirect("usuarios:cursos_lista")
     return render(request, "confirm_delete.html", {"obj": asignatura, "tipo": "Asignatura"})
 
 
@@ -560,7 +560,7 @@ def cursos_export_pdf(request):
         "cursos_sin_pj": cursos_sin_pj,
         "cursos_sin_asignaturas": cursos_sin_asignaturas,
     }
-
+    
     # Intento con WeasyPrint
     try:
         from weasyprint import HTML  # import local
@@ -645,8 +645,150 @@ def cursos_export_pdf(request):
         resp = HttpResponse(pdf_bytes, content_type="application/pdf")
         resp["Content-Disposition"] = 'attachment; filename="informe_cursos.pdf"'
         return resp
+    
+def reporte_alumno(request, alumno_id):
+    alumno = get_object_or_404(Alumno, id=alumno_id)
+    curso = alumno.curso
 
+    # ---------------------------
+    # Datos académicos del alumno
+    # ---------------------------
+    asignaturas = Asignatura.objects.filter(curso=curso).order_by("nombre")
 
+    asignaturas_data = []
+    for asignatura in asignaturas:
+        notas_qs = Nota.objects.filter(alumno=alumno, asignatura=asignatura).order_by("numero")
+        notas = [round(n.valor, 1) for n in notas_qs]
+        promedio_asig = round(sum(notas) / len(notas), 1) if notas else None
+        asignaturas_data.append({
+            "nombre": asignatura.nombre,
+            "notas": notas,                 # lista con N1..Nn (hasta 11)
+            "promedio": promedio_asig,      # promedio de la asignatura
+        })
+
+    # Promedio general del alumno (promedio de promedios válidos)
+    promedios_validos = [a["promedio"] for a in asignaturas_data if a["promedio"] is not None]
+    promedio_general = round(sum(promedios_validos) / len(promedios_validos), 1) if promedios_validos else 0
+
+    # Asistencia
+    total_asistencias = Asistencia.objects.filter(alumno=alumno).count()
+    presentes = Asistencia.objects.filter(alumno=alumno, estado="presente").count()
+    porcentaje_asistencia = round((presentes / total_asistencias * 100), 1) if total_asistencias > 0 else 0
+
+    # Anotaciones
+    anotaciones = Anotacion.objects.filter(alumno=alumno).order_by("-fecha")
+
+    # ---------------------------
+    # PDF (ReportLab) - imports locales
+    # ---------------------------
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import mm
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+
+    buf = BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=14*mm, rightMargin=14*mm, topMargin=18*mm, bottomMargin=18*mm
+    )
+    styles = getSampleStyleSheet()
+    story = []
+
+    # Encabezado
+    story.append(Paragraph("<b>Informe Académico del Alumno</b>", styles["Title"]))
+    story.append(Spacer(1, 4*mm))
+    story.append(Paragraph(f"<b>Alumno:</b> {alumno.nombres} {alumno.apellidos}", styles["Normal"]))
+    story.append(Paragraph(f"<b>Curso:</b> {curso.nombre}", styles["Normal"]))
+    story.append(Paragraph(f"<b>RUT:</b> {alumno.rut}", styles["Normal"]))
+    story.append(Paragraph(f"<b>Fecha de generación:</b> {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", styles["Normal"]))
+    story.append(Spacer(1, 6*mm))
+
+    # Tabla de notas (N1..N11 + Prom.)
+    encabezados = ["Asignatura"] + [f"N{i}" for i in range(1, 12)] + ["Prom."]
+    data = [encabezados]
+
+    # Estilo de celda centrado que permite etiquetas simples <font> / <b>
+    cell_style = ParagraphStyle("Cell", fontName="Helvetica", fontSize=10, alignment=1)
+
+    for a in asignaturas_data:
+        fila = [Paragraph(a["nombre"].upper(), cell_style)]
+
+        # Notas con color (rojo <4 / verde >=4)
+        for n in a["notas"]:
+            color = "#ff0000" if n < 4 else "#008000"
+            fila.append(Paragraph(f"<font color='{color}'>{n:.1f}</font>", cell_style))
+
+        # Completar celdas hasta 11 notas
+        faltantes = 11 - len(a["notas"])
+        for _ in range(max(faltantes, 0)):
+            fila.append(Paragraph("", cell_style))
+
+        # Promedio por asignatura
+        prom = a["promedio"]
+        if prom is not None:
+            color = "#ff0000" if prom < 4 else "#008000"
+            fila.append(Paragraph(f"<b><font color='{color}'>{prom:.1f}</font></b>", cell_style))
+        else:
+            fila.append(Paragraph("", cell_style))
+
+        data.append(fila)
+
+    tabla = Table(data, repeatRows=1)
+    tabla.setStyle(TableStyle([
+        ("GRID", (0,0), (-1,-1), 0.25, colors.black),
+        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#f0f0f0")),
+        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+        ("ALIGN", (1,0), (-1,-1), "CENTER"),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("FONTSIZE", (0,0), (-1,-1), 9),
+    ]))
+    story.append(tabla)
+
+    # Promedio general y asistencia
+    story.append(Spacer(1, 8*mm))
+    story.append(Paragraph(f"<b>Promedio final del alumno:</b> {promedio_general}", styles["Normal"]))
+    story.append(Paragraph(f"<b>Porcentaje de asistencia:</b> {porcentaje_asistencia}%", styles["Normal"]))
+    story.append(Spacer(1, 8*mm))
+
+    # Anotaciones
+    story.append(Paragraph("<b>Anotaciones registradas:</b>", styles["Heading3"]))
+    if anotaciones:
+        for an in anotaciones:
+            prof = an.profesor.get_full_name() or an.profesor.username
+            story.append(Paragraph(f"<b>{an.fecha.strftime('%d/%m/%Y')}:</b> {an.texto} <i>({prof})</i>", styles["Normal"]))
+    else:
+        story.append(Paragraph("No hay anotaciones registradas.", styles["Normal"]))
+    story.append(Spacer(1, 15*mm))
+
+    # Firmas (Apoderado / Docente-UTP)
+    firma_data = [
+        ["__________________________", "__________________________"],
+        ["Firma Apoderado(a)", "Firma Docente / UTP"]
+    ]
+    firma_table = Table(firma_data, colWidths=[90*mm, 90*mm])
+    firma_table.setStyle(TableStyle([
+        ("ALIGN", (0,0), (-1,-1), "CENTER"),
+        ("TOPPADDING", (0,0), (-1,-1), 10),
+    ]))
+    story.append(firma_table)
+
+    # Pie
+    story.append(Spacer(1, 6*mm))
+    story.append(Paragraph(
+        f"<font size='9'>Documento generado automáticamente por el sistema AulaTrack el {timezone.localtime().strftime('%d/%m/%Y %H:%M')}.</font>",
+        styles["Normal"]
+    ))
+
+    # Construcción y respuesta
+    doc.build(story)
+    pdf = buf.getvalue()
+    buf.close()
+
+    resp = HttpResponse(pdf, content_type="application/pdf")
+    resp["Content-Disposition"] = f'attachment; filename="reporte_{alumno.nombres}_{alumno.apellidos}.pdf"'
+    return resp
+#prueba
 
 
 
@@ -743,7 +885,7 @@ def libro_notas(request, curso_id, asignatura_id):
                         numero=i,
                         defaults={'valor': valor, 'profesor': request.user}
                     )
-        return redirect('libro_notas', curso_id=curso.id, asignatura_id=asignatura.id)
+        return redirect('usuarios:libro_notas', curso_id=curso.id, asignatura_id=asignatura.id)
 
     notas_por_alumno = {}
     for alumno in alumnos:
