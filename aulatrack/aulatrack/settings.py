@@ -57,7 +57,7 @@ STATICFILES_DIRS = [
 # ============================
 # Estas rutas deben usar el NAMESPACE declarado en usuarios/urls.py (app_name = 'usuarios')
 LOGIN_URL = 'usuarios:login'
-LOGIN_REDIRECT_URL = 'usuarios:home'
+LOGIN_REDIRECT_URL = 'usuarios:home_page'
 LOGOUT_REDIRECT_URL = 'usuarios:login'
 
 

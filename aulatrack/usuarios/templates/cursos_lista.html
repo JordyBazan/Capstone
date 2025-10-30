@@ -114,9 +114,11 @@
 
         <td class="cell-actions">
           <a class="link" href="{% url 'usuarios:curso_editar' c.id %}">Editar</a>
-          <form method="post" action="{% url 'usuarios:curso_eliminar' c.id %}" class="js-delete-form" data-confirm="¿Eliminar el curso '{{ c }}'? Esta acción no se puede deshacer.">
+          <form method="post" action="{% url 'usuarios:curso_eliminar' c.id %}" 
+                class="js-delete-form" 
+                data-confirm="¿Eliminar el curso '{{ c }}'? Esta acción no se puede deshacer.">
             {% csrf_token %}
-            <button type="submit" class="link link-danger" style="background:none;border:none;padding:0;">Eliminar</button>
+            <button type="submit" class="btn-danger">Eliminar</button>
           </form>
           <a class="link" href="{% url 'usuarios:asignar_asignaturas_curso' c.id %}">Asignar asignaturas</a>
         </td>

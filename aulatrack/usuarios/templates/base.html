@@ -14,60 +14,64 @@
 </head>
 <body>
 <main class="app">
+    <!-- =======================
+         SIDEBAR (oscuro)
+    ======================= -->
     <aside class="sidebar" aria-label="Barra lateral">
-        <div class="sidebar-top">
+        <div class="sidebar-content">
             <div class="brand">
-                <div class="logo" aria-hidden="true">AT</div>
+                <div class="logo">AT</div>
                 <div class="name">AulaTrack</div>
             </div>
 
             {% if user.is_authenticated %}
-            <div class="profile" aria-label="Perfil usuario">
-                <div class="avatar" aria-hidden="true">
-                    {{ user.username|slice:":2"|upper }}
-                </div>
+            <div class="profile">
+                <div class="avatar">{{ user.username|slice:":2"|upper }}</div>
                 <div>
                     <div class="docente">{{ user.username }}</div>
                     <div class="rol">{{ user.role|title|default:"Sin rol" }}</div>
                 </div>
             </div>
 
-            <nav aria-label="Menú principal" class="menu">
+            <nav class="menu">
                 <div class="nav-section">
-                    <h4>Cursos</h4>
+                    <h4>Panel</h4>
                     <ul>
-                        <!-- 🔹 HOME -->
-                        <li><a href="{% url 'usuarios:home_page' %}">Tus cursos</a></li>
+                        <li><a href="{% url 'usuarios:home_page' %}">Inicio</a></li>
 
                         {% if user.role == "utp" %}
-                            <li><a href="{% url 'usuarios:cursos_lista' %}">Gestionar cursos</a></li>
-                            <li><a href="{% url 'usuarios:crear_curso' %}">Crear curso</a></li>
-                            <li><a href="{% url 'usuarios:crear_asignatura' %}">Crear asignatura</a></li>
-                            <li><a href="{% url 'usuarios:asignar_profesor_jefe' %}">Asignar profesor jefe</a></li>
-                            <li><a href="{% url 'usuarios:agregar_alumno' %}">Agregar alumno</a></li>
-                            <li><a href="{% url 'usuarios:gestion_usuario' %}">Gestión de usuarios</a></li>
-                            <li><a href="{% url 'usuarios:historial_admin' %}">Historial de cambios</a></li>
-
+                            <li><a href="{% url 'usuarios:cursos_lista' %}">Gestión Académica</a></li>
+                            <li><a href="{% url 'usuarios:crear_curso' %}">Crear Curso</a></li>
+                            <li><a href="{% url 'usuarios:crear_asignatura' %}">Crear Asignatura</a></li>
+                            <li><a href="{% url 'usuarios:asignar_profesor_jefe' %}">Profesor Jefe</a></li>
+                            <li><a href="{% url 'usuarios:agregar_alumno' %}">Agregar Alumno</a></li>
+                            <li><a href="{% url 'usuarios:gestion_usuario' %}">Usuarios</a></li>
+                            <li><a href="{% url 'usuarios:historial_admin' %}">Historial</a></li>
                         {% elif user.role == "docente" %}
-                            <li><a href="{% url 'usuarios:home_page' %}">Mis cursos</a></li>
-
+                            <li><a href="{% url 'usuarios:home_page' %}">Mis Cursos</a></li>
                         {% elif user.role == "alumno" %}
-                            <li><a href="{% url 'usuarios:home_page' %}">Mi inicio</a></li>
+                            <li><a href="{% url 'usuarios:home_page' %}">Mi Inicio</a></li>
                         {% endif %}
                     </ul>
                 </div>
             </nav>
-
-            <div class="logout">
-                <form method="post" action="{% url 'usuarios:logout' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="logout-btn">Cerrar sesión</button>
-                </form>
-            </div>
             {% endif %}
         </div>
+
+        <!-- 🔻 Botón fijo inferior -->
+        {% if user.is_authenticated %}
+        <div class="logout-fixed">
+            <form method="post" action="{% url 'usuarios:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">Cerrar sesión</button>
+            </form>
+        </div>
+        {% endif %}
     </aside>
 
+    <!-- =======================
+         CONTENIDO PRINCIPAL
+    ======================= -->
     <section class="main">
         <header class="topbar">
             {% block topbar %}{% endblock %}

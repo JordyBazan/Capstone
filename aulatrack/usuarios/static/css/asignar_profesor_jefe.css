@@ -1,37 +1,260 @@
-.main{ background:#fff; color:#0f172a; }
+/* ===============================================
+   🎓 AulaTrack · Asignar Profesor Jefe (Modo Claro)
+   =============================================== */
 
-.btn-primary {
+:root {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-alt: #f9fafb;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+  --text: #0f172a;
+  --text-strong: #111827;
+  --muted: #64748b;
+  --focus: #7c3aed;
+  --focus-light: rgba(124, 58, 237, 0.15);
+  --radius: 12px;
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  --transition: all 0.25s ease;
+}
+
+/* Fondo general */
+.main {
+  background: var(--bg);
+  color: var(--text);
+  padding: 2rem;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+/* ------------------------
+   TARJETAS
+------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+  transition: var(--transition);
+}
+.card.large {
+  padding: 2rem;
+}
+.card:hover {
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.08);
+}
+
+/* ------------------------
+   TITULOS
+------------------------- */
+h1, h2 {
+  color: var(--text-strong);
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-weight: 800;
+}
+h1 {
+  font-size: 1.6rem;
+}
+h2 {
+  font-size: 1.3rem;
+  color: var(--text-strong);
+}
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 2rem 0;
+}
+
+/* ------------------------
+   FORMULARIO
+------------------------- */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 420px;
+}
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.form-row label {
+  font-weight: 700;
+  color: var(--text-strong);
+  font-size: 0.95rem;
+}
+.form-row select,
+.form-row input {
+  padding: 0.55rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: #fff;
+  color: var(--text);
+  font-size: 0.95rem;
+  transition: var(--transition);
+  cursor: pointer;
+}
+.form-row select:hover,
+.form-row input:hover,
+.form-row select:focus,
+.form-row input:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px var(--focus-light);
+  transform: scale(1.02);
+}
+
+/* ------------------------
+   BOTONES
+------------------------- */
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.btn-primary,
+.btn-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 30px;
-  padding: 0 0.95rem;
+  padding: 0.6rem 1.2rem;
   border-radius: 10px;
-  border: 1px solid #000000;
-  background: #974be4;
-  color: #ffffff;
   font-weight: 700;
+  font-size: 0.95rem;
+  transition: var(--transition);
+  cursor: pointer;
   text-decoration: none;
-  cursor: pointer; /* cambia el cursor al pasar el mouse */
-  transition: background 0.3s ease, transform 0.2s ease; /* animaciones suaves */
+  border: none;
 }
 
+/* Botón morado */
+.btn-primary {
+  background: linear-gradient(90deg, #7c3aed, #5b21b6);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+}
 .btn-primary:hover {
-  background: #7a36c8; /* color más oscuro al pasar el mouse */
-  transform: scale(1.05); /* pequeño efecto de “zoom” */
+  filter: brightness(1.05);
+  transform: scale(1.04);
 }
 
-.form-row input,
-.form-row select {
-  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
-  cursor: pointer; /* opcional si quieres que cambie el cursor */
+/* Botón gris claro */
+.btn-secondary {
+  background: #f3f4f6;
+  color: var(--text-strong);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px var(--focus-light);
 }
 
-.form-row input:hover,
-.form-row select:hover,
-.form-row input:focus,
-.form-row select:focus {
-  transform: scale(1.02); /* pequeño efecto de zoom */
-  box-shadow: 0 0 5px rgba(151, 75, 228, 0.5); /* sombra ligera */
-  border-color: #974be4; /* cambia el borde suavemente */
+/* ------------------------
+   TABLA DE CURSOS
+------------------------- */
+.table-container {
+  overflow-x: auto;
+  margin-top: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.96rem;
+}
+thead th {
+  background: var(--surface-alt);
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+tbody td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  background: #fff;
+}
+tbody tr:hover td {
+  background: #f9fafb;
+}
+
+/* ------------------------
+   CHIP DE ACCIÓN (editar)
+------------------------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--focus);
+  border-radius: 9999px;
+  color: var(--focus);
+  background: rgba(124, 58, 237, 0.06);
+  font-weight: 600;
+  font-size: 0.88rem;
+  text-decoration: none;
+  transition: var(--transition);
+}
+.chip:hover {
+  background: rgba(124, 58, 237, 0.15);
+}
+
+/* ------------------------
+   MENSAJES FLASH
+------------------------- */
+.messages {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+.msg {
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+.msg.success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+.msg.error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.msg.info {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+.msg.warning {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* ------------------------
+   RESPONSIVE
+------------------------- */
+@media (max-width: 720px) {
+  .card {
+    padding: 1.2rem;
+  }
+  table th, table td {
+    padding: 0.75rem;
+  }
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }

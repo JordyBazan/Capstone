@@ -9,13 +9,12 @@ from .views import (
     anotaciones_curso, anotaciones_alumno, reportes,
     crear_curso, crear_asignatura,
     curso_editar, curso_eliminar, asignar_asignaturas_curso,
-    curso_quitar_asignatura, cursos_export_pdf,
+    curso_quitar_asignatura,cursos_export_pdf,
     asignatura_list, asignatura_editar, asignatura_eliminar,
     asignar_profesor_jefe, asignar_profesor_jefe_inline,
     agregar_alumno, editar_alumno, cursos_lista, MiLoginView, registro
 )
 
-# 👇 AGREGA ESTA LÍNEA
 app_name = 'usuarios'
 
 urlpatterns = [
@@ -43,7 +42,10 @@ urlpatterns = [
     # Reportes
     # =============================
     path('reportes/', reportes, name='reportes'),
-    path("historial_admin/", views.historial_acciones_admin, name="historial_admin"),
+    path('historial/', views.historial_acciones_admin, name='historial_admin'),
+    path("historial/eliminar/<int:log_id>/", views.eliminar_log, name="eliminar_log"),
+    path("historial/eliminar_todos/", views.eliminar_todos_logs, name="eliminar_todos_logs"),
+
 
     # =============================
     # Autenticación

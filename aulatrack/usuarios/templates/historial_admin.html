@@ -1,12 +1,27 @@
 {% extends "base.html" %}
-{% block title %}Historial de acciones{% endblock %}
+{% load static %}
+{% block title %}Historial de Acciones{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/historial_acciones.css' %}">
+{% endblock %}
+
 {% block content %}
+<main class="hist-container">
 
-<main style="max-width:1000px;margin:auto;">
-  <h1>Historial de acciones (Django Admin)</h1>
+  <!-- Header -->
+  <div class="hist-header">
+    <h1>Historial de acciones</h1>
+    <form method="post" action="{% url 'usuarios:eliminar_todos_logs' %}"
+          onsubmit="return confirm('¿Seguro que deseas eliminar todo el historial?')">
+      {% csrf_token %}
+      <button type="submit" class="btn-danger">Eliminar todo</button>
+    </form>
+  </div>
 
-  <form method="get" style="margin-bottom:1rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
-    <select name="usuario">
+  <!-- Filtros -->
+  <form method="get" class="hist-filters">
+    <select name="usuario" class="hist-select">
       <option value="">Todos los usuarios</option>
       {% for u in usuarios %}
         <option value="{{ u.id }}" {% if u.id == usuario_filtrado %}selected{% endif %}>
@@ -15,54 +30,86 @@
       {% endfor %}
     </select>
 
-    <select name="accion">
+    <select name="accion" class="hist-select">
       <option value="">Todas las acciones</option>
       <option value="1" {% if accion_filtrada == '1' %}selected{% endif %}>Creación</option>
       <option value="2" {% if accion_filtrada == '2' %}selected{% endif %}>Edición</option>
       <option value="3" {% if accion_filtrada == '3' %}selected{% endif %}>Eliminación</option>
     </select>
 
-    <select name="modelo">
+    <select name="modelo" class="hist-select">
       <option value="">Todos los modelos</option>
       {% for m in modelos %}
         <option value="{{ m }}" {% if m == modelo_filtrado %}selected{% endif %}>{{ m|capfirst }}</option>
       {% endfor %}
     </select>
 
-    <button type="submit" class="btn primary">Filtrar</button>
-    <a href="{% url 'usuarios:historial_admin' %}" class="btn">Limpiar</a>
+    <button type="submit" class="btn-primary">Filtrar</button>
+    <a href="{% url 'usuarios:historial_admin' %}" class="btn-secondary">Limpiar</a>
+    <a href="?pdf=1" class="btn-blue">Exportar PDF</a>
   </form>
 
-  <table style="width:100%;border-collapse:collapse;">
-    <thead>
-      <tr style="background:#f0f0f0;text-align:left;">
-        <th style="padding:.5rem;border:1px solid #ddd;">Fecha</th>
-        <th style="padding:.5rem;border:1px solid #ddd;">Usuario</th>
-        <th style="padding:.5rem;border:1px solid #ddd;">Acción</th>
-        <th style="padding:.5rem;border:1px solid #ddd;">Modelo</th>
-        <th style="padding:.5rem;border:1px solid #ddd;">Objeto</th>
-        <th style="padding:.5rem;border:1px solid #ddd;">Detalle</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for log in log_entries %}
+  <!-- Tabla -->
+  <div class="hist-table-wrap">
+    <table class="hist-table">
+      <thead>
         <tr>
-          <td style="padding:.4rem;border:1px solid #ddd;">{{ log.action_time|date:"d/m/Y H:i" }}</td>
-          <td style="padding:.4rem;border:1px solid #ddd;">{{ log.user.get_full_name|default:log.user.username }}</td>
-          <td style="padding:.4rem;border:1px solid #ddd;">
-            {% if log.action_flag == 1 %}Creación
-            {% elif log.action_flag == 2 %}Edición
-            {% elif log.action_flag == 3 %}Eliminación
-            {% else %}Otro{% endif %}
-          </td>
-          <td style="padding:.4rem;border:1px solid #ddd;">{{ log.content_type.model|capfirst }}</td>
-          <td style="padding:.4rem;border:1px solid #ddd;">{{ log.object_repr }}</td>
-          <td style="padding:.4rem;border:1px solid #ddd;">{{ log.change_message }}</td>
+          <th>Fecha</th>
+          <th>Usuario</th>
+          <th>Acción</th>
+          <th>Modelo</th>
+          <th>Objeto</th>
+          <th>Detalle</th>
+          <th>Eliminar</th>
         </tr>
-      {% empty %}
-        <tr><td colspan="6" style="text-align:center;padding:1rem;">No hay registros.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for log in page_obj %}
+        <tr class="
+          {% if log.action_flag == 1 %}bg-creacion
+          {% elif log.action_flag == 2 %}bg-edicion
+          {% elif log.action_flag == 3 %}bg-eliminacion
+          {% endif %}
+        ">
+          <td>{{ log.action_time|date:"d/m/Y H:i" }}</td>
+          <td>{{ log.user.get_full_name|default:log.user.username }}</td>
+          <td>
+            {% if log.action_flag == 1 %}
+              <span class="tag tag-green">Creación</span>
+            {% elif log.action_flag == 2 %}
+              <span class="tag tag-blue">Edición</span>
+            {% elif log.action_flag == 3 %}
+              <span class="tag tag-red">Eliminación</span>
+            {% endif %}
+          </td>
+          <td>{{ log.content_type.model|capfirst }}</td>
+          <td>{{ log.object_repr }}</td>
+          <td class="muted">{{ log.change_message }}</td>
+          <td class="center">
+            <form method="post" action="{% url 'usuarios:eliminar_log' log.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn-delete" title="Eliminar registro"
+                      onclick="return confirm('¿Seguro que deseas eliminar este registro del historial?')">×</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="empty">No hay registros disponibles.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginación -->
+  <div class="hist-pagination">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}" class="btn-small">⏮ Anterior</a>
+    {% endif %}
+    <span class="page-info">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}" class="btn-small">Siguiente ⏭</a>
+    {% endif %}
+  </div>
+
 </main>
 {% endblock %}

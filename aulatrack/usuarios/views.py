@@ -4,10 +4,7 @@
 import re
 from io import BytesIO
 from collections import Counter
-
 from datetime import date
-from django.contrib import messages
-
 
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
@@ -16,34 +13,36 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Q, Count
-from django.http import HttpResponse
+from django.db.models import Q, Count, Avg
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
-from django.urls import reverse
-from django.contrib.admin.models import LogEntry
+from django.urls import reverse, reverse_lazy
+
+# 🔹 Para registrar acciones
+from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.auth.decorators import user_passes_test
 
 # Modelos
-from .models import Alumno, Curso, Asignatura, Nota, Asistencia, Anotacion,Usuario
+from .models import Alumno, Curso, Asignatura, Nota, Asistencia, Anotacion, Usuario
 
 # Formularios
 from .forms import (
     RegistroForm, LoginForm,
-    CursoForm, AsignaturaForm, CursoAsignaturasForm, AsignarProfesorJefeForm,CursoEditForm, AlumnoForm
+    CursoForm, AsignaturaForm, CursoAsignaturasForm, AsignarProfesorJefeForm,
+    CursoEditForm, AlumnoForm
 )
 
 # =========================================================
 # Utilidades / Permisos
 # =========================================================
 
-
 def es_utp(user):
     return hasattr(user, 'role') and user.role == 'utp'
+
 # =========================================================
 # Helper de orden por grado (1º→8º Básico, luego Medio, etc.)
 # =========================================================
@@ -59,6 +58,30 @@ def _clave_grado(nombre: str):
     return (prioridad, num, s)
 
 # =========================================================
+# 🔹 Función genérica para registrar acciones
+# =========================================================
+def registrar_accion(user, objeto, tipo_accion, mensaje=""):
+    """
+    Registra una acción manualmente en LogEntry.
+    tipo_accion: ADDITION, CHANGE o DELETION
+    """
+    try:
+        if user is None or not getattr(user, "id", None):
+            # Si no hay usuario autenticado, no registramos para evitar errores
+            return
+        LogEntry.objects.log_action(
+            user_id=user.id,
+            content_type_id=ContentType.objects.get_for_model(objeto).pk,
+            object_id=getattr(objeto, "pk", None),
+            object_repr=str(objeto),
+            action_flag=tipo_accion,
+            change_message=mensaje
+        )
+    except Exception as e:
+        # Evitar romper el flujo por logging
+        print(" Error registrando acción:", e)
+
+# =========================================================
 # Páginas principales
 # =========================================================
 @login_required
@@ -70,7 +93,7 @@ def home(request):
     cursos_todos = None
 
     # Cursos de docentes
-    if user.role == "docente":
+    if getattr(user, "role", None) == "docente":
         ids = set()
         ids.update(Curso.objects.filter(profesor_jefe=user).values_list("id", flat=True))
         ids.update(Curso.objects.filter(docentecurso__docente=user).values_list("id", flat=True))
@@ -91,7 +114,7 @@ def home(request):
             cursos_docente.sort(key=lambda c: (c.nombre or "").lower())
 
     # Cursos para UTP (todos)
-    if user.role == "utp":
+    if getattr(user, "role", None) == "utp":
         cursos_todos = list(
             Curso.objects.all()
             .select_related("profesor_jefe")
@@ -110,20 +133,19 @@ def home(request):
         "cursos_todos": cursos_todos,
     })
 
-
-
 @login_required
 def curso(request, curso_id):
     curso = get_object_or_404(Curso.objects.select_related("profesor_jefe"), id=curso_id)
     return render(request, "curso.html", {"curso": curso})
 
-
+# =========================================================
+# (Versión simple de asistencia - SOLO lectura lista)
+# =========================================================
 @login_required
-def asistencia(request, curso_id):
+def asistencia_listado(request, curso_id):
     curso = get_object_or_404(Curso, id=curso_id)
     alumnos = Alumno.objects.filter(curso=curso).order_by("apellidos", "nombres")
     return render(request, "asistencia.html", {"curso": curso, "alumnos": alumnos})
-
 
 @login_required
 def notas(request, curso_id):
@@ -135,101 +157,72 @@ def notas(request, curso_id):
         notas_dict.setdefault(nota.alumno_id, []).append(nota)
     return render(request, "notas.html", {"curso": curso, "alumnos": alumnos, "notas_dict": notas_dict})
 
-
 @login_required
 def anotaciones(request):
     return render(request, "anotaciones.html")
 
-
 @login_required
 def reportes(request):
     return render(request, "reportes.html")
-
 
 # =========================================================
 # Autenticación (Login / Registro)
 # =========================================================
 from django.contrib.auth import authenticate, login, logout
 from django.views.generic.edit import CreateView
-from django.urls import reverse_lazy
-from .forms import RegistroForm
-
 
 class MiLoginView(LoginView):
     template_name = 'login.html'
     authentication_form = LoginForm
     redirect_authenticated_user = True
+    success_url = reverse_lazy('usuarios:home_page') 
 
     def get_success_url(self):
-        user = self.request.user
-        if hasattr(user, 'role'):   # tu campo es 'role', no 'rol'
-            if user.role == 'utp':
-                return '/cursos/'
-            elif user.role == 'docente':
-                return '/mis_cursos/'
-            elif user.role == 'alumno':
-                return '/inicio/'
-        return '/home/'
-
-
+        # Ignora el rol, siempre lleva al home
+        messages.success(self.request, f"Bienvenido, {self.request.user.username}.")
+        return self.success_url
 
 def registro(request):
     if request.method == 'POST':
         form = RegistroForm(request.POST)
         if form.is_valid():
-            form.save()
+            usuario = form.save()
             messages.success(request, "Cuenta creada correctamente. Ya puedes iniciar sesión.")
             return redirect('usuarios:login')
         else:
-            # 👇 Esto mostrará en la consola por qué no valida
             print(" ERRORES DEL FORMULARIO:", form.errors)
             messages.error(request, "Revisa los campos e intenta nuevamente.")
     else:
         form = RegistroForm()
     return render(request, 'registro.html', {'form': form})
 
-
 def login_view(request):
+    # Si ya está autenticado, ir directo al Home
     if request.user.is_authenticated:
-        # Si ya está logueado, redirige según el rol
-        if hasattr(user, 'rol'):
-            if user.rol == 'utp':
-                return redirect('cursos_lista')
-            elif user.rol == 'docente':
-                return redirect('mis_cursos')
-            elif user.rol == 'alumno':
-                return redirect('inicio')
-        return redirect('home')
+        return redirect('usuarios:home_page')
 
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            # Redirigir después del login según el rol
-            if hasattr(user, 'rol'):
-                if user.rol == 'utp':
-                    return redirect('cursos_lista') 
-                elif user.rol == 'docente':
-                    return redirect('mis_cursos')
-                elif user.rol == 'alumno':
-                    return redirect('inicio')
-            return redirect('home')
+            # Siempre redirigir al Home tras iniciar sesión
+            return redirect('usuarios:home_page')
     else:
         form = LoginForm()
-    return render(request, 'login.html', {'form': form})
 
+    return render(request, 'login.html', {'form': form})
 
 def logout_view(request):
     logout(request)
     return redirect('login')
 
-
-from django.http import HttpResponseForbidden
-
+# =========================================================
+# Cursos / Asignaturas / Usuarios - Listas principales
+# =========================================================
 @login_required
 def cursos_lista(request):
-    if request.user.role != 'utp':
+    if getattr(request.user, "role", None) != 'utp':
         return HttpResponseForbidden("No tienes permisos para ver esta página.")
 
     page = request.GET.get('page', '1')
@@ -258,31 +251,24 @@ def cursos_lista(request):
         'asignaturas': asignaturas,
         'docentes': docentes,
         'alumnos': alumnos,
-        'cursos_alumno': cursos, 
+        'cursos_alumno': cursos,
         'curso_seleccionado': int(curso_id) if curso_id else None,
     }
 
     return render(request, "cursos_lista.html", context)
 
-
-
-
-
-
-
-
-
 # =========================================================
-# UTP - Gestión académica
+# UTP - Gestión académica (CRUD + logging)
 # =========================================================
 @user_passes_test(es_utp)
 def crear_curso(request):
     if request.method == "POST":
         form = CursoForm(request.POST)
         if form.is_valid():
-            form.save()
+            curso = form.save()
+            registrar_accion(request.user, curso, ADDITION, "Curso creado desde vista personalizada")
             messages.success(request, "Curso creado correctamente.")
-            return redirect("usuarios:home_page")
+            return redirect("usuarios:cursos_lista")
         messages.error(request, "Revisa los errores del formulario.")
     else:
         form = CursoForm()
@@ -293,20 +279,14 @@ def crear_asignatura(request):
     if request.method == "POST":
         form = AsignaturaForm(request.POST)
         if form.is_valid():
-            form.save()
+            asignatura = form.save()
+            registrar_accion(request.user, asignatura, ADDITION, "Asignatura creada desde vista personalizada")
             messages.success(request, "Asignatura creada con éxito.")
             return redirect("usuarios:cursos_lista")
         messages.error(request, "Revisa los errores del formulario.")
     else:
         form = AsignaturaForm()
     return render(request, "crear_asignatura.html", {"form": form})
-
-
-
-
-
-
-
 
 @user_passes_test(es_utp)
 def curso_editar(request, pk):
@@ -315,7 +295,8 @@ def curso_editar(request, pk):
     docentes = Usuario.objects.filter(role=Usuario.ROLE_DOCENTE).order_by('first_name','last_name','username')
 
     if form.is_valid():
-        form.save()
+        curso = form.save()
+        registrar_accion(request.user, curso, CHANGE, "Curso actualizado desde vista personalizada")
         messages.success(request, "Curso actualizado.")
         return redirect('usuarios:cursos_lista')
 
@@ -325,16 +306,15 @@ def curso_editar(request, pk):
         'docentes': docentes,
     })
 
-
 @user_passes_test(es_utp)
 def curso_eliminar(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
     if request.method == "POST":
+        registrar_accion(request.user, curso, DELETION, "Curso eliminado desde vista personalizada")
         curso.delete()
         messages.success(request, "Curso eliminado.")
         return redirect("usuarios:cursos_lista")
     return render(request, "curso_eliminar_confirmar.html", {"curso": curso})
-
 
 @user_passes_test(es_utp)
 def asignar_asignaturas_curso(request, curso_id):
@@ -346,6 +326,7 @@ def asignar_asignaturas_curso(request, curso_id):
         form = CursoAsignaturasForm(request.POST, instance=curso)
         if form.is_valid():
             form.save()
+            registrar_accion(request.user, curso, CHANGE, "Asignaturas del curso actualizadas desde vista personalizada")
             messages.success(request, f"Asignaturas actualizadas para {curso}.")
             return redirect("usuarios:cursos_lista")
         messages.error(request, "Revisa los errores del formulario.")
@@ -355,80 +336,55 @@ def asignar_asignaturas_curso(request, curso_id):
     return render(request, "asignar_asignaturas_curso.html", {"curso": curso, "form": form})
 
 # =========================================================
-# Crear Alumno
+# Crear / Editar / Eliminar Alumno
 # =========================================================
-
 @login_required
 def agregar_alumno(request):
     if request.method == 'POST':
         form = AlumnoForm(request.POST)
         if form.is_valid():
-            form.save()
+            alumno = form.save()
+            registrar_accion(request.user, alumno, ADDITION, "Alumno creado desde vista personalizada")
             messages.success(request, "Alumno agregado correctamente.")
-            return redirect('usuarios:cursos_lista')  # o 'lista_alumnos', si tienes una lista
+            return redirect('usuarios:cursos_lista')
     else:
         form = AlumnoForm()
-    
     return render(request, 'agregar_alumno.html', {'form': form})
 
-
-
-
-
-
-
-
-
 @user_passes_test(es_utp)
-@require_POST
-def curso_quitar_asignatura(request, curso_id, asignatura_id):
-    curso = get_object_or_404(Curso, pk=curso_id)
-    asignatura = get_object_or_404(Asignatura, pk=asignatura_id)
-    curso.asignaturas.remove(asignatura)
-    messages.success(request, f"Se quitó «{asignatura.nombre}» del curso {curso}.")
-    return redirect("cursos_lista")
+def editar_alumno(request, alumno_id):
+    alumno = get_object_or_404(Alumno, pk=alumno_id)
+    cursos = Curso.objects.all().order_by('año', 'nombre')
 
+    if request.method == 'POST':
+        alumno.rut = request.POST.get('rut')
+        alumno.nombres = request.POST.get('nombres')
+        alumno.apellidos = request.POST.get('apellidos')
+        curso_id = request.POST.get('curso')
+        alumno.curso = Curso.objects.get(pk=curso_id) if curso_id else None
+        alumno.save()
+        registrar_accion(request.user, alumno, CHANGE, "Alumno editado desde vista personalizada")
+        messages.success(request, f'Alumno {alumno.nombres} actualizado correctamente.')
+        return redirect(f"{reverse('cursos_lista')}?page=2&curso={alumno.curso.id if alumno.curso else ''}")
+
+    return render(request, 'editar_alumno.html', {
+        'alumno': alumno,
+        'cursos': cursos,
+    })
+
+@login_required
+def eliminar_alumno(request, id):
+    alumno = get_object_or_404(Alumno, id=id)
+    if request.method == "POST" or request.method == "GET":
+        registrar_accion(request.user, alumno, DELETION, "Alumno eliminado desde vista personalizada")
+        alumno.delete()
+        messages.success(request, "Alumno eliminado correctamente.")
+        return redirect('usuarios:cursos_lista')
+    # Si quieres confirmación, cambia a plantilla:
+    # return render(request, 'alumno_eliminar_confirmar.html', {'alumno': alumno})
 
 # =========================================================
-# Asignaturas (Listar / Editar / Eliminar)
-# =========================================================
-@user_passes_test(es_utp)
-def asignatura_list(request):
-    asignaturas = Asignatura.objects.select_related("profesor").order_by("nombre")
-    return render(request, "asignatura_list.html", {"asignaturas": asignaturas})
-
-
-@user_passes_test(es_utp)
-@transaction.atomic
-def asignatura_editar(request, pk):
-    asignatura = get_object_or_404(Asignatura, pk=pk)
-    if request.method == "POST":
-        form = AsignaturaForm(request.POST, instance=asignatura)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Asignatura actualizada correctamente.")
-            return redirect("usuarios:cursos_lista")
-        messages.error(request, "Revisa los errores del formulario.")
-    else:
-        form = AsignaturaForm(instance=asignatura)
-    return render(request, "asignatura_form.html", {"form": form, "modo": "editar", "asignatura": asignatura})
-
-
-@user_passes_test(es_utp)
-@transaction.atomic
-def asignatura_eliminar(request, pk):
-    asignatura = get_object_or_404(Asignatura, pk=pk)
-    if request.method == "POST":
-        asignatura.delete()
-        messages.success(request, "Asignatura eliminada.")
-        return redirect("usuarios:cursos_lista")
-    return render(request, "confirm_delete.html", {"obj": asignatura, "tipo": "Asignatura"})
-
-
-# =========================================================
-# Asignar Profesor Jefe
-#   - Página (con formulario AsignarProfesorJefeForm)
-#   - Inline POST desde curso_editar (dropdown)
+# Asignar Profesor Jefe (pantalla + inline)
 # =========================================================
 @user_passes_test(es_utp)
 def asignar_profesor_jefe(request):
@@ -445,6 +401,7 @@ def asignar_profesor_jefe(request):
             docente = form.cleaned_data["docente"]
             curso.profesor_jefe = docente
             curso.save(update_fields=["profesor_jefe"])
+            registrar_accion(request.user, curso, CHANGE, f"Profesor Jefe asignado: {docente.get_full_name() or docente.username}")
             messages.success(request, f"Se asignó a «{docente.username}» como profesor jefe de «{curso}».")
             return redirect("cursos_lista")
         messages.error(request, "Revisa los errores del formulario.")
@@ -453,7 +410,6 @@ def asignar_profesor_jefe(request):
 
     cursos = Curso.objects.select_related("profesor_jefe").order_by("año", "nombre")
     return render(request, "asignar_profesor_jefe.html", {"form": form, "cursos": cursos})
-
 
 @require_POST
 @login_required
@@ -473,16 +429,48 @@ def asignar_profesor_jefe_inline(request):
         msg = "Profesor Jefe eliminado."
 
     curso.save(update_fields=["profesor_jefe"])
+    registrar_accion(request.user, curso, CHANGE, msg)
     messages.success(request, msg)
     return redirect("curso_editar", pk=curso.pk)
 
+# =========================================================
+# Asignaturas (Listar / Editar / Eliminar)
+# =========================================================
+@user_passes_test(es_utp)
+def asignatura_list(request):
+    asignaturas = Asignatura.objects.select_related("profesor").order_by("nombre")
+    return render(request, "asignatura_list.html", {"asignaturas": asignaturas})
+
+@user_passes_test(es_utp)
+@transaction.atomic
+def asignatura_editar(request, pk):
+    asignatura = get_object_or_404(Asignatura, pk=pk)
+    if request.method == "POST":
+        form = AsignaturaForm(request.POST, instance=asignatura)
+        if form.is_valid():
+            asignatura = form.save()
+            registrar_accion(request.user, asignatura, CHANGE, "Asignatura actualizada desde vista personalizada")
+            messages.success(request, "Asignatura actualizada correctamente.")
+            return redirect("usuarios:cursos_lista")
+        messages.error(request, "Revisa los errores del formulario.")
+    else:
+        form = AsignaturaForm(instance=asignatura)
+    return render(request, "asignatura_form.html", {"form": form, "modo": "editar", "asignatura": asignatura})
+
+@user_passes_test(es_utp)
+@transaction.atomic
+def asignatura_eliminar(request, pk):
+    asignatura = get_object_or_404(Asignatura, pk=pk)
+    if request.method == "POST":
+        registrar_accion(request.user, asignatura, DELETION, "Asignatura eliminada desde vista personalizada")
+        asignatura.delete()
+        messages.success(request, "Asignatura eliminada.")
+        return redirect("usuarios:cursos_lista")
+    return render(request, "confirm_delete.html", {"obj": asignatura, "tipo": "Asignatura"})
 
 # =========================================================
 # Exportación PDF (WeasyPrint si está disponible, ReportLab como fallback)
 # =========================================================
-
-
-
 @user_passes_test(es_utp)
 def cursos_export_pdf(request):
     cursos = (
@@ -563,7 +551,7 @@ def cursos_export_pdf(request):
         "cursos_sin_pj": cursos_sin_pj,
         "cursos_sin_asignaturas": cursos_sin_asignaturas,
     }
-    
+
     # Intento con WeasyPrint
     try:
         from weasyprint import HTML  # import local
@@ -648,14 +636,15 @@ def cursos_export_pdf(request):
         resp = HttpResponse(pdf_bytes, content_type="application/pdf")
         resp["Content-Disposition"] = 'attachment; filename="informe_cursos.pdf"'
         return resp
-    
+
+# =========================================================
+# Reporte de Alumno (PDF)
+# =========================================================
 def reporte_alumno(request, alumno_id):
     alumno = get_object_or_404(Alumno, id=alumno_id)
     curso = alumno.curso
 
-    # ---------------------------
     # Datos académicos del alumno
-    # ---------------------------
     asignaturas = Asignatura.objects.filter(curso=curso).order_by("nombre")
 
     asignaturas_data = []
@@ -681,9 +670,7 @@ def reporte_alumno(request, alumno_id):
     # Anotaciones
     anotaciones = Anotacion.objects.filter(alumno=alumno).order_by("-fecha")
 
-    # ---------------------------
     # PDF (ReportLab) - imports locales
-    # ---------------------------
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.lib.units import mm
@@ -711,7 +698,7 @@ def reporte_alumno(request, alumno_id):
     encabezados = ["Asignatura"] + [f"N{i}" for i in range(1, 12)] + ["Prom."]
     data = [encabezados]
 
-    # Estilo de celda centrado que permite etiquetas simples <font> / <b>
+    # Estilo de celda centrado
     cell_style = ParagraphStyle("Cell", fontName="Helvetica", fontSize=10, alignment=1)
 
     for a in asignaturas_data:
@@ -764,7 +751,8 @@ def reporte_alumno(request, alumno_id):
         story.append(Paragraph("No hay anotaciones registradas.", styles["Normal"]))
     story.append(Spacer(1, 15*mm))
 
-    # Firmas (Apoderado / Docente-UTP)
+    # Firmas
+    from reportlab.platypus import Table
     firma_data = [
         ["__________________________", "__________________________"],
         ["Firma Apoderado(a)", "Firma Docente / UTP"]
@@ -779,7 +767,7 @@ def reporte_alumno(request, alumno_id):
     # Pie
     story.append(Spacer(1, 6*mm))
     story.append(Paragraph(
-        f"<font size='9'>Documento generado automáticamente por el sistema AulaTrack el {timezone.localtime().strftime('%d/%m/%Y %H:%M')}.</font>",
+        f"<font size='9'>Documento generado automáticamente por AulaTrack el {timezone.localtime().strftime('%d/%m/%Y %H:%M')}.</font>",
         styles["Normal"]
     ))
 
@@ -791,19 +779,11 @@ def reporte_alumno(request, alumno_id):
     resp = HttpResponse(pdf, content_type="application/pdf")
     resp["Content-Disposition"] = f'attachment; filename="reporte_{alumno.nombres}_{alumno.apellidos}.pdf"'
     return resp
-#prueba
-
-
-
-
-
 
 # =========================================================
-# Guardar Asistencia
+# Guardar Asistencia (CON REGISTRO)
 # =========================================================
-
-from datetime import date
-
+@login_required
 def asistencia(request, curso_id):
     curso = get_object_or_404(Curso, id=curso_id)
     alumnos = Alumno.objects.filter(curso=curso).order_by('apellidos', 'nombres')
@@ -815,15 +795,25 @@ def asistencia(request, curso_id):
         else:
             fecha = date.today()
 
+        cambios = 0
         for alumno in alumnos:
             estado = request.POST.get(f"estado_{alumno.id}")
             if estado:
-                Asistencia.objects.update_or_create(
+                obj, created = Asistencia.objects.update_or_create(
                     alumno=alumno,
                     curso=curso,
                     fecha=fecha,
                     defaults={'estado': estado}
                 )
+                cambios += 1
+
+        # ✅ Registrar una sola acción resumen en el curso
+        registrar_accion(
+            request.user,
+            curso,
+            CHANGE,
+            f"Asistencia guardada para {cambios} registro(s) en fecha {fecha.isoformat()}"
+        )
 
         messages.success(request, "Asistencia guardada correctamente.")
         return redirect('usuarios:asistencia', curso_id=curso.id)
@@ -844,13 +834,9 @@ def asistencia(request, curso_id):
         'today': date.today(),
     })
 
-
-
 # =========================================================
-# Notas
+# Notas (CON REGISTRO)
 # =========================================================
-
-from django.db.models import Avg
 @login_required
 def seleccionar_asignatura(request, curso_id):
     curso = get_object_or_404(Curso, id=curso_id)
@@ -861,13 +847,6 @@ def seleccionar_asignatura(request, curso_id):
     }
     return render(request, 'seleccionar_asignatura.html', context)
 
-
-
-
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from .models import Curso, Asignatura, Alumno, Nota
-
 @login_required
 def libro_notas(request, curso_id, asignatura_id):
     curso = get_object_or_404(Curso, id=curso_id)
@@ -876,6 +855,7 @@ def libro_notas(request, curso_id, asignatura_id):
     columnas_notas = range(1, 11)
 
     if request.method == 'POST':
+        cambios = 0
         for alumno in alumnos:
             for i in columnas_notas:
                 key = f'nota_{alumno.id}_{i}'
@@ -888,6 +868,16 @@ def libro_notas(request, curso_id, asignatura_id):
                         numero=i,
                         defaults={'valor': valor, 'profesor': request.user}
                     )
+                    cambios += 1
+
+        # ✅ Registrar cambio en la asignatura (resumen)
+        registrar_accion(
+            request.user,
+            asignatura,
+            CHANGE,
+            f"Notas registradas/actualizadas: {cambios} cambios en {curso}"
+        )
+        messages.success(request, "Notas guardadas correctamente.")
         return redirect('usuarios:libro_notas', curso_id=curso.id, asignatura_id=asignatura.id)
 
     notas_por_alumno = {}
@@ -914,23 +904,14 @@ def libro_notas(request, curso_id, asignatura_id):
 
     return render(request, 'notas.html', context)
 
-
 # =========================================================
-# Anotaciones
+# Anotaciones (CON REGISTRO)
 # =========================================================
-
 @login_required
 def anotaciones_curso(request, curso_id):
     curso = get_object_or_404(Curso, id=curso_id)
     alumnos = Alumno.objects.filter(curso=curso).order_by('apellidos', 'nombres')
-
-    return render(request, 'anotaciones_lista.html', {
-        'curso': curso,
-        'alumnos': alumnos
-    })
-
-
-
+    return render(request, 'anotaciones_lista.html', {'curso': curso, 'alumnos': alumnos})
 
 @login_required
 def anotaciones_alumno(request, alumno_id):
@@ -952,11 +933,13 @@ def anotaciones_alumno(request, alumno_id):
     if request.method == 'POST':
         texto = request.POST.get('texto')
         if texto:
-            Anotacion.objects.create(
+            anota = Anotacion.objects.create(
                 texto=texto,
                 alumno=alumno,
                 profesor=request.user
             )
+            # ✅ Registrar creación de anotación (objeto real)
+            registrar_accion(request.user, anota, ADDITION, f"Anotación creada para {alumno.nombres} {alumno.apellidos}")
             messages.success(request, "Anotación agregada correctamente.")
             return redirect('anotaciones_alumno', alumno_id=alumno.id)
 
@@ -968,48 +951,19 @@ def anotaciones_alumno(request, alumno_id):
         'anotaciones': anotaciones
     })
 
-@user_passes_test(es_utp)
-def editar_alumno(request, alumno_id):
-    alumno = get_object_or_404(Alumno, pk=alumno_id)
-    cursos = Curso.objects.all().order_by('año', 'nombre')
-
-    if request.method == 'POST':
-        alumno.rut = request.POST.get('rut')
-        alumno.nombres = request.POST.get('nombres')
-        alumno.apellidos = request.POST.get('apellidos')
-        curso_id = request.POST.get('curso')
-        alumno.curso = Curso.objects.get(pk=curso_id) if curso_id else None
-        alumno.save()
-        messages.success(request, f'Alumno {alumno.nombres} actualizado correctamente.')
-        return redirect(f"{reverse('cursos_lista')}?page=2&curso={alumno.curso.id if alumno.curso else ''}")
-
-    return render(request, 'editar_alumno.html', {
-        'alumno': alumno,
-        'cursos': cursos,
-    })
-
-
-
-def eliminar_alumno(request, id):
-    alumno = get_object_or_404(Alumno, id=id)
-    alumno.delete()
-    return redirect('usuarios:cursos_lista')
-
-
-
+# =========================================================
+# Gestión de Usuarios (UTP)
+# =========================================================
 def gestion_usuario(request):
-    if request.user.role != 'utp':
+    if getattr(request.user, "role", None) != 'utp':
         return HttpResponseForbidden("No tienes permisos para ver esta página.")
 
-    # Obtener rol seleccionado desde el filtro
     rol_seleccionado = request.GET.get('rol', '')
 
-    # Obtener todos los usuarios o filtrar por rol
     usuarios_filtrados = Usuario.objects.all().order_by('nombres', 'apellidos')
     if rol_seleccionado:
         usuarios_filtrados = usuarios_filtrados.filter(role=rol_seleccionado)
 
-    # Opciones de rol para el select
     roles = Usuario.ROLE_CHOICES
 
     context = {
@@ -1017,22 +971,13 @@ def gestion_usuario(request):
         'roles': roles,
         'rol_seleccionado': rol_seleccionado,
     }
-
     return render(request, "gestion_usuario.html", context)
 
-def eliminar_usuario(request, id):
-    usuario = get_object_or_404(Usuario, id=id)
-    usuario.delete()
-    messages.success(request, "Usuario eliminado correctamente.")
-    return redirect('usuarios:gestion_usuario')
-
 def editar_usuario(request, id):
-    # Obtiene el usuario específico
     usuario = get_object_or_404(Usuario, id=id)
     roles = Usuario.ROLE_CHOICES  # Tus roles definidos en el modelo
 
     if request.method == 'POST':
-        # Actualiza los campos con los datos enviados por el formulario
         usuario.nombres = request.POST.get('nombres')
         usuario.apellidos = request.POST.get('apellidos')
         usuario.email = request.POST.get('email')
@@ -1043,44 +988,160 @@ def editar_usuario(request, id):
             usuario.role = nuevo_role
 
         usuario.save()
+        registrar_accion(request.user, usuario, CHANGE, "Usuario editado desde vista personalizada")
         messages.success(request, "Usuario actualizado correctamente.")
-        return redirect('usuarios:gestion_usuario')  # O tu vista de listado
+        return redirect('usuarios:gestion_usuario')
 
-    # Si es GET, muestra el formulario con los datos actuales del usuario
-    return render(request, 'editar_usuario.html', {
-        'usuario': usuario,
-        'roles': roles,
-    })
+    return render(request, 'editar_usuario.html', {'usuario': usuario, 'roles': roles})
 
+def eliminar_usuario(request, id):
+    usuario = get_object_or_404(Usuario, id=id)
+    if request.method == "POST" or request.method == "GET":
+        registrar_accion(request.user, usuario, DELETION, "Usuario eliminado desde vista personalizada")
+        usuario.delete()
+        messages.success(request, "Usuario eliminado correctamente.")
+        return redirect('usuarios:gestion_usuario')
+    # return render(request, 'usuario_eliminar_confirmar.html', {'usuario': usuario})
 
+# =========================================================
+# Historial de Acciones (Admin Log)
+# =========================================================
 @user_passes_test(es_utp)
 def historial_acciones_admin(request):
-    """Vista para mostrar el historial de acciones del panel admin."""
-    log_entries = (
+    """Historial profesional con filtros, colores y exportación PDF elegante."""
+    import io
+    from django.template.loader import render_to_string
+
+    # =============================
+    # FILTROS Y DATOS
+    # =============================
+    logs = (
         LogEntry.objects.select_related("user", "content_type")
         .order_by("-action_time")
     )
-
-    # Filtros opcionales
     accion = request.GET.get("accion")
     usuario_id = request.GET.get("usuario")
     modelo = request.GET.get("modelo")
 
     if accion:
-        log_entries = log_entries.filter(action_flag=int(accion))
+        logs = logs.filter(action_flag=int(accion))
     if usuario_id:
-        log_entries = log_entries.filter(user_id=usuario_id)
+        logs = logs.filter(user_id=usuario_id)
     if modelo:
-        log_entries = log_entries.filter(content_type__model=modelo.lower())
+        logs = logs.filter(content_type__model=modelo.lower())
+
+    # =============================
+    # EXPORTACIÓN PDF
+    # =============================
+    if "pdf" in request.GET:
+        try:
+            # Intentar con WeasyPrint
+            from weasyprint import HTML
+            html_str = render_to_string("historial_pdf.html", {
+                "logs": logs,
+                "usuario": request.user,
+                "fecha_gen": timezone.localtime(),
+            })
+            pdf = HTML(string=html_str, base_url=request.build_absolute_uri()).write_pdf()
+        except Exception:
+            # Fallback con ReportLab (sin dependencias externas)
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib import colors
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+            from reportlab.lib.styles import getSampleStyleSheet
+            buffer = io.BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=A4)
+            styles = getSampleStyleSheet()
+            story = [
+                Paragraph("<b>Historial de Acciones - AulaTrack</b>", styles["Title"]),
+                Paragraph(f"Generado por: {request.user.get_full_name() or request.user.username}", styles["Normal"]),
+                Paragraph(f"Fecha: {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", styles["Normal"]),
+                Spacer(1, 12)
+            ]
+            data = [["Fecha", "Usuario", "Acción", "Modelo", "Objeto", "Detalle"]]
+            for log in logs:
+                if log.action_flag == 1:
+                    accion_str = "Creación"
+                elif log.action_flag == 2:
+                    accion_str = "Edición"
+                elif log.action_flag == 3:
+                    accion_str = "Eliminación"
+                else:
+                    accion_str = "Otro"
+                data.append([
+                    log.action_time.strftime("%d/%m/%Y %H:%M"),
+                    log.user.get_full_name() or log.user.username,
+                    accion_str,
+                    log.content_type.model,
+                    log.object_repr,
+                    log.change_message,
+                ])
+            table = Table(data, repeatRows=1)
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#f0f0f0")),
+                ('GRID', (0, 0), (-1, -1), 0.25, colors.grey),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ]))
+            story.append(table)
+            doc.build(story)
+            pdf = buffer.getvalue()
+            buffer.close()
+
+        response = HttpResponse(pdf, content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="Historial_AulaTrack.pdf"'
+        return response
+
+    # =============================
+    # PAGINACIÓN
+    # =============================
+    paginator = Paginator(logs, 25)
+    page_obj = paginator.get_page(request.GET.get("page"))
 
     usuarios = Usuario.objects.all().order_by("first_name", "last_name")
-    modelos = ContentType.objects.values_list("model", flat=True).distinct().order_by("model")
+    modelos = (
+        ContentType.objects.values_list("model", flat=True)
+        .distinct()
+        .order_by("model")
+    )
 
     return render(request, "historial_admin.html", {
-        "log_entries": log_entries,
+        "page_obj": page_obj,
         "usuarios": usuarios,
         "modelos": modelos,
         "accion_filtrada": accion,
         "usuario_filtrado": int(usuario_id) if usuario_id else None,
         "modelo_filtrado": modelo,
     })
+
+@user_passes_test(es_utp)
+def eliminar_log(request, log_id):
+    """Elimina un registro específico del historial."""
+    log = get_object_or_404(LogEntry, id=log_id)
+    if request.method == "POST":
+        log.delete()
+        messages.success(request, "✅ Registro eliminado correctamente.")
+    return redirect("usuarios:historial_admin")
+
+
+@user_passes_test(es_utp)
+def eliminar_todos_logs(request):
+    """Elimina todos los registros del historial."""
+    if request.method == "POST":
+        LogEntry.objects.all().delete()
+        messages.success(request, "🧹 Se ha eliminado todo el historial de acciones.")
+    return redirect("usuarios:historial_admin")
+
+
+
+
+
+@user_passes_test(es_utp)
+@require_POST
+def curso_quitar_asignatura(request, curso_id, asignatura_id):
+    curso = get_object_or_404(Curso, pk=curso_id)
+    asignatura = get_object_or_404(Asignatura, pk=asignatura_id)
+    curso.asignaturas.remove(asignatura)
+    messages.success(request, f"Se quitó «{asignatura.nombre}» del curso {curso}.")
+    return redirect("cursos_lista")

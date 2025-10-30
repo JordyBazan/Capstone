@@ -1,0 +1,181 @@
+/* === Fondo general === */
+body, .main, .app {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.topbar {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* === Contenedor principal === */
+.hist-container {
+  background: #ffffff;
+  color: #111827;
+  border-radius: 14px;
+  padding: 2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* === Header === */
+.hist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+.hist-header h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+/* === Botones === */
+.btn-primary, .btn-secondary, .btn-blue, .btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s ease;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(124, 58, 237, 0.25);
+}
+.btn-primary:hover { filter: brightness(1.05); }
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #111827;
+}
+.btn-secondary:hover { background: #e5e7eb; }
+
+.btn-blue {
+  background: #0ea5e9;
+  color: #fff;
+}
+.btn-blue:hover { background: #0284c7; }
+
+.btn-danger {
+  background: #ef4444;
+  color: #fff;
+  font-weight: 700;
+}
+.btn-danger:hover { background: #dc2626; }
+
+/* === Selects === */
+.hist-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-bottom: 1.5rem;
+}
+.hist-select {
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #d1d5db;
+  padding: .45rem .7rem;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all .2s ease;
+}
+.hist-select:hover, .hist-select:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+/* === Tabla === */
+.hist-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+}
+.hist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  color: #111827;
+}
+.hist-table th, .hist-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+.hist-table th {
+  background: #f9fafb;
+  color: #111827;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+.hist-table td {
+  color: #1f2937;
+}
+.hist-table tr:hover td {
+  background: #f3f4f6;
+}
+.empty {
+  text-align: center;
+  padding: 1rem;
+  color: #6b7280;
+}
+
+/* === Etiquetas de acción === */
+.tag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 13px;
+}
+.tag-green { background: #bbf7d0; color: #065f46; }
+.tag-blue { background: #bfdbfe; color: #1e3a8a; }
+.tag-red { background: #fecaca; color: #7f1d1d; }
+
+/* === Filas coloreadas === */
+.bg-creacion { background: #ecfdf5; color: #065f46; }
+.bg-edicion { background: #eff6ff; color: #1e3a8a; }
+.bg-eliminacion { background: #fef2f2; color: #7f1d1d; }
+
+/* === Botón eliminar individual === */
+.btn-delete {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: bold;
+  transition: all .2s;
+}
+.btn-delete:hover {
+  color: #b91c1c;
+  transform: scale(1.2);
+}
+
+/* === Paginación === */
+.hist-pagination {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+.btn-small {
+  padding: 0.3rem 0.7rem;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #111827;
+  text-decoration: none;
+  font-weight: 600;
+}
+.btn-small:hover { background: #e5e7eb; }
+.page-info {
+  margin: 0 10px;
+  color: #374151;
+}

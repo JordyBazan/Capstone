@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Historial de Acciones - AulaTrack</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 11pt; color: #111; margin: 20px; }
+  h1 { text-align: center; color: #1f2937; }
+  table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+  th, td { border: 1px solid #ddd; padding: 6px; }
+  th { background: #f3f4f6; }
+  tr:nth-child(even) { background: #f9fafb; }
+  .creacion { color: green; }
+  .edicion { color: blue; }
+  .eliminacion { color: red; }
+</style>
+</head>
+<body>
+  <h1>Historial de Acciones - AulaTrack</h1>
+  <p><b>Generado por:</b> {{ usuario.get_full_name|default:usuario.username }} <br>
+     <b>Fecha:</b> {{ fecha_gen|date:"d/m/Y H:i" }}</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Usuario</th>
+        <th>Acción</th>
+        <th>Modelo</th>
+        <th>Objeto</th>
+        <th>Detalle</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+        <tr>
+          <td>{{ log.action_time|date:"d/m/Y H:i" }}</td>
+          <td>{{ log.user.get_full_name|default:log.user.username }}</td>
+          <td>
+            {% if log.action_flag == 1 %}<span class="creacion">Creación</span>
+            {% elif log.action_flag == 2 %}<span class="edicion">Edición</span>
+            {% elif log.action_flag == 3 %}<span class="eliminacion">Eliminación</span>{% endif %}
+          </td>
+          <td>{{ log.content_type.model|capfirst }}</td>
+          <td>{{ log.object_repr }}</td>
+          <td>{{ log.change_message }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>
