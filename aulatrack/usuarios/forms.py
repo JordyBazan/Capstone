@@ -78,34 +78,26 @@ class RegistroForm(UserCreationForm):
 class AsignaturaForm(forms.ModelForm):
     class Meta:
         model = Asignatura
-        fields = ["nombre", "descripcion", "profesor"]
+        fields = ["nombre", "descripcion", "profesor", "curso"]
         labels = {
             "nombre": "Nombre de la asignatura",
             "descripcion": "Descripción",
             "profesor": "Profesor",
+            "curso": "Curso",
         }
         widgets = {
             "nombre": forms.TextInput(attrs={"placeholder": "Ej: Matemáticas"}),
-            "descripcion": forms.Textarea(attrs={"placeholder": "Breve descripción"}),
-            "profesor": forms.Select(attrs={"data-placeholder": "Seleccione un docente"}),
+            "descripcion": forms.Textarea(attrs={"placeholder": "Breve descripción", "rows": 2}),
+            "profesor": forms.Select(),
+            "curso": forms.Select(),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Solo profesores activos con rol docente
-        self.fields["profesor"].queryset = (
-            Usuario.objects.filter(is_active=True, role=Usuario.ROLE_DOCENTE)
-            .order_by("nombres", "apellidos", "username")
-        )
-        self.fields["profesor"].label_from_instance = lambda u: (
-            f"{u.get_full_name()} ({u.username})".strip() if u.get_full_name() else f"{u.username}"
-        )
-
-    def clean_profesor(self):
-        prof = self.cleaned_data.get("profesor")
-        if prof and prof.role != Usuario.ROLE_DOCENTE:
-            raise forms.ValidationError("El usuario seleccionado no tiene rol de Docente.")
-        return prof
+        self.fields["profesor"].queryset = Usuario.objects.filter(
+            role=Usuario.ROLE_DOCENTE, is_active=True
+        ).order_by("nombres", "apellidos")
+        self.fields["curso"].queryset = Curso.objects.all().order_by("año", "nombre")
 
 # 3.2) Curso (crear)
 class CursoForm(forms.ModelForm):
@@ -261,3 +253,13 @@ class AlumnoForm(forms.ModelForm):
         widgets = {
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
         }
+
+class AsignarAsignaturasForm(forms.Form):
+    asignaturas = forms.ModelMultipleChoiceField(
+        queryset=Asignatura.objects.filter(curso__isnull=True).order_by("nombre"),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Asignaturas disponibles"
+    )
+
+    

@@ -9,8 +9,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+    <!--  Estilos base -->
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
+
+    <!--  Estilos específicos por vista -->
     {% block extra_css %}{% endblock %}
+
+    <!--  Estilos globales (unifica diseño en todas las vistas) -->
+    <link rel="stylesheet" href="{% static 'css/global.css' %}">
 </head>
 <body>
 <main class="app">
@@ -58,7 +65,7 @@
             {% endif %}
         </div>
 
-        <!-- 🔻 Botón fijo inferior -->
+        <!--  Botón fijo inferior -->
         {% if user.is_authenticated %}
         <div class="logout-fixed">
             <form method="post" action="{% url 'usuarios:logout' %}">
@@ -76,6 +83,15 @@
         <header class="topbar">
             {% block topbar %}{% endblock %}
         </header>
+
+        <!--  BOTONES GLOBALES (Atrás / Inicio) -->
+        {% if request.path != '/' and request.path != '/home/' %}
+        <div class="nav-buttons fade-in">
+            <button onclick="window.history.back()" class="btn btn-secondary">⬅️ Atrás</button>
+            <a href="{% url 'usuarios:home_page' %}" class="btn btn-prim">Inicio</a>
+        </div>
+        {% endif %}
+
         <div class="content">
             {% block content %}{% endblock %}
         </div>

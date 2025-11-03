@@ -86,7 +86,7 @@
   border-color: rgba(124, 58, 237, 0.55);
 }
 
-/* Botón principal */
+/* Botón principal superior */
 .topCta {
   background: linear-gradient(90deg, #7c3aed, #6d28d9);
   color: #fff;
@@ -166,7 +166,6 @@
   animation: floatBadge 3s ease-in-out infinite;
 }
 
-
 /* Contenido de la card */
 .courseCard .title {
   margin-top: 42px;
@@ -203,8 +202,10 @@
   border-radius: 0 0 16px 16px;
 }
 
-/* Botones */
-.btn {
+/* ===============================================
+   🎨 Colores originales de los botones en las cards
+   =============================================== */
+.courseCard .actions .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -219,13 +220,13 @@
 }
 
 /* Entrar */
-.btn-primary {
-  color: #111827;
+.courseCard .actions .btn-primary {
   background: #ffffff;
+  color: #111827;
   border: 1px solid #d1d5db;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
-.btn-primary:hover {
+.courseCard .actions .btn-primary:hover {
   border-color: rgba(124, 58, 237, 0.45);
   background: #f9fafb;
   transform: translateY(-2px);
@@ -233,23 +234,24 @@
 }
 
 /* Editar */
-.btn-ghost {
+.courseCard .actions .btn-ghost {
   color: #4b0082;
   background: rgba(124, 58, 237, 0.12);
   border: 1px solid rgba(124, 58, 237, 0.25);
 }
-.btn-ghost:hover {
+.courseCard .actions .btn-ghost:hover {
   background: rgba(124, 58, 237, 0.18);
   transform: translateY(-2px);
 }
 
 /* Eliminar */
-.btn-danger {
+.courseCard .actions .btn-danger {
   color: #fff;
   background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: none;
   box-shadow: 0 4px 10px rgba(220, 38, 38, 0.35);
 }
-.btn-danger:hover {
+.courseCard .actions .btn-danger:hover {
   filter: brightness(1.07);
   transform: translateY(-2px) scale(1.02);
   box-shadow: 0 8px 18px rgba(220, 38, 38, 0.45);

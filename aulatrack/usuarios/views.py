@@ -33,7 +33,7 @@ from .models import Alumno, Curso, Asignatura, Nota, Asistencia, Anotacion, Usua
 from .forms import (
     RegistroForm, LoginForm,
     CursoForm, AsignaturaForm, CursoAsignaturasForm, AsignarProfesorJefeForm,
-    CursoEditForm, AlumnoForm
+    CursoEditForm, AlumnoForm, AsignarAsignaturasForm
 )
 
 # =========================================================
@@ -279,11 +279,9 @@ def crear_asignatura(request):
     if request.method == "POST":
         form = AsignaturaForm(request.POST)
         if form.is_valid():
-            asignatura = form.save()
-            registrar_accion(request.user, asignatura, ADDITION, "Asignatura creada desde vista personalizada")
-            messages.success(request, "Asignatura creada con éxito.")
-            return redirect("usuarios:cursos_lista")
-        messages.error(request, "Revisa los errores del formulario.")
+            form.save()
+            messages.success(request, "Asignatura creada correctamente.")
+            return redirect("usuarios:asignatura_list")
     else:
         form = AsignaturaForm()
     return render(request, "crear_asignatura.html", {"form": form})
@@ -318,22 +316,37 @@ def curso_eliminar(request, pk):
 
 @user_passes_test(es_utp)
 def asignar_asignaturas_curso(request, curso_id):
-    curso = get_object_or_404(
-        Curso.objects.select_related("profesor_jefe").prefetch_related("asignaturas"),
-        pk=curso_id
-    )
-    if request.method == "POST":
-        form = CursoAsignaturasForm(request.POST, instance=curso)
-        if form.is_valid():
-            form.save()
-            registrar_accion(request.user, curso, CHANGE, "Asignaturas del curso actualizadas desde vista personalizada")
-            messages.success(request, f"Asignaturas actualizadas para {curso}.")
-            return redirect("usuarios:cursos_lista")
-        messages.error(request, "Revisa los errores del formulario.")
-    else:
-        form = CursoAsignaturasForm(instance=curso)
+    curso = get_object_or_404(Curso, pk=curso_id)
 
-    return render(request, "asignar_asignaturas_curso.html", {"curso": curso, "form": form})
+    if request.method == "POST":
+        form = AsignarAsignaturasForm(request.POST)
+        if form.is_valid():
+            # 🔹 Primero quitamos asignaciones previas
+            Asignatura.objects.filter(curso=curso).update(curso=None)
+
+            # 🔹 Luego asignamos las nuevas
+            nuevas_asignaturas = form.cleaned_data["asignaturas"]
+            for a in nuevas_asignaturas:
+                a.curso = curso
+                a.save()
+
+            messages.success(request, f"✅ Se asignaron {nuevas_asignaturas.count()} asignaturas al curso {curso}.")
+            return redirect("usuarios:cursos_lista")
+        else:
+            messages.error(request, "❌ Error al procesar el formulario.")
+    else:
+        # Solo mostrar asignaturas sin curso o ya asignadas a este curso
+        form = AsignarAsignaturasForm(initial={
+            "asignaturas": Asignatura.objects.filter(curso=curso)
+        })
+
+    asignaturas_actuales = Asignatura.objects.filter(curso=curso)
+
+    return render(request, "asignar_asignaturas_curso.html", {
+        "curso": curso,
+        "form": form,
+        "asignaturas_actuales": asignaturas_actuales,
+    })
 
 # =========================================================
 # Crear / Editar / Eliminar Alumno
@@ -807,7 +820,7 @@ def asistencia(request, curso_id):
                 )
                 cambios += 1
 
-        # ✅ Registrar una sola acción resumen en el curso
+        #  Registrar una sola acción resumen en el curso
         registrar_accion(
             request.user,
             curso,
@@ -849,11 +862,17 @@ def seleccionar_asignatura(request, curso_id):
 
 @login_required
 def libro_notas(request, curso_id, asignatura_id):
+    # ===========================
+    # Datos base
+    # ===========================
     curso = get_object_or_404(Curso, id=curso_id)
     asignatura = get_object_or_404(Asignatura, id=asignatura_id)
-    alumnos = Alumno.objects.filter(curso=curso)
+    alumnos = Alumno.objects.filter(curso=curso).order_by("apellidos", "nombres")
     columnas_notas = range(1, 11)
 
+    # ===========================
+    # Si el usuario guarda notas
+    # ===========================
     if request.method == 'POST':
         cambios = 0
         for alumno in alumnos:
@@ -861,16 +880,24 @@ def libro_notas(request, curso_id, asignatura_id):
                 key = f'nota_{alumno.id}_{i}'
                 valor = request.POST.get(key)
                 if valor:
-                    valor = float(valor)
+                    try:
+                        valor = float(valor)
+                    except ValueError:
+                        continue
+
+                    # Si ya existe nota en este curso y número, la actualiza
                     Nota.objects.update_or_create(
                         alumno=alumno,
-                        asignatura=asignatura,
+                        asignatura=asignatura,  # mantiene asignatura visible
                         numero=i,
-                        defaults={'valor': valor, 'profesor': request.user}
+                        defaults={
+                            'valor': valor,
+                            'profesor': request.user,
+                            'evaluacion': f"nota_{i}",
+                        }
                     )
                     cambios += 1
 
-        # ✅ Registrar cambio en la asignatura (resumen)
         registrar_accion(
             request.user,
             asignatura,
@@ -880,20 +907,30 @@ def libro_notas(request, curso_id, asignatura_id):
         messages.success(request, "Notas guardadas correctamente.")
         return redirect('usuarios:libro_notas', curso_id=curso.id, asignatura_id=asignatura.id)
 
+    # ===========================
+    # Mostrar siempre las notas del curso completo
+    # ===========================
     notas_por_alumno = {}
     for alumno in alumnos:
-        notas_queryset = Nota.objects.filter(alumno=alumno, asignatura=asignatura)
+        # Traer TODAS las notas del alumno en este curso (no solo esta asignatura)
+        notas_queryset = Nota.objects.filter(alumno=alumno, asignatura__curso=curso)
         notas_dict = {n.numero: n.valor for n in notas_queryset}
+
+        # Crear lista ordenada del 1 al 10
         notas_lista = [notas_dict.get(i, None) for i in columnas_notas]
 
+        # Calcular promedio
         notas_validas = [v for v in notas_lista if v is not None]
-        promedio = round(sum(notas_validas)/len(notas_validas), 1) if notas_validas else None
+        promedio = round(sum(notas_validas) / len(notas_validas), 1) if notas_validas else None
 
         notas_por_alumno[alumno] = {
             'notas': notas_lista,
             'promedio': promedio
         }
 
+    # ===========================
+    # Contexto
+    # ===========================
     context = {
         'curso': curso,
         'asignatura': asignatura,
@@ -1142,6 +1179,15 @@ def eliminar_todos_logs(request):
 def curso_quitar_asignatura(request, curso_id, asignatura_id):
     curso = get_object_or_404(Curso, pk=curso_id)
     asignatura = get_object_or_404(Asignatura, pk=asignatura_id)
-    curso.asignaturas.remove(asignatura)
+
+    # Verificar si realmente pertenece al curso
+    if asignatura.curso_id != curso.id:
+        messages.error(request, f"La asignatura «{asignatura.nombre}» no pertenece al curso {curso}.")
+        return redirect("usuarios:cursos_lista")
+
+    # Desvincular la asignatura
+    asignatura.curso = None
+    asignatura.save(update_fields=["curso"])
+
     messages.success(request, f"Se quitó «{asignatura.nombre}» del curso {curso}.")
-    return redirect("cursos_lista")
+    return redirect("usuarios:cursos_lista")

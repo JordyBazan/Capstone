@@ -40,7 +40,6 @@ class Curso(models.Model):
     año = models.CharField(max_length=15)
     nombre = models.CharField(max_length=30)
     sala = models.CharField(max_length=10)
-    asignaturas = models.ManyToManyField('Asignatura', blank=True)
     profesor_jefe = models.ForeignKey(
         Usuario,
         on_delete=models.CASCADE,
@@ -88,11 +87,16 @@ class Alumno(models.Model):
 
 class Asignatura(models.Model):
     nombre = models.CharField(max_length=30)
-    descripcion = models.TextField()
-    profesor = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=True, blank=True)
+    descripcion = models.TextField(blank=True)
+    profesor = models.ForeignKey(
+        Usuario, on_delete=models.CASCADE, null=True, blank=True, limit_choices_to={'role': 'docente'}
+    )
+    curso = models.ForeignKey(
+        'Curso', on_delete=models.CASCADE, related_name='asignaturas', null=True, blank=True
+    )
 
     def __str__(self):
-        return self.nombre
+        return f"{self.nombre} ({self.curso.año} {self.curso.nombre})" if self.curso else self.nombre
 
 
 class DocenteCurso(models.Model):

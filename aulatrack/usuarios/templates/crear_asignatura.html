@@ -1,32 +1,19 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Crear asignatura{% endblock %}
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/crear_asignatura.css' %}">
-{% endblock %}
+
+{% block title %}Nueva Asignatura — AulaTrack{% endblock %}
 
 {% block content %}
 <div class="page">
   <h1>Nueva Asignatura</h1>
-  <div class="hint">Completa la información de la asignatura</div>
+  <p class="hint">Crea una asignatura y asígnala a un curso específico.</p>
 
-  <form method="post" class="form-card" novalidate>
+  <form method="post" class="form-card">
     {% csrf_token %}
-    <div class="field">
-      <label class="label" for="{{ form.nombre.id_for_label }}">Nombre</label>
-      {{ form.nombre }}
-    </div>
-    <div class="field">
-      <label class="label" for="{{ form.descripcion.id_for_label }}">Descripción</label>
-      {{ form.descripcion }}
-    </div>
-    <div class="field">
-      <label class="label" for="{{ form.profesor.id_for_label }}">Docente a cargo</label>
-      {{ form.profesor }}
-    </div>
+    {{ form.as_p }}
     <div class="actions">
-      <button class="btn primary" type="submit">Guardar</button>
-      <a class="btn" href="{% url 'usuarios:home' %}">Cancelar</a>
+      <button class="btn btn-prim" type="submit">Guardar</button>
+      <a class="btn btn-secondary" href="{% url 'usuarios:asignatura_list' %}">Cancelar</a>
     </div>
   </form>
 </div>

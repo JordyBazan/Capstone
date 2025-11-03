@@ -1,7 +1,126 @@
-{% extends 'base.html' %}
-{% load static %}
+{% extends "base.html" %}
+{% load static dict_extras %}
+
+{% block title %}Registro de Notas - AulaTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+/* =======================================================
+    Estilos visuales de la página de notas
+   ======================================================= */
+.sectionTitle {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1e1e2f;
+  margin-bottom: 4px;
+}
+.hint {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+}
+
+.divider {
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #7c3aed, #c084fc);
+  border-radius: 8px;
+  margin-bottom: 1.2rem;
+}
+
+.grades-scroll {
+  overflow-x: auto;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.06);
+}
+
+.grades-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.grades-table th {
+  background: #f8fafc;
+  color: #374151;
+  font-weight: 700;
+  padding: 10px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.grades-table td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 8px;
+}
+
+.grades-table input[type="number"] {
+  width: 60px;
+  padding: 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 600;
+  color: #111827;
+  background: #f9fafb;
+  transition: 0.2s;
+}
+.grades-table input[type="number"]:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+  outline: none;
+}
+.grades-table input.low { color: #dc2626; font-weight: 700; }
+.grades-table input.high { color: #16a34a; font-weight: 700; }
+
+tfoot td {
+  font-weight: 700;
+  background: #f9fafb;
+}
+
+/* Botón guardar */
+.save-container {
+  margin-top: 1.5rem;
+  text-align: right;
+}
+.save-btn {
+  background: linear-gradient(90deg, #7c3aed, #6d28d9);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+}
+
+/* Mensajes de éxito */
+.msg.success {
+  background: #dcfce7;
+  color: #065f46;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+</style>
+{% endblock %}
 
 {% block content %}
+{% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li class="msg {{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
 <h2 class="sectionTitle">{{ asignatura.nombre }} - {{ curso.año }} {{ curso.nombre }}</h2>
 <p class="hint">Registro de notas</p>
 <div class="divider"></div>
@@ -19,20 +138,23 @@
           <th>Promedio</th>
         </tr>
       </thead>
+
       <tbody>
         {% for alumno, data in notas_por_alumno.items %}
         <tr>
           <td style="text-align:left;">{{ alumno.nombres }} {{ alumno.apellidos }}</td>
 
-          {% for nota in data.notas %}
-            <td>
-              <input type="number" step="0.1" min="1.0" max="7.0"
-                     name="nota_{{ alumno.id }}_{{ forloop.counter }}"
-                     value="{{ nota }}">
-            </td>
+          {% for i in columnas_notas %}
+            {% with nota=data.notas|index:i %}
+              <td>
+                <input type="number" step="0.1" min="1.0" max="7.0"
+                       name="nota_{{ alumno.id }}_{{ i }}"
+                       value="{{ nota|default_if_none:'' }}">
+              </td>
+            {% endwith %}
           {% endfor %}
 
-          <td>
+          <td class="promedio">
             {% if data.promedio %}
               {{ data.promedio }}
             {% else %}
@@ -45,75 +167,52 @@
     </table>
   </div>
 
-  <button type="submit" class="btn-primary">Guardar</button>
+  <div class="save-container">
+    <button type="submit" class="save-btn"> Guardar Notas</button>
+  </div>
 </form>
 
+<!-- =======================================================
+      Script: colores + promedio dinámico persistente
+     ======================================================= -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const inputs = document.querySelectorAll('.grades-table input[type="number"]');
 
-<style>
-  .grades-scroll {
-    overflow-x: auto;
-    margin-top: 20px;
-  }
+  const actualizarColor = (input) => {
+    input.classList.remove('low', 'high');
+    const val = parseFloat(input.value);
+    if (!isNaN(val)) {
+      if (val < 4) input.classList.add('low');
+      else input.classList.add('high');
+    }
+  };
 
-  .grades-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: center;
-    font-size: 14px;
-  }
+  const recalcularPromedio = (fila) => {
+    const celdas = fila.querySelectorAll('input[type="number"]');
+    let sum = 0, count = 0;
+    celdas.forEach(inp => {
+      const v = parseFloat(inp.value);
+      if (!isNaN(v)) { sum += v; count++; }
+    });
+    const prom = count ? (sum / count).toFixed(1) : '-';
+    fila.querySelector('.promedio').textContent = prom;
+  };
 
-  .grades-table th, .grades-table td {
-    border: 1px solid #e5e7eb;
-    padding: 10px;
-  }
+  // Inicializa colores y promedios en carga
+  const filas = document.querySelectorAll('.grades-table tbody tr');
+  filas.forEach(fila => {
+    fila.querySelectorAll('input[type="number"]').forEach(actualizarColor);
+    recalcularPromedio(fila);
+  });
 
-  .grades-table th {
-    background-color: #f3f4f6;
-    font-weight: 600;
-  }
-
-  .grades-table tr:hover {
-    background-color: #fafafa;
-  }
-
-  .grades-table input {
-    width: 60px;
-    text-align: center;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    padding: 4px;
-  }
-
-  .btn-primary {
-    margin-top: 20px;
-    background-color: #6b21a8;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-
-  .btn-primary:hover {
-    background-color: #581c87;
-  }
-
-  .sectionTitle {
-    font-size: 22px;
-    font-weight: 700;
-    color: #1f2937;
-  }
-
-  .hint {
-    color: #6b7280;
-    font-size: 14px;
-  }
-
-  .divider {
-    height: 2px;
-    width: 100%;
-    background: linear-gradient(to right, #6b21a8, transparent);
-    margin: 10px 0 20px;
-  }
-</style>
+  // Detecta cambios
+  inputs.forEach(input => {
+    input.addEventListener('input', e => {
+      actualizarColor(e.target);
+      recalcularPromedio(e.target.closest('tr'));
+    });
+  });
+});
+</script>
 {% endblock %}
