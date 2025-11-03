@@ -6,6 +6,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/home.css' %}">
 {% endblock %}
+
 {% block content %}
 <div class="filter-bar">
   <form method="get">
@@ -22,57 +23,75 @@
       </option>
     </select>
   </form>
-  <a class="topCta" href="{% url 'usuarios:crear_curso' %}">+ Nuevo curso (Solo Admin)</a>
-</div>
 
-<!-- ===== Tus cursos (docente) ===== -->
-<div class="courses">
-  {% if cursos_docente %}
-    {% for c in cursos_docente %}
-      <article class="courseCard {% if c.profesor_jefe_id == request.user.id %}is-mi-curso{% endif %}" tabindex="0">
-        <span class="badge">{{ c.año }}</span>
-
-        {% if c.profesor_jefe_id == request.user.id %}
-          <span class="badge-mi-curso" aria-label="Eres profesor jefe de este curso">Mi curso</span>
-        {% endif %}
-
-        <div class="title">{{ c.nombre }}</div>
-        <div class="meta">Aula {{ c.sala }}</div>
-
-        <div class="meta">Profesor Jefe:
-          {% if c.profesor_jefe %}
-            {{ c.profesor_jefe.username }}{% if c.profesor_jefe_id == request.user.id %} (tú){% endif %}
-          {% else %}
-            Sin asignar
-          {% endif %}
-        </div>
-
-        <div class="actions">
-          <a href="{% url 'usuarios:curso' c.id %}" class="btn btn-primary">Entrar</a>
-        </div>
-      </article>
-    {% endfor %}
-  {% elif user.role == 'docente' %}
-    <p class="muted">No tienes cursos asignados.</p>
+  {% if user.role == 'utp' %}
+    <a class="topCta" href="{% url 'usuarios:crear_curso' %}?from=home">+ Nuevo curso</a>
   {% endif %}
 </div>
 
-<!-- ===== Vista UTP ===== -->
-{% if user.role == 'utp' %}
-  <div style="margin-top: 8px;">
-    <div class="sectionTitle">Todos los cursos</div>
-    <h1>Cambiar reportes guardar </h1>
-    <h1>"LISTO"Notas previsualizar Todas</h1>
-    <h1>Falta Crear todas las asignaturas para cada curso 8 de mates 8 de lenguaje etc</h1>
-    <div class="hint">Vista de UTP: gestión de todos los cursos</div>
+<!-- ============================ -->
+<!-- DOCENTE - MIS CURSOS -->
+<!-- ============================ -->
+{% if user.role == 'docente' %}
+  <div class="sectionTitle">Mis Cursos Asignados</div>
+  <p class="hint">Cursos donde eres profesor jefe o dictas alguna asignatura.</p>
+
+  <div class="courses">
+    {% if cursos_docente %}
+      {% for c in cursos_docente %}
+        <article class="courseCard {% if c.profesor_jefe_id == user.id %}is-mi-curso{% endif %}" tabindex="0">
+          <span class="badge">{{ c.año }}</span>
+
+          {% if c.profesor_jefe_id == user.id %}
+            <span class="badge-mi-curso" aria-label="Eres profesor jefe de este curso">Profesor Jefe</span>
+          {% endif %}
+
+          <div class="title">{{ c.nombre }}</div>
+          <div class="meta">Aula {{ c.sala }}</div>
+
+          <div class="meta">Profesor Jefe:
+            {% if c.profesor_jefe %}
+              {{ c.profesor_jefe.username }}{% if c.profesor_jefe_id == user.id %} (tú){% endif %}
+            {% else %}
+              Sin asignar
+            {% endif %}
+          </div>
+
+          <!-- Lista de asignaturas a su cargo -->
+          <div class="meta" style="margin-top: 8px;">
+            <strong>Asignaturas a tu cargo:</strong>
+            <div style="margin-top: 4px;">
+              {% for a in c.asignaturas.all %}
+                {% if a.profesor_id == user.id %}
+                  <span class="chip">{{ a.nombre }}</span>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="actions">
+            <a href="{% url 'usuarios:curso' c.id %}" class="btn btn-primary">Entrar</a>
+          </div>
+        </article>
+      {% endfor %}
+    {% else %}
+      <p class="muted">No tienes cursos asignados.</p>
+    {% endif %}
   </div>
+{% endif %}
+
+<!-- ============================ -->
+<!-- UTP - TODOS LOS CURSOS -->
+<!-- ============================ -->
+{% if user.role == 'utp' %}
+  <div class="sectionTitle">Todos los cursos</div>
+  <p class="hint">Vista de UTP: gestión de todos los cursos</p>
 
   <div class="courses">
     {% if cursos_todos %}
       {% for curso in cursos_todos %}
         <article class="courseCard" tabindex="0">
           <span class="badge">{{ curso.año }}</span>
-
           <div class="title">{{ curso.nombre }}</div>
           <div class="meta">Aula {{ curso.sala }}</div>
           <div class="meta">Profesor Jefe:
@@ -85,8 +104,13 @@
 
           <div class="actions">
             <a href="{% url 'usuarios:curso' curso.id %}" class="btn btn-primary">Entrar</a>
-            <a href="{% url 'usuarios:curso_editar' curso.id %}" class="btn btn-ghost">Editar</a>
-            <a href="{% url 'usuarios:curso_eliminar' curso.id %}" class="btn btn-danger">Eliminar</a>
+            <a href="{% url 'usuarios:curso_editar' curso.id %}?from=home" class="btn btn-ghost">Editar</a>
+            <form method="post" action="{% url 'usuarios:curso_eliminar' curso.id %}?from=home"
+                  style="display:inline;"
+                  onsubmit="return confirm('¿Estás seguro de que deseas eliminar el curso «{{ curso.nombre }}»? Esta acción no se puede deshacer.');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger">Eliminar</button>
+            </form>
           </div>
         </article>
       {% endfor %}
@@ -96,7 +120,9 @@
   </div>
 {% endif %}
 
-<!-- ===== Usuarios sin rol ===== -->
+<!-- ============================ -->
+<!-- SIN ROL -->
+<!-- ============================ -->
 {% if not user.role %}
   <div class="no-role" style="margin-top: 20px; text-align:center;">
     <div class="sectionTitle">Sin Rol Asignado</div>

@@ -66,6 +66,8 @@ urlpatterns = [
     path('cursos/export/pdf/', cursos_export_pdf, name='cursos_export_pdf'),
     path("mis_cursos/", RedirectView.as_view(pattern_name="usuarios:home_page"), name="mis_cursos"),
     path("reporte_alumno/<int:alumno_id>/pdf/", views.reporte_alumno, name="reporte_alumno"),
+    path('asignar-docente-curso/', views.asignar_docente_curso, name='asignar_docente_curso'),
+
 
     # =============================
     # Gestión Académica: Asignaturas

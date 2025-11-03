@@ -21,6 +21,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.urls import reverse, reverse_lazy
+from django.db.models import Q, Prefetch
 
 # 🔹 Para registrar acciones
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
@@ -84,28 +85,34 @@ def registrar_accion(user, objeto, tipo_accion, mensaje=""):
 # =========================================================
 # Páginas principales
 # =========================================================
+# =========================================================
+# Página principal (Home)
+# =========================================================
 @login_required
 def home(request):
     user = request.user
     ordenar = request.GET.get("ordenar") or "basico_asc"
 
-    cursos_docente = None
-    cursos_todos = None
+    cursos_docente = []
+    cursos_todos = []
 
-    # Cursos de docentes
-    if getattr(user, "role", None) == "docente":
-        ids = set()
-        ids.update(Curso.objects.filter(profesor_jefe=user).values_list("id", flat=True))
-        ids.update(Curso.objects.filter(docentecurso__docente=user).values_list("id", flat=True))
-        ids.update(Curso.objects.filter(asignaturas__profesor=user).values_list("id", flat=True))
-
-        cursos_docente = list(
-            Curso.objects.filter(id__in=ids)
+    # ==========================================
+    # DOCENTE: obtener todos los cursos donde participa
+    # ==========================================
+    if getattr(user, "role", "").lower() == "docente":
+        cursos_docente = (
+            Curso.objects.filter(
+                Q(profesor_jefe=user) | Q(asignaturas__profesor=user)
+            )
             .select_related("profesor_jefe")
-            .prefetch_related("asignaturas")
+            .prefetch_related(
+                Prefetch("asignaturas", queryset=Asignatura.objects.select_related("profesor"))
+            )
             .distinct()
         )
 
+        # Ordenar según selección
+        cursos_docente = list(cursos_docente)
         if ordenar == "basico_asc":
             cursos_docente.sort(key=lambda c: _clave_grado(c.nombre))
         elif ordenar == "basico_desc":
@@ -113,14 +120,23 @@ def home(request):
         elif ordenar == "nombre_asc":
             cursos_docente.sort(key=lambda c: (c.nombre or "").lower())
 
-    # Cursos para UTP (todos)
-    if getattr(user, "role", None) == "utp":
+        #  Debug temporal (puedes eliminarlo después)
+        print(f"[DEBUG] Usuario: {user.username} | Cursos encontrados: {len(cursos_docente)}")
+        for c in cursos_docente:
+            print(f" - {c.nombre} ({c.año}) | PJ: {c.profesor_jefe} | Asignaturas: {c.asignaturas.count()}")
+
+    # ==========================================
+    # UTP: ver todos los cursos
+    # ==========================================
+    elif getattr(user, "role", "").lower() == "utp":
         cursos_todos = list(
-            Curso.objects.all()
-            .select_related("profesor_jefe")
-            .prefetch_related("asignaturas")
+            Curso.objects.select_related("profesor_jefe")
+            .prefetch_related(
+                Prefetch("asignaturas", queryset=Asignatura.objects.select_related("profesor"))
+            )
         )
 
+        # Ordenar según selección
         if ordenar == "basico_asc":
             cursos_todos.sort(key=lambda c: _clave_grado(c.nombre))
         elif ordenar == "basico_desc":
@@ -128,6 +144,11 @@ def home(request):
         elif ordenar == "nombre_asc":
             cursos_todos.sort(key=lambda c: (c.nombre or "").lower())
 
+        print(f"[DEBUG] Usuario UTP: {user.username} | Cursos totales: {len(cursos_todos)}")
+
+    # ==========================================
+    # Renderizar según rol
+    # ==========================================
     return render(request, "home.html", {
         "cursos_docente": cursos_docente,
         "cursos_todos": cursos_todos,
@@ -238,12 +259,60 @@ def cursos_lista(request):
         )
         .order_by("año", "nombre")
     )
-    asignaturas = Asignatura.objects.select_related("profesor").all().order_by("nombre")
     docentes = Usuario.objects.filter(role="docente").order_by("first_name", "last_name", "username")
 
+    # ========================================
+    # Página 2: Asignaturas (con filtro y resumen)
+    # ========================================
+    if page == '2':
+        curso_id = request.GET.get('curso')
+        cursos = Curso.objects.all().order_by("nombre")
+
+        asignaturas_qs = (
+            Asignatura.objects
+            .select_related("profesor", "curso")
+            .order_by("curso__nombre", "nombre")
+        )
+
+        if curso_id:
+            asignaturas_qs = asignaturas_qs.filter(curso_id=curso_id)
+
+        # --- Totales generales y por curso ---
+        total_asignaturas = asignaturas_qs.count()
+        total_sin_profesor = asignaturas_qs.filter(profesor__isnull=True).count()
+        total_con_profesor = asignaturas_qs.filter(profesor__isnull=False).count()
+
+        # Conteo por curso
+        resumen_por_curso = (
+            Asignatura.objects
+            .values("curso__nombre")
+            .annotate(total=Count("id"))
+            .order_by("curso__nombre")
+        )
+
+        context = {
+            'page': page,
+            'asignaturas': asignaturas_qs,
+            'cursos': cursos,
+            'curso_id': curso_id,
+            'total_asignaturas': total_asignaturas,
+            'total_sin_profesor': total_sin_profesor,
+            'total_con_profesor': total_con_profesor,
+            'resumen_por_curso': resumen_por_curso,
+        }
+        return render(request, "cursos_lista.html", context)
+
+    # ========================================
+    # Página 3: Alumnos 
+    # ========================================
     alumnos = Alumno.objects.select_related('curso').order_by('curso__año', 'curso__nombre', 'apellidos', 'nombres')
     if curso_id:
         alumnos = alumnos.filter(curso_id=curso_id)
+
+    # ========================================
+    # Página 1: Cursos
+    # ========================================
+    asignaturas = Asignatura.objects.select_related("profesor").all().order_by("nombre")
 
     context = {
         'page': page,
@@ -262,41 +331,74 @@ def cursos_lista(request):
 # =========================================================
 @user_passes_test(es_utp)
 def crear_curso(request):
+    # Saber desde dónde viene la creación (home o cursos_lista)
+    origen = request.GET.get('from') or request.POST.get('from') or ''
+
     if request.method == "POST":
         form = CursoForm(request.POST)
         if form.is_valid():
             curso = form.save()
             registrar_accion(request.user, curso, ADDITION, "Curso creado desde vista personalizada")
             messages.success(request, "Curso creado correctamente.")
-            return redirect("usuarios:cursos_lista")
+
+            # Redirigir según el origen
+            if origen == 'home':
+                return redirect('usuarios:home_page')
+            else:
+                return redirect(f"{reverse('usuarios:cursos_lista')}?page=1")
+
         messages.error(request, "Revisa los errores del formulario.")
     else:
         form = CursoForm()
-    return render(request, "crear_curso.html", {"form": form})
+
+    return render(request, "crear_curso.html", {
+        "form": form,
+        "origen": origen,  # Para mantenerlo en el form
+    })
 
 @user_passes_test(es_utp)
-def crear_asignatura(request):
-    if request.method == "POST":
-        form = AsignaturaForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Asignatura creada correctamente.")
-            return redirect("usuarios:asignatura_list")
-    else:
-        form = AsignaturaForm()
-    return render(request, "crear_asignatura.html", {"form": form})
+def curso_eliminar(request, pk):
+    curso = get_object_or_404(Curso, pk=pk)
+
+    # Verificar desde dónde viene (home o lista)
+    referer = request.META.get('HTTP_REFERER', '')
+    viene_de_home = '/home' in referer or referer.endswith('/')
+
+    if request.method == "POST" or request.method == "GET":
+        registrar_accion(request.user, curso, DELETION, "Curso eliminado desde vista personalizada")
+        curso.delete()
+        messages.success(request, f"Curso «{curso.nombre}» eliminado correctamente.")
+
+        # Si vino desde home → volver al home
+        if viene_de_home:
+            return redirect('usuarios:home_page')
+
+        # Si vino desde lista → mantener page=1
+        return redirect(f"{reverse('usuarios:cursos_lista')}?page=1")
+
+    return render(request, "curso_eliminar_confirmar.html", {"curso": curso})
+
+
 
 @user_passes_test(es_utp)
 def curso_editar(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
     form = CursoEditForm(request.POST or None, instance=curso)
-    docentes = Usuario.objects.filter(role=Usuario.ROLE_DOCENTE).order_by('first_name','last_name','username')
+    docentes = Usuario.objects.filter(role=Usuario.ROLE_DOCENTE).order_by('first_name', 'last_name', 'username')
+
+    referer = request.META.get('HTTP_REFERER', '')
+    viene_de_home = '/home' in referer or referer.endswith('/')
 
     if form.is_valid():
         curso = form.save()
         registrar_accion(request.user, curso, CHANGE, "Curso actualizado desde vista personalizada")
-        messages.success(request, "Curso actualizado.")
-        return redirect('usuarios:cursos_lista')
+        messages.success(request, "Curso actualizado correctamente.")
+
+        # Si viene desde home → vuelve a home
+        if viene_de_home:
+            return redirect('usuarios:home_page')
+        # Si viene desde lista → vuelve a page=1
+        return redirect(f"{reverse('usuarios:cursos_lista')}?page=1")
 
     return render(request, 'curso_editar.html', {
         'curso': curso,
@@ -304,15 +406,6 @@ def curso_editar(request, pk):
         'docentes': docentes,
     })
 
-@user_passes_test(es_utp)
-def curso_eliminar(request, pk):
-    curso = get_object_or_404(Curso, pk=pk)
-    if request.method == "POST":
-        registrar_accion(request.user, curso, DELETION, "Curso eliminado desde vista personalizada")
-        curso.delete()
-        messages.success(request, "Curso eliminado.")
-        return redirect("usuarios:cursos_lista")
-    return render(request, "curso_eliminar_confirmar.html", {"curso": curso})
 
 @user_passes_test(es_utp)
 def asignar_asignaturas_curso(request, curso_id):
@@ -359,10 +452,13 @@ def agregar_alumno(request):
             alumno = form.save()
             registrar_accion(request.user, alumno, ADDITION, "Alumno creado desde vista personalizada")
             messages.success(request, "Alumno agregado correctamente.")
-            return redirect('usuarios:cursos_lista')
+            return redirect(f"{reverse('usuarios:cursos_lista')}?page=3")
+        else:
+            messages.error(request, "Revisa los errores del formulario.")
     else:
         form = AlumnoForm()
     return render(request, 'agregar_alumno.html', {'form': form})
+
 
 @user_passes_test(es_utp)
 def editar_alumno(request, alumno_id):
@@ -378,30 +474,24 @@ def editar_alumno(request, alumno_id):
         alumno.save()
         registrar_accion(request.user, alumno, CHANGE, "Alumno editado desde vista personalizada")
         messages.success(request, f'Alumno {alumno.nombres} actualizado correctamente.')
-        return redirect(f"{reverse('cursos_lista')}?page=2&curso={alumno.curso.id if alumno.curso else ''}")
+        return redirect(f"{reverse('usuarios:cursos_lista')}?page=3")
+    return render(request, 'editar_alumno.html', {'alumno': alumno, 'cursos': cursos})
 
-    return render(request, 'editar_alumno.html', {
-        'alumno': alumno,
-        'cursos': cursos,
-    })
 
 @login_required
 def eliminar_alumno(request, id):
     alumno = get_object_or_404(Alumno, id=id)
-    if request.method == "POST" or request.method == "GET":
+    if request.method in ["POST", "GET"]:
         registrar_accion(request.user, alumno, DELETION, "Alumno eliminado desde vista personalizada")
         alumno.delete()
         messages.success(request, "Alumno eliminado correctamente.")
-        return redirect('usuarios:cursos_lista')
-    # Si quieres confirmación, cambia a plantilla:
-    # return render(request, 'alumno_eliminar_confirmar.html', {'alumno': alumno})
+        return redirect(f"{reverse('usuarios:cursos_lista')}?page=3")
 
 # =========================================================
 # Asignar Profesor Jefe (pantalla + inline)
 # =========================================================
 @user_passes_test(es_utp)
 def asignar_profesor_jefe(request):
-    """Pantalla independiente para asignar PJ usando AsignarProfesorJefeForm."""
     initial_curso = None
     curso_id = request.GET.get("curso")
     if curso_id:
@@ -416,7 +506,7 @@ def asignar_profesor_jefe(request):
             curso.save(update_fields=["profesor_jefe"])
             registrar_accion(request.user, curso, CHANGE, f"Profesor Jefe asignado: {docente.get_full_name() or docente.username}")
             messages.success(request, f"Se asignó a «{docente.username}» como profesor jefe de «{curso}».")
-            return redirect("cursos_lista")
+            return redirect("usuarios:cursos_lista")  # ✅ corregido
         messages.error(request, "Revisa los errores del formulario.")
     else:
         form = AsignarProfesorJefeForm(initial_curso=initial_curso)
@@ -454,6 +544,22 @@ def asignatura_list(request):
     asignaturas = Asignatura.objects.select_related("profesor").order_by("nombre")
     return render(request, "asignatura_list.html", {"asignaturas": asignaturas})
 
+
+
+@user_passes_test(es_utp)
+def crear_asignatura(request):
+    if request.method == "POST":
+        form = AsignaturaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Asignatura creada correctamente.")
+            return redirect(f"{reverse('usuarios:cursos_lista')}?page=2")
+        messages.error(request, "Revisa los errores del formulario.")
+    else:
+        form = AsignaturaForm()
+    return render(request, "crear_asignatura.html", {"form": form})
+
+
 @user_passes_test(es_utp)
 @transaction.atomic
 def asignatura_editar(request, pk):
@@ -464,11 +570,12 @@ def asignatura_editar(request, pk):
             asignatura = form.save()
             registrar_accion(request.user, asignatura, CHANGE, "Asignatura actualizada desde vista personalizada")
             messages.success(request, "Asignatura actualizada correctamente.")
-            return redirect("usuarios:cursos_lista")
+            return redirect(f"{reverse('usuarios:cursos_lista')}?page=2")
         messages.error(request, "Revisa los errores del formulario.")
     else:
         form = AsignaturaForm(instance=asignatura)
     return render(request, "asignatura_form.html", {"form": form, "modo": "editar", "asignatura": asignatura})
+
 
 @user_passes_test(es_utp)
 @transaction.atomic
@@ -478,7 +585,7 @@ def asignatura_eliminar(request, pk):
         registrar_accion(request.user, asignatura, DELETION, "Asignatura eliminada desde vista personalizada")
         asignatura.delete()
         messages.success(request, "Asignatura eliminada.")
-        return redirect("usuarios:cursos_lista")
+        return redirect(f"{reverse('usuarios:cursos_lista')}?page=2")
     return render(request, "confirm_delete.html", {"obj": asignatura, "tipo": "Asignatura"})
 
 # =========================================================
@@ -885,10 +992,10 @@ def libro_notas(request, curso_id, asignatura_id):
                     except ValueError:
                         continue
 
-                    # Si ya existe nota en este curso y número, la actualiza
+                    # 🔹 Crear o actualizar nota SOLO de esta asignatura
                     Nota.objects.update_or_create(
                         alumno=alumno,
-                        asignatura=asignatura,  # mantiene asignatura visible
+                        asignatura=asignatura,  # asignatura actual
                         numero=i,
                         defaults={
                             'valor': valor,
@@ -898,28 +1005,29 @@ def libro_notas(request, curso_id, asignatura_id):
                     )
                     cambios += 1
 
+        # 🔹 Registrar acción
         registrar_accion(
             request.user,
             asignatura,
             CHANGE,
-            f"Notas registradas/actualizadas: {cambios} cambios en {curso}"
+            f"Notas registradas/actualizadas: {cambios} cambios en {curso} - {asignatura.nombre}"
         )
-        messages.success(request, "Notas guardadas correctamente.")
+        messages.success(request, " Notas guardadas correctamente.")
         return redirect('usuarios:libro_notas', curso_id=curso.id, asignatura_id=asignatura.id)
 
     # ===========================
-    # Mostrar siempre las notas del curso completo
+    # Mostrar solo notas de esta asignatura
     # ===========================
     notas_por_alumno = {}
     for alumno in alumnos:
-        # Traer TODAS las notas del alumno en este curso (no solo esta asignatura)
-        notas_queryset = Nota.objects.filter(alumno=alumno, asignatura__curso=curso)
+        # 🔹 Traer solo las notas del alumno en la asignatura actual
+        notas_queryset = Nota.objects.filter(alumno=alumno, asignatura=asignatura)
         notas_dict = {n.numero: n.valor for n in notas_queryset}
 
         # Crear lista ordenada del 1 al 10
         notas_lista = [notas_dict.get(i, None) for i in columnas_notas]
 
-        # Calcular promedio
+        # Calcular promedio (solo de esta asignatura)
         notas_validas = [v for v in notas_lista if v is not None]
         promedio = round(sum(notas_validas) / len(notas_validas), 1) if notas_validas else None
 
@@ -975,10 +1083,10 @@ def anotaciones_alumno(request, alumno_id):
                 alumno=alumno,
                 profesor=request.user
             )
-            # ✅ Registrar creación de anotación (objeto real)
+            #  Registrar creación de anotación (objeto real)
             registrar_accion(request.user, anota, ADDITION, f"Anotación creada para {alumno.nombres} {alumno.apellidos}")
             messages.success(request, "Anotación agregada correctamente.")
-            return redirect('anotaciones_alumno', alumno_id=alumno.id)
+            return redirect('usuarios:anotaciones_alumno', alumno_id=alumno.id)
 
     return render(request, 'anotaciones.html', {
         'alumno': alumno,
@@ -1045,7 +1153,7 @@ def eliminar_usuario(request, id):
 # =========================================================
 @user_passes_test(es_utp)
 def historial_acciones_admin(request):
-    """Historial profesional con filtros, colores y exportación PDF elegante."""
+    """Historial profesional con filtros, colores y exportación PDF elegante y legible."""
     import io
     from django.template.loader import render_to_string
 
@@ -1081,21 +1189,42 @@ def historial_acciones_admin(request):
             })
             pdf = HTML(string=html_str, base_url=request.build_absolute_uri()).write_pdf()
         except Exception:
-            # Fallback con ReportLab (sin dependencias externas)
-            from reportlab.lib.pagesizes import A4
+            # -----------------------------
+            # Fallback con ReportLab
+            # -----------------------------
+            from reportlab.lib.pagesizes import landscape, A4
             from reportlab.lib import colors
-            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+            from reportlab.platypus import (
+                SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+            )
             from reportlab.lib.styles import getSampleStyleSheet
+            from reportlab.lib.units import mm
+
             buffer = io.BytesIO()
-            doc = SimpleDocTemplate(buffer, pagesize=A4)
+            doc = SimpleDocTemplate(
+                buffer,
+                pagesize=landscape(A4),  # 🔹 horizontal para más espacio
+                leftMargin=10 * mm,
+                rightMargin=10 * mm,
+                topMargin=14 * mm,
+                bottomMargin=14 * mm,
+            )
             styles = getSampleStyleSheet()
-            story = [
-                Paragraph("<b>Historial de Acciones - AulaTrack</b>", styles["Title"]),
-                Paragraph(f"Generado por: {request.user.get_full_name() or request.user.username}", styles["Normal"]),
-                Paragraph(f"Fecha: {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", styles["Normal"]),
-                Spacer(1, 12)
-            ]
+            story = []
+
+            # Título y metadatos
+            story.append(Paragraph("<b>Historial de Acciones - AulaTrack</b>", styles["Title"]))
+            story.append(Paragraph(
+                f"Generado por: {request.user.get_full_name() or request.user.username}", styles["Normal"]
+            ))
+            story.append(Paragraph(
+                f"Fecha: {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", styles["Normal"]
+            ))
+            story.append(Spacer(1, 8))
+
+            # Encabezados y datos
             data = [["Fecha", "Usuario", "Acción", "Modelo", "Objeto", "Detalle"]]
+
             for log in logs:
                 if log.action_flag == 1:
                     accion_str = "Creación"
@@ -1105,23 +1234,60 @@ def historial_acciones_admin(request):
                     accion_str = "Eliminación"
                 else:
                     accion_str = "Otro"
+
                 data.append([
                     log.action_time.strftime("%d/%m/%Y %H:%M"),
                     log.user.get_full_name() or log.user.username,
                     accion_str,
                     log.content_type.model,
                     log.object_repr,
-                    log.change_message,
+                    log.change_message or "",
                 ])
-            table = Table(data, repeatRows=1)
+
+            # 🔹 Definir anchos equilibrados para A4 horizontal
+            col_widths = [25 * mm, 35 * mm, 25 * mm, 25 * mm, 40 * mm, 85 * mm]
+
+            # 🔹 Convertir texto largo en párrafos envolventes
+            wrap_style = styles["Normal"]
+            wrap_style.fontSize = 8
+            wrap_style.leading = 9
+
+            wrapped_data = []
+            for row in data:
+                wrapped_row = []
+                for cell in row:
+                    if isinstance(cell, str):
+                        wrapped_row.append(Paragraph(cell, wrap_style))
+                    else:
+                        wrapped_row.append(cell)
+                wrapped_data.append(wrapped_row)
+
+            # Crear tabla
+            table = Table(wrapped_data, repeatRows=1, colWidths=col_widths)
             table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#f0f0f0")),
-                ('GRID', (0, 0), (-1, -1), 0.25, colors.grey),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f0f0f0")),
+                ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 3),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 3),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1),
+                    [colors.white, colors.HexColor("#fafafa")]),
             ]))
+
             story.append(table)
+
+            # Pie de página
+            story.append(Spacer(1, 10))
+            story.append(Paragraph(
+                "<i>Documento generado automáticamente por AulaTrack</i>", styles["Normal"]
+            ))
+
+            # Construcción del PDF
             doc.build(story)
             pdf = buffer.getvalue()
             buffer.close()
@@ -1131,7 +1297,7 @@ def historial_acciones_admin(request):
         return response
 
     # =============================
-    # PAGINACIÓN
+    # PAGINACIÓN (vista normal)
     # =============================
     paginator = Paginator(logs, 25)
     page_obj = paginator.get_page(request.GET.get("page"))
@@ -1152,13 +1318,15 @@ def historial_acciones_admin(request):
         "modelo_filtrado": modelo,
     })
 
+
+
 @user_passes_test(es_utp)
 def eliminar_log(request, log_id):
     """Elimina un registro específico del historial."""
     log = get_object_or_404(LogEntry, id=log_id)
     if request.method == "POST":
         log.delete()
-        messages.success(request, "✅ Registro eliminado correctamente.")
+        messages.success(request, " Registro eliminado correctamente.")
     return redirect("usuarios:historial_admin")
 
 
@@ -1191,3 +1359,24 @@ def curso_quitar_asignatura(request, curso_id, asignatura_id):
 
     messages.success(request, f"Se quitó «{asignatura.nombre}» del curso {curso}.")
     return redirect("usuarios:cursos_lista")
+
+
+
+
+@user_passes_test(es_utp)
+def asignar_docente_curso(request):
+    """Asigna un docente a un curso específico"""
+    from .forms import AsignarDocenteCursoForm
+
+    if request.method == "POST":
+        form = AsignarDocenteCursoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "✅ Docente asignado correctamente al curso.")
+            return redirect("usuarios:cursos_lista")
+        else:
+            messages.error(request, " Ocurrió un error al asignar docente. Revisa los campos.")
+    else:
+        form = AsignarDocenteCursoForm()
+
+    return render(request, "asignar_docente_curso.html", {"form": form})

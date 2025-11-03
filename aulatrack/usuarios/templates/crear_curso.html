@@ -19,6 +19,9 @@
 
   <form method="post" class="form-card">
     {% csrf_token %}
+    {# 🔹 Campo oculto para mantener el origen (home o cursos_lista) #}
+    <input type="hidden" name="from" value="{{ origen }}">
+
     <div class="grid">
       <div class="field">
         <label class="label" for="{{ form.año.id_for_label }}">Año</label>
@@ -47,7 +50,13 @@
 
     <div class="actions">
       <button class="btn primary" type="submit">Guardar</button>
-      <a class="btn" href="{% url 'usuarios:cursos_lista' %}">Cancelar</a>
+
+      {# 🔹 Si viene del home, volver al home; si no, volver a page=1 #}
+      {% if origen == 'home' %}
+        <a class="btn" href="{% url 'usuarios:home_page' %}">Cancelar</a>
+      {% else %}
+        <a class="btn" href="{% url 'usuarios:cursos_lista' %}?page=1">Cancelar</a>
+      {% endif %}
     </div>
   </form>
 </div>

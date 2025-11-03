@@ -262,4 +262,26 @@ class AsignarAsignaturasForm(forms.Form):
         label="Asignaturas disponibles"
     )
 
-    
+from .models import DocenteCurso, Usuario, Curso
+
+class AsignarDocenteCursoForm(forms.ModelForm):
+    class Meta:
+        model = DocenteCurso
+        fields = ["docente", "curso"]
+        widgets = {
+            "docente": forms.Select(attrs={"class": "form-control"}),
+            "curso": forms.Select(attrs={"class": "form-control"}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        docente = cleaned_data.get("docente")
+        curso = cleaned_data.get("curso")
+
+        #  Evitar duplicados
+        if docente and curso:
+            if DocenteCurso.objects.filter(docente=docente, curso=curso).exists():
+                raise forms.ValidationError(
+                    f" El docente «{docente.username}» ya está asignado al curso «{curso.nombre}»."
+                )
+        return cleaned_data

@@ -36,7 +36,7 @@
     <div class="hint">Gestiona todos los cursos</div>
   </div>
   <div class="head-actions">
-    <a class="btn" href="{% url 'usuarios:crear_curso' %}">+ Crear curso</a>
+    <a class="btn" href="{% url 'usuarios:crear_curso' %}?from=cursos_lista">+ Crear curso</a>
     <a class="btn-prim" href="{% url 'usuarios:cursos_export_pdf' %}">Exportar PDF</a>
   </div>
 </div>
@@ -136,46 +136,103 @@
 <!-- ============================ -->
 {% if page == '2' %}
 <div class="page-head flex-between">
-    <div>
-      <h1>Asignaturas</h1>
-      <div class="hint">Listado de todas las asignaturas creadas</div>
-    </div>
-    <div>
-        <a class="btn" href="{% url 'usuarios:crear_asignatura' %}">+ Crear asignatura</a>
-    </div>
+  <div>
+    <h1>Asignaturas</h1>
+    <div class="hint">Listado de todas las asignaturas creadas y su distribución</div>
   </div>
+  <div class="head-actions">
+    <a class="btn" href="{% url 'usuarios:crear_asignatura' %}">+ Crear asignatura</a>
+  </div>
+</div>
 
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Descripción</th>
-          <th>Profesor</th>
-          <th style="width:1%;">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for a in asignaturas %}
-        <tr>
-          <td>{{ a.nombre }}</td>
-          <td>{{ a.descripcion|default:"—" }}</td>
-          <td>{% if a.profesor %}{{ a.profesor.get_full_name|default:a.profesor.username }}{% else %}—{% endif %}</td>
-          <td class="cell-actions">
-            <a class="link" href="{% url 'usuarios:asignatura_editar' a.id %}">Editar</a>
-            <form method="post" action="{% url 'usuarios:asignatura_eliminar' a.id %}" class="js-delete-form"
-                  data-confirm="¿Eliminar la asignatura '{{ a.nombre }}'?">
-              {% csrf_token %}
-              <button type="submit" class="link link-danger" style="background:none;border:none;padding:0;">Eliminar</button>
-            </form>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4">No hay asignaturas creadas.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<!--  Filtros -->
+<div class="filter-bar">
+  <form method="get">
+    <input type="hidden" name="page" value="2">
+    <label for="curso">Filtrar por curso:</label>
+    <select name="curso" id="curso" onchange="this.form.submit()">
+      <option value="">Todos los cursos</option>
+      {% for c in cursos %}
+        <option value="{{ c.id }}" {% if curso_id|stringformat:"s" == c.id|stringformat:"s" %}selected{% endif %}>
+          {{ c.nombre }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<!--  Resumen tipo panel -->
+<div class="stats-grid">
+  <div class="card stat">
+    <h3>Total asignaturas</h3>
+    <p>{{ total_asignaturas }}</p>
   </div>
+  <div class="card stat">
+    <h3>Con profesor</h3>
+    <p>{{ total_con_profesor }}</p>
+  </div>
+  <div class="card stat">
+    <h3>Sin profesor</h3>
+    <p>{{ total_sin_profesor }}</p>
+  </div>
+</div>
+
+<!--  Totales por curso -->
+<div class="table-wrap mt-2">
+  <table class="table small">
+    <thead>
+      <tr>
+        <th>Curso</th>
+        <th>Total asignaturas</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in resumen_por_curso %}
+      <tr>
+        <td>{{ item.curso__nombre|default:"—" }}</td>
+        <td>{{ item.total }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="2">No hay datos de asignaturas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!--  Tabla detallada -->
+<div class="table-wrap mt-2">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th>Profesor</th>
+        <th>Curso</th>
+        <th style="width:1%;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in asignaturas %}
+      <tr>
+        <td>{{ a.nombre }}</td>
+        <td>{{ a.descripcion|default:"—" }}</td>
+        <td>{% if a.profesor %}{{ a.profesor.get_full_name|default:a.profesor.username }}{% else %}—{% endif %}</td>
+        <td>{% if a.curso %}{{ a.curso.nombre }}{% else %}—{% endif %}</td>
+        <td class="cell-actions">
+          <a class="link" href="{% url 'usuarios:asignatura_editar' a.id %}">Editar</a>
+          <form method="post" action="{% url 'usuarios:asignatura_eliminar' a.id %}" class="js-delete-form"
+                data-confirm="¿Eliminar la asignatura '{{ a.nombre }}'?">
+            {% csrf_token %}
+            <button type="submit" class="link link-danger" style="background:none;border:none;padding:0;">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5">No hay asignaturas creadas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endif %}
 
 <!-- ============================ -->
