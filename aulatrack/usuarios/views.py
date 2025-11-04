@@ -82,12 +82,11 @@ def registrar_accion(user, objeto, tipo_accion, mensaje=""):
         # Evitar romper el flujo por logging
         print(" Error registrando acción:", e)
 
-# =========================================================
-# Páginas principales
-# =========================================================
+
 # =========================================================
 # Página principal (Home)
 # =========================================================
+
 @login_required
 def home(request):
     user = request.user
@@ -95,23 +94,32 @@ def home(request):
 
     cursos_docente = []
     cursos_todos = []
+    curso_profesor_jefe = None
 
-    # ==========================================
-    # DOCENTE: obtener todos los cursos donde participa
-    # ==========================================
-    if getattr(user, "role", "").lower() == "docente":
-        cursos_docente = (
-            Curso.objects.filter(
-                Q(profesor_jefe=user) | Q(asignaturas__profesor=user)
-            )
+    # =====================================================
+    # DOCENTE: solo sus cursos y asignaturas
+    # =====================================================
+    if user.role == "docente":
+        # Curso donde es profesor jefe
+        curso_profesor_jefe = (
+            Curso.objects
+            .filter(profesor_jefe=user)
             .select_related("profesor_jefe")
-            .prefetch_related(
-                Prefetch("asignaturas", queryset=Asignatura.objects.select_related("profesor"))
-            )
+            .prefetch_related("asignaturas", "asignaturas__profesor")
+            .first()
+        )
+
+        # Otros cursos donde dicta asignaturas
+        cursos_docente = (
+            Curso.objects
+            .filter(asignaturas__profesor=user)
+            .exclude(profesor_jefe=user)
+            .select_related("profesor_jefe")
+            .prefetch_related("asignaturas", "asignaturas__profesor")
             .distinct()
         )
 
-        # Ordenar según selección
+        # Ordenar
         cursos_docente = list(cursos_docente)
         if ordenar == "basico_asc":
             cursos_docente.sort(key=lambda c: _clave_grado(c.nombre))
@@ -120,23 +128,16 @@ def home(request):
         elif ordenar == "nombre_asc":
             cursos_docente.sort(key=lambda c: (c.nombre or "").lower())
 
-        #  Debug temporal (puedes eliminarlo después)
-        print(f"[DEBUG] Usuario: {user.username} | Cursos encontrados: {len(cursos_docente)}")
-        for c in cursos_docente:
-            print(f" - {c.nombre} ({c.año}) | PJ: {c.profesor_jefe} | Asignaturas: {c.asignaturas.count()}")
-
-    # ==========================================
-    # UTP: ver todos los cursos
-    # ==========================================
-    elif getattr(user, "role", "").lower() == "utp":
+    # =====================================================
+    # UTP: ver todos los cursos (para gestión)
+    # =====================================================
+    elif user.role == "utp":
         cursos_todos = list(
-            Curso.objects.select_related("profesor_jefe")
-            .prefetch_related(
-                Prefetch("asignaturas", queryset=Asignatura.objects.select_related("profesor"))
-            )
+            Curso.objects
+            .select_related("profesor_jefe")
+            .prefetch_related("asignaturas", "asignaturas__profesor")
         )
 
-        # Ordenar según selección
         if ordenar == "basico_asc":
             cursos_todos.sort(key=lambda c: _clave_grado(c.nombre))
         elif ordenar == "basico_desc":
@@ -144,15 +145,17 @@ def home(request):
         elif ordenar == "nombre_asc":
             cursos_todos.sort(key=lambda c: (c.nombre or "").lower())
 
-        print(f"[DEBUG] Usuario UTP: {user.username} | Cursos totales: {len(cursos_todos)}")
-
-    # ==========================================
-    # Renderizar según rol
-    # ==========================================
+    # =====================================================
+    # Render
+    # =====================================================
     return render(request, "home.html", {
+        "curso_profesor_jefe": curso_profesor_jefe,
         "cursos_docente": cursos_docente,
         "cursos_todos": cursos_todos,
     })
+
+
+
 
 @login_required
 def curso(request, curso_id):
@@ -243,11 +246,12 @@ def logout_view(request):
 # =========================================================
 @login_required
 def cursos_lista(request):
-    if getattr(request.user, "role", None) != 'utp':
+    if getattr(request.user, "role", None) != "utp":
         return HttpResponseForbidden("No tienes permisos para ver esta página.")
 
-    page = request.GET.get('page', '1')
-    curso_id = request.GET.get('curso')
+    page = request.GET.get("page", "1")
+    curso_id = request.GET.get("curso")
+    filtro_nombre = request.GET.get("nombre_asignatura")
 
     cursos = (
         Curso.objects
@@ -259,30 +263,45 @@ def cursos_lista(request):
         )
         .order_by("año", "nombre")
     )
+
     docentes = Usuario.objects.filter(role="docente").order_by("first_name", "last_name", "username")
 
-    # ========================================
-    # Página 2: Asignaturas (con filtro y resumen)
-    # ========================================
-    if page == '2':
-        curso_id = request.GET.get('curso')
-        cursos = Curso.objects.all().order_by("nombre")
-
+    # ===============================
+    # Página 2: Asignaturas
+    # ===============================
+    if page == "2":
         asignaturas_qs = (
             Asignatura.objects
             .select_related("profesor", "curso")
             .order_by("curso__nombre", "nombre")
         )
 
+        # Filtros
         if curso_id:
             asignaturas_qs = asignaturas_qs.filter(curso_id=curso_id)
 
-        # --- Totales generales y por curso ---
+        # Si se selecciona una asignatura como "Ciencias Naturales", traer TODAS con ese nombre base
+        if filtro_nombre:
+            asignaturas_qs = asignaturas_qs.filter(nombre__icontains=filtro_nombre)
+
+        # Nombres base de asignaturas (agrupadas por nombre principal sin curso)
+        nombres_asignaturas = (
+            Asignatura.objects
+            .values_list("nombre", flat=True)
+            .distinct()
+        )
+
+        # Limpiar los nombres: quitar el texto de curso, si existiera
+        nombres_limpios = set()
+        for nombre in nombres_asignaturas:
+            base = nombre.split(" - ")[0].strip()
+            nombres_limpios.add(base)
+        nombres_asignaturas = sorted(nombres_limpios)
+
         total_asignaturas = asignaturas_qs.count()
         total_sin_profesor = asignaturas_qs.filter(profesor__isnull=True).count()
         total_con_profesor = asignaturas_qs.filter(profesor__isnull=False).count()
 
-        # Conteo por curso
         resumen_por_curso = (
             Asignatura.objects
             .values("curso__nombre")
@@ -291,37 +310,44 @@ def cursos_lista(request):
         )
 
         context = {
-            'page': page,
-            'asignaturas': asignaturas_qs,
-            'cursos': cursos,
-            'curso_id': curso_id,
-            'total_asignaturas': total_asignaturas,
-            'total_sin_profesor': total_sin_profesor,
-            'total_con_profesor': total_con_profesor,
-            'resumen_por_curso': resumen_por_curso,
+            "page": page,
+            "asignaturas": asignaturas_qs,
+            "cursos": cursos,
+            "curso_id": curso_id,
+            "nombre_asignatura": filtro_nombre,
+            "total_asignaturas": total_asignaturas,
+            "total_sin_profesor": total_sin_profesor,
+            "total_con_profesor": total_con_profesor,
+            "resumen_por_curso": resumen_por_curso,
+            "docentes": docentes,
+            "nombres_asignaturas": nombres_asignaturas,
         }
         return render(request, "cursos_lista.html", context)
 
-    # ========================================
-    # Página 3: Alumnos 
-    # ========================================
-    alumnos = Alumno.objects.select_related('curso').order_by('curso__año', 'curso__nombre', 'apellidos', 'nombres')
+    # ===============================
+    # Página 3: Alumnos
+    # ===============================
+    alumnos = (
+        Alumno.objects
+        .select_related("curso")
+        .order_by("curso__año", "curso__nombre", "apellidos", "nombres")
+    )
     if curso_id:
         alumnos = alumnos.filter(curso_id=curso_id)
 
-    # ========================================
+    # ===============================
     # Página 1: Cursos
-    # ========================================
+    # ===============================
     asignaturas = Asignatura.objects.select_related("profesor").all().order_by("nombre")
 
     context = {
-        'page': page,
-        'cursos': cursos,
-        'asignaturas': asignaturas,
-        'docentes': docentes,
-        'alumnos': alumnos,
-        'cursos_alumno': cursos,
-        'curso_seleccionado': int(curso_id) if curso_id else None,
+        "page": page,
+        "cursos": cursos,
+        "asignaturas": asignaturas,
+        "docentes": docentes,
+        "alumnos": alumnos,
+        "cursos_alumno": cursos,
+        "curso_seleccionado": int(curso_id) if curso_id else None,
     }
 
     return render(request, "cursos_lista.html", context)
@@ -960,10 +986,30 @@ def asistencia(request, curso_id):
 @login_required
 def seleccionar_asignatura(request, curso_id):
     curso = get_object_or_404(Curso, id=curso_id)
-    asignaturas = Asignatura.objects.filter(curso=curso)
+
+    # Caso 1: UTP o admin -> ve todas las asignaturas
+    if getattr(request.user, "role", None) in ["utp", "admin"]:
+        asignaturas = Asignatura.objects.filter(curso=curso).order_by("nombre")
+
+    # Caso 2: Docente -> puede ver todas si es profesor jefe de este curso
+    elif getattr(request.user, "role", None) == "docente":
+        if curso.profesor_jefe == request.user:
+            # Es profesor jefe, ve todas las asignaturas del curso
+            asignaturas = Asignatura.objects.filter(curso=curso).order_by("nombre")
+        else:
+            # No es profesor jefe, ve solo las que él imparte
+            asignaturas = Asignatura.objects.filter(
+                curso=curso,
+                profesor=request.user
+            ).order_by("nombre")
+
+    # Caso 3: Otros roles (por seguridad)
+    else:
+        asignaturas = Asignatura.objects.none()
+
     context = {
         'curso': curso,
-        'asignaturas': asignaturas
+        'asignaturas': asignaturas,
     }
     return render(request, 'seleccionar_asignatura.html', context)
 
@@ -1362,21 +1408,91 @@ def curso_quitar_asignatura(request, curso_id, asignatura_id):
 
 
 
+from .forms import AsignarDocenteCursoForm
+from .models import DocenteCurso
 
 @user_passes_test(es_utp)
 def asignar_docente_curso(request):
     """Asigna un docente a un curso específico"""
-    from .forms import AsignarDocenteCursoForm
-
     if request.method == "POST":
         form = AsignarDocenteCursoForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "✅ Docente asignado correctamente al curso.")
-            return redirect("usuarios:cursos_lista")
+            messages.success(request, " Docente asignado correctamente al curso.")
+            return redirect("usuarios:asignar_docente_curso")
         else:
             messages.error(request, " Ocurrió un error al asignar docente. Revisa los campos.")
     else:
         form = AsignarDocenteCursoForm()
 
-    return render(request, "asignar_docente_curso.html", {"form": form})
+    # 🔹 Lista de docentes con cursos y sus asignaturas
+    asignaciones = (
+        DocenteCurso.objects
+        .select_related('docente', 'curso')
+        .prefetch_related('curso__asignaturas')  # importante para ver sus asignaturas
+        .order_by('docente__apellidos', 'docente__nombres', 'curso__nombre')
+    )
+
+    return render(
+        request,
+        "asignar_docente_curso.html",
+        {"form": form, "asignaciones": asignaciones},
+    )
+
+@login_required
+def asignar_docente_global(request):
+    """Asigna un docente a todas las asignaturas que contengan el mismo nombre base (por ejemplo, 'Ciencias Naturales')."""
+    if getattr(request.user, "role", None) != "utp":
+        return HttpResponseForbidden("No tienes permisos para realizar esta acción.")
+
+    if request.method == "POST":
+        nombre_asignatura = request.POST.get("nombre_asignatura")
+        docente_id = request.POST.get("docente_id")
+
+        if not nombre_asignatura or not docente_id:
+            messages.error(request, "Debes seleccionar una asignatura y un docente.")
+            return redirect("/cursos/?page=2")
+
+        try:
+            docente = Usuario.objects.get(id=docente_id, role="docente")
+        except Usuario.DoesNotExist:
+            messages.error(request, "El docente seleccionado no existe.")
+            return redirect("/cursos/?page=2")
+
+        # Buscar todas las asignaturas que contengan el nombre base (sin importar el curso)
+        asignaturas_afectadas = Asignatura.objects.filter(nombre__icontains=nombre_asignatura)
+        total = asignaturas_afectadas.count()
+
+        if total == 0:
+            messages.warning(request, f"No se encontraron asignaturas que coincidan con '{nombre_asignatura}'.")
+            return redirect("/cursos/?page=2")
+
+        # Actualizar en bloque
+        asignaturas_afectadas.update(profesor=docente)
+
+        messages.success(
+            request,
+            f"Se asignó correctamente a {docente.get_full_name() or docente.username} "
+            f"como profesor de todas las asignaturas que contienen '{nombre_asignatura}' "
+            f"({total} asignaturas actualizadas)."
+        )
+
+    return redirect("/cursos/?page=2")
+
+
+@login_required
+def eliminar_asignacion(request, asignacion_id):
+    """Elimina una asignación DocenteCurso."""
+    if getattr(request.user, "role", None) != "utp":
+        return HttpResponseForbidden("No tienes permisos para esta acción.")
+
+    asignacion = get_object_or_404(DocenteCurso, id=asignacion_id)
+
+    if request.method == "POST":
+        nombre_docente = asignacion.docente.get_full_name() or asignacion.docente.username
+        nombre_curso = asignacion.curso.nombre
+        asignacion.delete()
+        messages.success(request, f"Se eliminó la asignación de {nombre_docente} al curso {nombre_curso}.")
+        return redirect("usuarios:asignar_docente_curso")
+
+    return redirect("usuarios:asignar_docente_curso")

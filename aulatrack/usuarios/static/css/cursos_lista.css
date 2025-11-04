@@ -385,3 +385,53 @@ button.link-danger:hover,
   align-items: center;
   justify-content: center;
 }
+
+/* ==============================
+   Asignar docente globalmente
+   ============================== */
+.global-assign {
+  background: #fff;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  margin: 1.5rem 0;
+}
+
+.global-assign h3 {
+  margin-bottom: 0.8rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.global-assign form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.global-assign select {
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.global-assign .btn-prim {
+  background: linear-gradient(90deg, #7c3aed, #6d28d9);
+  color: #fff;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.global-assign .btn-prim:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
