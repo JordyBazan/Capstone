@@ -1,44 +1,151 @@
-.main{ background:#fff; color:#0f172a; }
-
-.page{
-  max-width: 680px;
-  margin: 16px 0;                 /* se alinea al contenido de tu layout */
+:root {
+  --bg: #f8fafc;
+  --text: #0f172a;
+  --text-strong: #111827;
+  --muted: #64748b;
+  --border: #e5e7eb;
+  --focus: #7c3aed;
+  --radius: 12px;
+  --shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  --transition: 0.25s ease;
+  --font: "Inter", "Poppins", sans-serif;
 }
 
-.form-card{
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:14px;
-  padding:1.25rem;
-  box-shadow:0 6px 18px rgba(2,6,23,.06);
+/* ----- Página general ----- */
+.page {
+  max-width: 600px;
+  margin: 3rem auto;
+  background: var(--bg);
+  font-family: var(--font);
+  color: var(--text);
 }
 
-/* Inputs full width y legibles */
-.field{ margin-bottom:1rem; }
-.label{ display:block; font-weight:700; color:#111827; margin-bottom:.35rem; }
-.form-card input[type="text"],
-.form-card textarea{
-  width:100%;
-  box-sizing:border-box;
-  border:1px solid #d1d5db;
-  border-radius:10px;
-  padding:.55rem .75rem;
-  background:#fff !important;
-  color:#111827 !important;
-}
-.form-card textarea{ min-height:120px; resize:vertical; }
-.form-card input:focus, .form-card textarea:focus{
-  border-color:#974be4;
-  box-shadow:0 0 0 3px rgba(151,75,228,.18);
-  outline:none;
+.page h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-strong);
+  margin-bottom: 0.3rem;
 }
 
-.actions{ display:flex; gap:.6rem; }
-.btn{
-  display:inline-flex; align-items:center; justify-content:center;
-  height:38px; padding:0 .95rem; border-radius:10px; font-weight:700;
-  border:1px solid #e5e7eb; background:#fff; color:#111827; text-decoration:none;
+.page .hint {
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
 }
-.btn:hover{ border-color:#974be4; box-shadow:0 0 0 3px rgba(151,75,228,.15); }
-.btn.primary{ background:#8b5cf6; border-color:#8b5cf6; color:#fff; }
-.btn.primary:hover{ background:#7c3aed; }
+
+/* ----- Formulario ----- */
+.form-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+}
+
+.form-card p {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.form-card label {
+  font-weight: 700;
+  color: var(--text-strong);
+  margin-bottom: 0.3rem;
+}
+
+.form-card input,
+.form-card select,
+.form-card textarea {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  color: var(--text);
+  background: #fff;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.form-card input:focus,
+.form-card select:focus,
+.form-card textarea:focus {
+  outline: none;
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
+
+/* ----- Botones ----- */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.btn {
+  border-radius: var(--radius);
+  padding: 0.6rem 1.1rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+
+/* Botón primario */
+.btn-prim {
+  background: var(--focus);
+  color: #fff;
+  border-color: var(--focus);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-prim::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.25);
+  transform: skewX(-20deg);
+  transition: left 0.5s ease;
+}
+
+.btn-prim:hover::after {
+  left: 120%;
+}
+
+.btn-prim:hover {
+  filter: brightness(1.05);
+}
+
+/* Botón secundario */
+.btn-secondary {
+  background: #fff;
+  color: var(--text-strong);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
+
+/* ----- Responsive ----- */
+@media (max-width: 576px) {
+  .page {
+    margin: 1.5rem;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .btn {
+    width: 100%;
+    text-align: center;
+  }
+}

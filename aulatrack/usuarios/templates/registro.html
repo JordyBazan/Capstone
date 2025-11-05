@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Registro{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/registro.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
@@ -38,7 +41,9 @@
       </div>
       {% endfor %}
 
-      <button type="submit" class="btn btn-primary w-100">Registrarse</button>
+      <br>
+
+      <button type="submit" class="btn-1 btn-primary w-100">Registrarse</button>
     </form>
 
     <p class="text-center mt-3">
