@@ -295,6 +295,7 @@
         <td class="cell-actions">
           <a class="link" href="{% url 'usuarios:editar_alumno' alumno.id %}">Editar</a>
           <a class="link link-danger" href="{% url 'usuarios:eliminar_alumno' alumno.id %}" onclick="return confirm('¿Estás seguro de que deseas eliminar a este alumno?');">Eliminar</a>
+          <a href="{% url 'usuarios:reporte_alumno' alumno.id %}" class="btn primary">Reporte académico</a>
         </td>
       </tr>
       {% empty %}

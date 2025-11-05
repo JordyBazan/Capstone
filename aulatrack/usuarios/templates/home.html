@@ -97,9 +97,10 @@
   {% endif %}
 {% endif %}
 
-{% if user.role == 'utp' %}
+
+{% if user.role == 'utp' or user.role == 'inspector' %}
   <div class="sectionTitle">Todos los Cursos</div>
-  <p class="hint">Vista de UTP: gestión de todos los cursos</p>
+  <p class="hint">Vista de {% if user.role == 'utp' %}UTP{% else %}Inspector{% endif %}: gestión de todos los cursos</p>
 
   <div class="courses">
     {% if cursos_todos %}
@@ -119,26 +120,22 @@
 
           <div class="actions">
             <a href="{% url 'usuarios:curso' curso.id %}" class="btn btn-primary">Entrar</a>
-            <a href="{% url 'usuarios:curso_editar' curso.id %}?from=home" class="btn btn-ghost">Editar</a>
-            <form method="post" action="{% url 'usuarios:curso_eliminar' curso.id %}?from=home"
-                  style="display:inline;"
-                  onsubmit="return confirm('¿Eliminar el curso «{{ curso.nombre }}»? Esta acción no se puede deshacer.');">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-danger">Eliminar</button>
-            </form>
+
+            {% if user.role == 'utp' %}
+              <a href="{% url 'usuarios:curso_editar' curso.id %}?from=home" class="btn btn-ghost">Editar</a>
+              <form method="post" action="{% url 'usuarios:curso_eliminar' curso.id %}?from=home"
+                    style="display:inline;"
+                    onsubmit="return confirm('¿Eliminar el curso «{{ curso.nombre }}»? Esta acción no se puede deshacer.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Eliminar</button>
+              </form>
+            {% endif %}
           </div>
         </article>
       {% endfor %}
     {% else %}
       <p class="muted">No hay cursos creados.</p>
     {% endif %}
-  </div>
-{% endif %}
-
-{% if not user.role %}
-  <div class="no-role" style="margin-top: 20px; text-align:center;">
-    <div class="sectionTitle">Sin Rol Asignado</div>
-    <p class="muted">No tienes un rol asignado aún. Contacta al administrador del sistema.</p>
   </div>
 {% endif %}
 {% endblock %}

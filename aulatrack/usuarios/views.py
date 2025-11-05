@@ -100,7 +100,6 @@ def home(request):
     # DOCENTE: solo sus cursos y asignaturas
     # =====================================================
     if user.role == "docente":
-        # Curso donde es profesor jefe
         curso_profesor_jefe = (
             Curso.objects
             .filter(profesor_jefe=user)
@@ -109,7 +108,6 @@ def home(request):
             .first()
         )
 
-        # Otros cursos donde dicta asignaturas
         cursos_docente = (
             Curso.objects
             .filter(asignaturas__profesor=user)
@@ -119,7 +117,6 @@ def home(request):
             .distinct()
         )
 
-        # Ordenar
         cursos_docente = list(cursos_docente)
         if ordenar == "basico_asc":
             cursos_docente.sort(key=lambda c: _clave_grado(c.nombre))
@@ -129,9 +126,9 @@ def home(request):
             cursos_docente.sort(key=lambda c: (c.nombre or "").lower())
 
     # =====================================================
-    # UTP: ver todos los cursos (para gestión)
+    # UTP e INSPECTOR: ver todos los cursos
     # =====================================================
-    elif user.role == "utp":
+    elif user.role in ["utp", "inspector"]:
         cursos_todos = list(
             Curso.objects
             .select_related("profesor_jefe")
@@ -153,7 +150,6 @@ def home(request):
         "cursos_docente": cursos_docente,
         "cursos_todos": cursos_todos,
     })
-
 
 
 
