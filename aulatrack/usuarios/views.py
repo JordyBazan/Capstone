@@ -42,7 +42,8 @@ from .forms import (
 # =========================================================
 
 def es_utp(user):
-    return hasattr(user, 'role') and user.role == 'utp'
+    # ✅ Permite tanto al rol UTP como al superusuario
+    return (hasattr(user, 'role') and user.role == 'utp') or user.is_superuser
 
 # =========================================================
 # Helper de orden por grado (1º→8º Básico, luego Medio, etc.)
@@ -99,7 +100,7 @@ def home(request):
     # =====================================================
     # DOCENTE: solo sus cursos y asignaturas
     # =====================================================
-    if user.role == "docente":
+    if getattr(user, "role", None) == "docente":
         curso_profesor_jefe = (
             Curso.objects
             .filter(profesor_jefe=user)
@@ -126,9 +127,9 @@ def home(request):
             cursos_docente.sort(key=lambda c: (c.nombre or "").lower())
 
     # =====================================================
-    # UTP e INSPECTOR: ver todos los cursos
+    # UTP, INSPECTOR y SUPERUSUARIO: ver todos los cursos
     # =====================================================
-    elif user.role in ["utp", "inspector"]:
+    elif user.is_superuser or getattr(user, "role", None) in ["utp", "inspector"]:
         cursos_todos = list(
             Curso.objects
             .select_related("profesor_jefe")
@@ -150,7 +151,6 @@ def home(request):
         "cursos_docente": cursos_docente,
         "cursos_todos": cursos_todos,
     })
-
 
 
 @login_required
@@ -242,8 +242,7 @@ def logout_view(request):
 # =========================================================
 @login_required
 def cursos_lista(request):
-    if getattr(request.user, "role", None) != "utp":
-        return HttpResponseForbidden("No tienes permisos para ver esta página.")
+
 
     page = request.GET.get("page", "1")
     curso_id = request.GET.get("curso")
@@ -1142,8 +1141,7 @@ def anotaciones_alumno(request, alumno_id):
 # Gestión de Usuarios (UTP)
 # =========================================================
 def gestion_usuario(request):
-    if getattr(request.user, "role", None) != 'utp':
-        return HttpResponseForbidden("No tienes permisos para ver esta página.")
+
 
     rol_seleccionado = request.GET.get('rol', '')
 
@@ -1438,8 +1436,7 @@ def asignar_docente_curso(request):
 @login_required
 def asignar_docente_global(request):
     """Asigna un docente a todas las asignaturas que contengan el mismo nombre base (por ejemplo, 'Ciencias Naturales')."""
-    if getattr(request.user, "role", None) != "utp":
-        return HttpResponseForbidden("No tienes permisos para realizar esta acción.")
+
 
     if request.method == "POST":
         nombre_asignatura = request.POST.get("nombre_asignatura")
@@ -1479,8 +1476,7 @@ def asignar_docente_global(request):
 @login_required
 def eliminar_asignacion(request, asignacion_id):
     """Elimina una asignación DocenteCurso."""
-    if getattr(request.user, "role", None) != "utp":
-        return HttpResponseForbidden("No tienes permisos para esta acción.")
+
 
     asignacion = get_object_or_404(DocenteCurso, id=asignacion_id)
 

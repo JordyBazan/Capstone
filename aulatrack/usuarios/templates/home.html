@@ -24,7 +24,7 @@
     </select>
   </form>
 
-  {% if user.role == 'utp' %}
+  {% if user.role == 'utp' or user.is_superuser %}
     <a class="topCta" href="{% url 'usuarios:crear_curso' %}?from=home">+ Nuevo curso</a>
   {% endif %}
 </div>
@@ -97,10 +97,9 @@
   {% endif %}
 {% endif %}
 
-
-{% if user.role == 'utp' or user.role == 'inspector' %}
+{% if user.role == 'utp' or user.role == 'inspector' or user.is_superuser %}
   <div class="sectionTitle">Todos los Cursos</div>
-  <p class="hint">Vista de {% if user.role == 'utp' %}UTP{% else %}Inspector{% endif %}: gestión de todos los cursos</p>
+  <p class="hint">Vista de {% if user.role == 'utp' or user.is_superuser %}UTP{% else %}Inspector{% endif %}: gestión de todos los cursos</p>
 
   <div class="courses">
     {% if cursos_todos %}
@@ -121,7 +120,7 @@
           <div class="actions">
             <a href="{% url 'usuarios:curso' curso.id %}" class="btn btn-primary">Entrar</a>
 
-            {% if user.role == 'utp' %}
+            {% if user.role == 'utp' or user.is_superuser %}
               <a href="{% url 'usuarios:curso_editar' curso.id %}?from=home" class="btn btn-ghost">Editar</a>
               <form method="post" action="{% url 'usuarios:curso_eliminar' curso.id %}?from=home"
                     style="display:inline;"
