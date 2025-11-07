@@ -51,7 +51,7 @@
                     <ul>
                         <li><a href="{% url 'usuarios:home_page' %}">Inicio</a></li>
 
-                        {# ✅ SUPERUSUARIO tiene acceso total #}
+                        {#  SUPERUSUARIO tiene acceso total #}
                         {% if user.is_superuser %}
                             <li><a href="{% url 'usuarios:cursos_lista' %}">Gestión Académica</a></li>
                             <li><a href="{% url 'usuarios:crear_curso' %}">Crear Curso</a></li>
@@ -62,7 +62,7 @@
                             <li><a href="{% url 'usuarios:historial_admin' %}">Historial</a></li>
                             <li><a href="{% url 'usuarios:asignar_docente_curso' %}">Asignar Docente a Curso</a></li>
 
-                        {# ✅ UTP sin acceso a Usuarios ni Historial #}
+                        {#  UTP sin acceso a Usuarios ni Historial #}
                         {% elif user.role == "utp" %}
                             <li><a href="{% url 'usuarios:cursos_lista' %}">Gestión Académica</a></li>
                             <li><a href="{% url 'usuarios:crear_curso' %}">Crear Curso</a></li>

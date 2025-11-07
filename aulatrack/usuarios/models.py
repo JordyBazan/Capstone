@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import RegexValidator
 from django.db.models.functions import Lower
+from django.utils import timezone
 
 # Validadores
 rut_validator = RegexValidator(
@@ -124,8 +125,19 @@ class Nota(models.Model):
     def __str__(self):
         return f"{self.evaluacion} - {self.valor} ({self.alumno})"
 
+    def detalle_registro(self):
+        """Texto útil para mostrar quién y cuándo registró."""
+        prof = self.profesor.get_full_name() or self.profesor.username
+        fecha = self.ultima_actualizacion.strftime("%d/%m/%Y %H:%M")
+        return f"{prof} · {fecha}"
+
+    def fue_editada_recientemente(self):
+        """Indica si la nota fue modificada hace menos de 24 horas."""
+        return (timezone.now() - self.ultima_actualizacion).days < 1
+
     class Meta:
         ordering = ["alumno", "asignatura", "evaluacion"]
+        unique_together = ("alumno", "asignatura", "numero")
 
 
 class Asistencia(models.Model):

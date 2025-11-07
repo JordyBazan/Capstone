@@ -56,12 +56,16 @@
           <td>{{ usuario.email }}</td>
           <td>{{ usuario.get_role_display }}</td>
           <td class="cell-actions">
-            <a class="link" href="{% url 'usuarios:editar_usuario' usuario.id %}">Editar</a>
-            <a class="link text-danger"
-              href="{% url 'usuarios:eliminar_usuario' usuario.id %}"
-              onclick="return confirm('¿Estás seguro de que deseas eliminar este usuario?');">
-              Eliminar
-            </a>
+            {% if not usuario.is_superuser %}
+              <a class="link" href="{% url 'usuarios:editar_usuario' usuario.id %}">Editar</a>
+              <a class="link text-danger"
+                href="{% url 'usuarios:eliminar_usuario' usuario.id %}"
+                onclick="return confirm('¿Estás seguro de que deseas eliminar este usuario?');">
+                Eliminar
+              </a>
+            {% else %}
+              <span class="text-muted">(Tú) Administrador del sistema</span>
+            {% endif %}
           </td>
         </tr>
       {% empty %}

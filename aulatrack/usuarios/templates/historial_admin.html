@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+
 {% block title %}Historial de Acciones{% endblock %}
 
 {% block extra_css %}
@@ -64,7 +65,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for log in page_obj %}
+        {% for log in logs %}
         <tr class="
           {% if log.action_flag == 1 %}bg-creacion
           {% elif log.action_flag == 2 %}bg-edicion
@@ -80,11 +81,13 @@
               <span class="tag tag-blue">Edición</span>
             {% elif log.action_flag == 3 %}
               <span class="tag tag-red">Eliminación</span>
+            {% else %}
+              <span class="tag">Otro</span>
             {% endif %}
           </td>
           <td>{{ log.content_type.model|capfirst }}</td>
           <td>{{ log.object_repr }}</td>
-          <td class="muted">{{ log.change_message }}</td>
+          <td class="muted">{{ log.change_message|default:"—" }}</td>
           <td class="center">
             <form method="post" action="{% url 'usuarios:eliminar_log' log.id %}" style="display:inline;">
               {% csrf_token %}
@@ -98,17 +101,6 @@
         {% endfor %}
       </tbody>
     </table>
-  </div>
-
-  <!-- Paginación -->
-  <div class="hist-pagination">
-    {% if page_obj.has_previous %}
-      <a href="?page={{ page_obj.previous_page_number }}" class="btn-small">⏮ Anterior</a>
-    {% endif %}
-    <span class="page-info">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
-    {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}" class="btn-small">Siguiente ⏭</a>
-    {% endif %}
   </div>
 
 </main>

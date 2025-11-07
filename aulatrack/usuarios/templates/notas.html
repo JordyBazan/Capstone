@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% load static dict_extras %}
+{% load static %}
 
 {% block title %}Registro de Notas - AulaTrack{% endblock %}
 
 {% block extra_css %}
 <style>
-/* =======================================================
-    Estilos visuales de la página de notas
-   ======================================================= */
+/* ============================
+   Estilos generales
+=============================== */
 .sectionTitle {
   font-size: 1.6rem;
   font-weight: 800;
@@ -19,7 +20,6 @@
   font-size: 0.95rem;
   margin-bottom: 12px;
 }
-
 .divider {
   width: 100%;
   height: 2px;
@@ -28,13 +28,13 @@
   margin-bottom: 1.2rem;
 }
 
+/* Tabla principal */
 .grades-scroll {
   overflow-x: auto;
   border-radius: 12px;
   background: #fff;
   box-shadow: 0 4px 14px rgba(124, 58, 237, 0.06);
 }
-
 .grades-table {
   width: 100%;
   border-collapse: collapse;
@@ -42,7 +42,6 @@
   text-align: center;
   font-size: 0.95rem;
 }
-
 .grades-table th {
   background: #f8fafc;
   color: #374151;
@@ -50,12 +49,16 @@
   padding: 10px;
   border-bottom: 2px solid #e5e7eb;
 }
-
 .grades-table td {
   border-bottom: 1px solid #e5e7eb;
   padding: 8px;
+  vertical-align: middle;
+}
+.grades-table tr:hover {
+  background: #f9fafb;
 }
 
+/* Inputs */
 .grades-table input[type="number"] {
   width: 60px;
   padding: 4px;
@@ -72,12 +75,29 @@
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
   outline: none;
 }
-.grades-table input.low { color: #dc2626; font-weight: 700; }
-.grades-table input.high { color: #16a34a; font-weight: 700; }
-
-tfoot td {
+.grades-table input.low {
+  color: #dc2626;
   font-weight: 700;
-  background: #f9fafb;
+}
+.grades-table input.high {
+  color: #16a34a;
+  font-weight: 700;
+}
+.grades-table input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* Promedio */
+.promedio {
+  font-weight: 700;
+}
+.promedio.ok {
+  color: #16a34a;
+}
+.promedio.bad {
+  color: #dc2626;
 }
 
 /* Botón guardar */
@@ -100,7 +120,7 @@ tfoot td {
   box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
 }
 
-/* Mensajes de éxito */
+/* Mensajes */
 .msg.success {
   background: #dcfce7;
   color: #065f46;
@@ -120,8 +140,9 @@ tfoot td {
     {% endfor %}
   </ul>
 {% endif %}
+
 <h2 class="sectionTitle">{{ asignatura.nombre }} - {{ curso.año }} {{ curso.nombre }}</h2>
-<p class="hint">Registro de notas</p>
+<p class="hint">Registro de notas del curso. {% if puede_editar %}Puedes editar las notas.{% else %}Solo lectura.{% endif %}</p>
 <div class="divider"></div>
 
 <form method="post">
@@ -140,40 +161,47 @@ tfoot td {
 
       <tbody>
         {% for alumno, data in notas_por_alumno.items %}
-        <tr>
-          <td style="text-align:left;">{{ alumno.nombres }} {{ alumno.apellidos }}</td>
+          <tr>
+            <td style="text-align:left; font-weight:600;">
+              {{ alumno.apellidos }} {{ alumno.nombres }}
+            </td>
 
-          {% for i in columnas_notas %}
-            {% with nota=data.notas|index:i %}
-              <td>
-                <input type="number" step="0.1" min="1.0" max="7.0"
-                       name="nota_{{ alumno.id }}_{{ i }}"
-                       value="{{ nota|default_if_none:'' }}">
-              </td>
-            {% endwith %}
-          {% endfor %}
+            {% for i in columnas_notas %}
+              {% with nota=data.notas|index:i %}
+                <td>
+                  <input type="number"
+                         step="0.1" min="1.0" max="7.0"
+                         name="nota_{{ alumno.id }}_{{ i }}"
+                         value="{{ nota.valor|default_if_none:'' }}"
+                         {% if not puede_editar %}disabled{% endif %}
+                         class="{% if nota and nota.valor < 4 %}low{% elif nota and nota.valor >= 4 %}high{% endif %}">
+                </td>
+              {% endwith %}
+            {% endfor %}
 
-          <td class="promedio">
-            {% if data.promedio %}
-              {{ data.promedio }}
-            {% else %}
-              -
-            {% endif %}
-          </td>
-        </tr>
+            <td class="promedio {% if data.promedio and data.promedio < 4 %}bad{% elif data.promedio %}ok{% endif %}">
+              {% if data.promedio %}
+                {{ data.promedio|floatformat:1 }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
+  {% if puede_editar %}
   <div class="save-container">
     <button type="submit" class="save-btn"> Guardar Notas</button>
   </div>
+  {% endif %}
 </form>
 
 <!-- =======================================================
-      Script: colores + promedio dinámico persistente
-     ======================================================= -->
+      Script: Colores dinámicos y promedio en vivo
+======================================================= -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const inputs = document.querySelectorAll('.grades-table input[type="number"]');
@@ -188,24 +216,27 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const recalcularPromedio = (fila) => {
-    const celdas = fila.querySelectorAll('input[type="number"]');
+    const celdas = fila.querySelectorAll('input[type="number"]:not(:disabled)');
     let sum = 0, count = 0;
     celdas.forEach(inp => {
       const v = parseFloat(inp.value);
       if (!isNaN(v)) { sum += v; count++; }
     });
     const prom = count ? (sum / count).toFixed(1) : '-';
-    fila.querySelector('.promedio').textContent = prom;
+    const promCell = fila.querySelector('.promedio');
+    promCell.textContent = prom;
+    promCell.classList.remove('ok', 'bad');
+    if (prom !== '-' && prom < 4) promCell.classList.add('bad');
+    else if (prom !== '-') promCell.classList.add('ok');
   };
 
-  // Inicializa colores y promedios en carga
-  const filas = document.querySelectorAll('.grades-table tbody tr');
-  filas.forEach(fila => {
+  // Inicializar colores y promedios
+  document.querySelectorAll('.grades-table tbody tr').forEach(fila => {
     fila.querySelectorAll('input[type="number"]').forEach(actualizarColor);
     recalcularPromedio(fila);
   });
 
-  // Detecta cambios
+  // Actualizar en tiempo real
   inputs.forEach(input => {
     input.addEventListener('input', e => {
       actualizarColor(e.target);

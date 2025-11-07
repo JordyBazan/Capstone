@@ -42,7 +42,7 @@ from .forms import (
 # =========================================================
 
 def es_utp(user):
-    # ✅ Permite tanto al rol UTP como al superusuario
+    #  Permite tanto al rol UTP como al superusuario
     return (hasattr(user, 'role') and user.role == 'utp') or user.is_superuser
 
 # =========================================================
@@ -444,10 +444,10 @@ def asignar_asignaturas_curso(request, curso_id):
                 a.curso = curso
                 a.save()
 
-            messages.success(request, f"✅ Se asignaron {nuevas_asignaturas.count()} asignaturas al curso {curso}.")
+            messages.success(request, f" Se asignaron {nuevas_asignaturas.count()} asignaturas al curso {curso}.")
             return redirect("usuarios:cursos_lista")
         else:
-            messages.error(request, "❌ Error al procesar el formulario.")
+            messages.error(request, " Error al procesar el formulario.")
     else:
         # Solo mostrar asignaturas sin curso o ya asignadas a este curso
         form = AsignarAsignaturasForm(initial={
@@ -527,7 +527,7 @@ def asignar_profesor_jefe(request):
             curso.save(update_fields=["profesor_jefe"])
             registrar_accion(request.user, curso, CHANGE, f"Profesor Jefe asignado: {docente.get_full_name() or docente.username}")
             messages.success(request, f"Se asignó a «{docente.username}» como profesor jefe de «{curso}».")
-            return redirect("usuarios:cursos_lista")  # ✅ corregido
+            return redirect("usuarios:cursos_lista")  #  corregido
         messages.error(request, "Revisa los errores del formulario.")
     else:
         form = AsignarProfesorJefeForm(initial_curso=initial_curso)
@@ -982,8 +982,8 @@ def asistencia(request, curso_id):
 def seleccionar_asignatura(request, curso_id):
     curso = get_object_or_404(Curso, id=curso_id)
 
-    # Caso 1: UTP o admin -> ve todas las asignaturas
-    if getattr(request.user, "role", None) in ["utp", "admin"]:
+    # Caso 1: UTP o Superusuario -> puede ver TODAS las asignaturas del curso
+    if getattr(request.user, "role", None) == "utp" or request.user.is_superuser:
         asignaturas = Asignatura.objects.filter(curso=curso).order_by("nombre")
 
     # Caso 2: Docente -> puede ver todas si es profesor jefe de este curso
@@ -1003,10 +1003,12 @@ def seleccionar_asignatura(request, curso_id):
         asignaturas = Asignatura.objects.none()
 
     context = {
-        'curso': curso,
-        'asignaturas': asignaturas,
+        "curso": curso,
+        "asignaturas": asignaturas,
     }
-    return render(request, 'seleccionar_asignatura.html', context)
+    return render(request, "seleccionar_asignatura.html", context)
+
+
 
 @login_required
 def libro_notas(request, curso_id, asignatura_id):
@@ -1019,76 +1021,91 @@ def libro_notas(request, curso_id, asignatura_id):
     columnas_notas = range(1, 11)
 
     # ===========================
-    # Si el usuario guarda notas
+    # Validación de permisos
     # ===========================
-    if request.method == 'POST':
+    puede_editar = (
+        request.user.role == "docente"
+        and asignatura.profesor_id == request.user.id
+    ) or request.user.role in ["utp"] or request.user.is_superuser
+
+    # ===========================
+    # Guardar notas (solo docente o UTP)
+    # ===========================
+    if request.method == "POST":
+        if not puede_editar:
+            messages.error(request, " No tienes permisos para modificar estas notas.")
+            return redirect("usuarios:libro_notas", curso_id=curso.id, asignatura_id=asignatura.id)
+
         cambios = 0
+        cambios_detalle = []
+
         for alumno in alumnos:
             for i in columnas_notas:
-                key = f'nota_{alumno.id}_{i}'
+                key = f"nota_{alumno.id}_{i}"
                 valor = request.POST.get(key)
+
                 if valor:
                     try:
                         valor = float(valor)
                     except ValueError:
                         continue
 
-                    # 🔹 Crear o actualizar nota SOLO de esta asignatura
-                    Nota.objects.update_or_create(
+                    nota, created = Nota.objects.update_or_create(
                         alumno=alumno,
-                        asignatura=asignatura,  # asignatura actual
+                        asignatura=asignatura,
                         numero=i,
                         defaults={
-                            'valor': valor,
-                            'profesor': request.user,
-                            'evaluacion': f"nota_{i}",
-                        }
+                            "valor": valor,
+                            "profesor": request.user,
+                            "evaluacion": f"Nota {i}",
+                        },
                     )
                     cambios += 1
+                    cambios_detalle.append(
+                        f"{'Creada' if created else 'Actualizada'} Nota {i}: {valor:.1f} para {alumno.nombres} {alumno.apellidos}"
+                    )
 
-        # 🔹 Registrar acción
+        # Registrar acción (solo una entrada consolidada)
         registrar_accion(
             request.user,
             asignatura,
             CHANGE,
-            f"Notas registradas/actualizadas: {cambios} cambios en {curso} - {asignatura.nombre}"
+            f" Modificación de notas en {curso.nombre} - {asignatura.nombre}: {cambios} cambios.\n"
+            + "\n".join(cambios_detalle[:10])
         )
-        messages.success(request, " Notas guardadas correctamente.")
-        return redirect('usuarios:libro_notas', curso_id=curso.id, asignatura_id=asignatura.id)
+        messages.success(request, f" {cambios} notas guardadas correctamente.")
+        return redirect("usuarios:libro_notas", curso_id=curso.id, asignatura_id=asignatura.id)
 
     # ===========================
-    # Mostrar solo notas de esta asignatura
+    # Mostrar notas
     # ===========================
     notas_por_alumno = {}
     for alumno in alumnos:
-        # 🔹 Traer solo las notas del alumno en la asignatura actual
-        notas_queryset = Nota.objects.filter(alumno=alumno, asignatura=asignatura)
-        notas_dict = {n.numero: n.valor for n in notas_queryset}
+        notas_queryset = Nota.objects.filter(alumno=alumno, asignatura=asignatura).order_by("numero")
+        notas_dict = {n.numero: n for n in notas_queryset}
 
-        # Crear lista ordenada del 1 al 10
         notas_lista = [notas_dict.get(i, None) for i in columnas_notas]
-
-        # Calcular promedio (solo de esta asignatura)
-        notas_validas = [v for v in notas_lista if v is not None]
-        promedio = round(sum(notas_validas) / len(notas_validas), 1) if notas_validas else None
+        valores = [n.valor for n in notas_lista if n and n.valor is not None]
+        promedio = round(sum(valores) / len(valores), 1) if valores else None
 
         notas_por_alumno[alumno] = {
-            'notas': notas_lista,
-            'promedio': promedio
+            "notas": notas_lista,
+            "promedio": promedio,
         }
 
     # ===========================
-    # Contexto
+    # Contexto para el template
     # ===========================
     context = {
-        'curso': curso,
-        'asignatura': asignatura,
-        'alumnos': alumnos,
-        'notas_por_alumno': notas_por_alumno,
-        'columnas_notas': columnas_notas,
+        "curso": curso,
+        "asignatura": asignatura,
+        "alumnos": alumnos,
+        "notas_por_alumno": notas_por_alumno,
+        "columnas_notas": columnas_notas,
+        "puede_editar": puede_editar,
     }
 
-    return render(request, 'notas.html', context)
+    return render(request, "notas.html", context)
 
 # =========================================================
 # Anotaciones (CON REGISTRO)
@@ -1160,7 +1177,13 @@ def gestion_usuario(request):
 
 def editar_usuario(request, id):
     usuario = get_object_or_404(Usuario, id=id)
-    roles = Usuario.ROLE_CHOICES  # Tus roles definidos en el modelo
+
+    #  Evitar editar el superusuario
+    if usuario.is_superuser:
+        messages.warning(request, " No puedes editar al usuario administrador del sistema.")
+        return redirect('usuarios:gestion_usuario')
+
+    roles = Usuario.ROLE_CHOICES
 
     if request.method == 'POST':
         usuario.nombres = request.POST.get('nombres')
@@ -1181,29 +1204,39 @@ def editar_usuario(request, id):
 
 def eliminar_usuario(request, id):
     usuario = get_object_or_404(Usuario, id=id)
-    if request.method == "POST" or request.method == "GET":
+
+    #  Bloquear eliminación del superusuario
+    if usuario.is_superuser:
+        messages.warning(request, " No puedes eliminar al usuario administrador del sistema.")
+        return redirect('usuarios:gestion_usuario')
+
+    if request.method in ["POST", "GET"]:
         registrar_accion(request.user, usuario, DELETION, "Usuario eliminado desde vista personalizada")
         usuario.delete()
-        messages.success(request, "Usuario eliminado correctamente.")
+        messages.success(request, f"Usuario {usuario.username} eliminado correctamente.")
         return redirect('usuarios:gestion_usuario')
-    # return render(request, 'usuario_eliminar_confirmar.html', {'usuario': usuario})
+
 
 # =========================================================
 # Historial de Acciones (Admin Log)
 # =========================================================
 @user_passes_test(es_utp)
 def historial_acciones_admin(request):
-    """Historial profesional con filtros, colores y exportación PDF elegante y legible."""
+    """Historial completo de todas las acciones sin paginación, con columnas alineadas."""
     import io
     from django.template.loader import render_to_string
+    from django.utils import timezone
+    from reportlab.lib.pagesizes import landscape, A4
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import mm
 
-    # =============================
-    # FILTROS Y DATOS
-    # =============================
     logs = (
         LogEntry.objects.select_related("user", "content_type")
         .order_by("-action_time")
     )
+
     accion = request.GET.get("accion")
     usuario_id = request.GET.get("usuario")
     modelo = request.GET.get("modelo")
@@ -1215,132 +1248,93 @@ def historial_acciones_admin(request):
     if modelo:
         logs = logs.filter(content_type__model=modelo.lower())
 
-    # =============================
-    # EXPORTACIÓN PDF
-    # =============================
     if "pdf" in request.GET:
-        try:
-            # Intentar con WeasyPrint
-            from weasyprint import HTML
-            html_str = render_to_string("historial_pdf.html", {
-                "logs": logs,
-                "usuario": request.user,
-                "fecha_gen": timezone.localtime(),
-            })
-            pdf = HTML(string=html_str, base_url=request.build_absolute_uri()).write_pdf()
-        except Exception:
-            # -----------------------------
-            # Fallback con ReportLab
-            # -----------------------------
-            from reportlab.lib.pagesizes import landscape, A4
-            from reportlab.lib import colors
-            from reportlab.platypus import (
-                SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-            )
-            from reportlab.lib.styles import getSampleStyleSheet
-            from reportlab.lib.units import mm
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=landscape(A4),
+            leftMargin=18 * mm,
+            rightMargin=18 * mm,
+            topMargin=18 * mm,
+            bottomMargin=18 * mm,
+        )
 
-            buffer = io.BytesIO()
-            doc = SimpleDocTemplate(
-                buffer,
-                pagesize=landscape(A4),  # 🔹 horizontal para más espacio
-                leftMargin=10 * mm,
-                rightMargin=10 * mm,
-                topMargin=14 * mm,
-                bottomMargin=14 * mm,
-            )
-            styles = getSampleStyleSheet()
-            story = []
+        styles = getSampleStyleSheet()
+        style_normal = ParagraphStyle(
+            "normal",
+            fontSize=8,
+            leading=10,
+            textColor=colors.HexColor("#111827"),
+        )
+        style_accion = ParagraphStyle(
+            "accion",
+            fontSize=8,
+            leading=10,
+            alignment=1,  # centrado
+        )
 
-            # Título y metadatos
-            story.append(Paragraph("<b>Historial de Acciones - AulaTrack</b>", styles["Title"]))
-            story.append(Paragraph(
-                f"Generado por: {request.user.get_full_name() or request.user.username}", styles["Normal"]
-            ))
-            story.append(Paragraph(
-                f"Fecha: {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", styles["Normal"]
-            ))
-            story.append(Spacer(1, 8))
+        story = []
+        story.append(Paragraph("<b>Historial de Acciones - AulaTrack</b>", styles["Title"]))
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(f"<b>Generado por:</b> {request.user.get_full_name() or request.user.username}", styles["Normal"]))
+        story.append(Paragraph(f"<b>Fecha:</b> {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", styles["Normal"]))
+        story.append(Spacer(1, 10))
 
-            # Encabezados y datos
-            data = [["Fecha", "Usuario", "Acción", "Modelo", "Objeto", "Detalle"]]
+        data = [["Fecha", "Usuario", "Acción", "Modelo", "Objeto", "Detalle"]]
 
-            for log in logs:
-                if log.action_flag == 1:
-                    accion_str = "Creación"
-                elif log.action_flag == 2:
-                    accion_str = "Edición"
-                elif log.action_flag == 3:
-                    accion_str = "Eliminación"
-                else:
-                    accion_str = "Otro"
+        for log in logs:
+            if log.action_flag == 1:
+                accion_str = "<font color='#16a34a'><b>Creación</b></font>"
+            elif log.action_flag == 2:
+                accion_str = "<font color='#2563eb'><b>Edición</b></font>"
+            elif log.action_flag == 3:
+                accion_str = "<font color='#dc2626'><b>Eliminación</b></font>"
+            else:
+                accion_str = "<font color='#6b7280'><b>Otro</b></font>"
 
-                data.append([
-                    log.action_time.strftime("%d/%m/%Y %H:%M"),
-                    log.user.get_full_name() or log.user.username,
-                    accion_str,
-                    log.content_type.model,
-                    log.object_repr,
-                    log.change_message or "",
-                ])
+            detalle = log.change_message or "—"
+            detalle = detalle.replace("\n", "<br/>• ")
+            detalle = f"<font color='#334155'>• {detalle}</font>"
 
-            # 🔹 Definir anchos equilibrados para A4 horizontal
-            col_widths = [25 * mm, 35 * mm, 25 * mm, 25 * mm, 40 * mm, 85 * mm]
+            data.append([
+                Paragraph(log.action_time.strftime("%d/%m/%Y %H:%M"), style_normal),
+                Paragraph(log.user.get_full_name() or log.user.username, style_normal),
+                Paragraph(accion_str, style_accion),
+                Paragraph(log.content_type.model.capitalize(), style_normal),
+                Paragraph(log.object_repr or "—", style_normal),
+                Paragraph(detalle, style_normal),
+            ])
 
-            # 🔹 Convertir texto largo en párrafos envolventes
-            wrap_style = styles["Normal"]
-            wrap_style.fontSize = 8
-            wrap_style.leading = 9
+        # 🔹 Ajuste de anchos balanceados
+        table = Table(
+            data,
+            repeatRows=1,
+            colWidths=[25 * mm, 30 * mm, 25 * mm, 35 * mm, 55 * mm, 110 * mm],
+        )
 
-            wrapped_data = []
-            for row in data:
-                wrapped_row = []
-                for cell in row:
-                    if isinstance(cell, str):
-                        wrapped_row.append(Paragraph(cell, wrap_style))
-                    else:
-                        wrapped_row.append(cell)
-                wrapped_data.append(wrapped_row)
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f1f5f9")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#111827")),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 9),
+            ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#cbd5e1")),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+            ("LEFTPADDING", (0, 0), (-1, -1), 5),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]))
 
-            # Crear tabla
-            table = Table(wrapped_data, repeatRows=1, colWidths=col_widths)
-            table.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f0f0f0")),
-                ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
-                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 3),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 3),
-                ("TOPPADDING", (0, 0), (-1, -1), 2),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1),
-                    [colors.white, colors.HexColor("#fafafa")]),
-            ]))
-
-            story.append(table)
-
-            # Pie de página
-            story.append(Spacer(1, 10))
-            story.append(Paragraph(
-                "<i>Documento generado automáticamente por AulaTrack</i>", styles["Normal"]
-            ))
-
-            # Construcción del PDF
-            doc.build(story)
-            pdf = buffer.getvalue()
-            buffer.close()
+        story.append(table)
+        doc.build(story)
+        pdf = buffer.getvalue()
+        buffer.close()
 
         response = HttpResponse(pdf, content_type="application/pdf")
         response["Content-Disposition"] = 'attachment; filename="Historial_AulaTrack.pdf"'
         return response
-
-    # =============================
-    # PAGINACIÓN (vista normal)
-    # =============================
-    paginator = Paginator(logs, 25)
-    page_obj = paginator.get_page(request.GET.get("page"))
 
     usuarios = Usuario.objects.all().order_by("first_name", "last_name")
     modelos = (
@@ -1350,7 +1344,7 @@ def historial_acciones_admin(request):
     )
 
     return render(request, "historial_admin.html", {
-        "page_obj": page_obj,
+        "logs": logs,
         "usuarios": usuarios,
         "modelos": modelos,
         "accion_filtrada": accion,
