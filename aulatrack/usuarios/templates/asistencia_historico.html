@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Histórico de Asistencia - {{ curso.nombre }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/asistencia.css' %}">
+<style>
+  .page-switch {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 10px;
+  }
+  .page-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    background: #f3f4f6;
+    text-decoration: none;
+    color: #111827;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+  .page-btn:hover {
+    background: #e5e7eb;
+  }
+  .page-btn.active {
+    background: #2563eb;
+    color: white;
+  }
+  .asistencia-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .asistencia-card h3 {
+    margin-top: 0;
+    color: #1e3a8a;
+  }
+  .asistencia-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+  }
+  .asistencia-tabla th, .asistencia-tabla td {
+    border: 1px solid #e5e7eb;
+    padding: 6px 10px;
+    text-align: left;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="sectionTitle">Histórico de Asistencia - {{ curso.nombre }}</h2>
+<p class="hint">Revisión de asistencia pasada</p>
+
+<div class="page-switch">
+  <a href="?page=1" class="page-btn">Registrar asistencia</a>
+  <a href="?page=2" class="page-btn active">Ver histórico</a>
+</div>
+<div class="divider"></div>
+
+{% for dia in asistencia_por_dia %}
+  <div class="asistencia-card">
+    <h3>{{ dia.fecha }}</h3>
+    <p>
+      <b>Presentes:</b> {{ dia.presentes }}/{{ dia.total }} |
+      <b>Asistencia:</b> {{ dia.porcentaje }}%
+    </p>
+
+    <table class="asistencia-tabla">
+      <thead>
+        <tr><th>Alumno</th><th>Estado</th></tr>
+      </thead>
+      <tbody>
+        {% for a in dia.registros %}
+        <tr
+          {% if a.estado == 'Presente' %}
+            style="color:#16a34a;"
+          {% elif a.estado == 'Ausente' %}
+            style="color:#dc2626;"
+          {% else %}
+            style="color:#facc15;"
+          {% endif %}
+        >
+          <td>{{ a.alumno.nombres }} {{ a.alumno.apellidos }}</td>
+          <td><b>{{ a.estado }}</b></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% empty %}
+  <p>No hay registros de asistencia anteriores.</p>
+{% endfor %}
+{% endblock %}

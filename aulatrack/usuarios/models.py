@@ -141,20 +141,32 @@ class Nota(models.Model):
 
 
 class Asistencia(models.Model):
-    fecha = models.DateField(auto_now_add=True)
-    estado = models.CharField(max_length=10)  # Presente, Ausente, Justificado
-    alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
-    curso = models.ForeignKey(Curso, on_delete=models.CASCADE)
+    ESTADOS = [
+        ("Presente", "Presente"),
+        ("Ausente", "Ausente"),
+        ("Justificado", "Justificado"),
+    ]
+
+    fecha = models.DateField(
+        verbose_name="Fecha",
+        help_text="Selecciona la fecha de asistencia",
+        null=False,
+        blank=False
+    )
+    estado = models.CharField(max_length=15, choices=ESTADOS)
+    alumno = models.ForeignKey("Alumno", on_delete=models.CASCADE)
+    curso = models.ForeignKey("Curso", on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.alumno} - {self.fecha} ({self.estado})"
 
 
+
 class Anotacion(models.Model):
     texto = models.TextField()
     fecha = models.DateField(auto_now_add=True)
-    alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
-    profesor = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    alumno = models.ForeignKey('Alumno', on_delete=models.CASCADE)
+    profesor = models.ForeignKey('Usuario', on_delete=models.CASCADE)
 
     def __str__(self):
         return f"Anotación de {self.profesor} para {self.alumno} el {self.fecha}"

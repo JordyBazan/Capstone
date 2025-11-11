@@ -836,7 +836,7 @@ def reporte_alumno(request, alumno_id):
     story.append(Spacer(1, 6*mm))
 
     # Tabla de notas (N1..N11 + Prom.)
-    encabezados = ["Asignatura"] + [f"N{i}" for i in range(1, 12)] + ["Prom."]
+    encabezados = ["Asignatura"] + [f"N{i}" for i in range(1, 11)] + ["Prom."]
     data = [encabezados]
 
     # Estilo de celda centrado
@@ -851,7 +851,7 @@ def reporte_alumno(request, alumno_id):
             fila.append(Paragraph(f"<font color='{color}'>{n:.1f}</font>", cell_style))
 
         # Completar celdas hasta 11 notas
-        faltantes = 11 - len(a["notas"])
+        faltantes = 10 - len(a["notas"])
         for _ in range(max(faltantes, 0)):
             fila.append(Paragraph("", cell_style))
 
@@ -926,54 +926,80 @@ def reporte_alumno(request, alumno_id):
 # =========================================================
 @login_required
 def asistencia(request, curso_id):
+    from datetime import date
     curso = get_object_or_404(Curso, id=curso_id)
     alumnos = Alumno.objects.filter(curso=curso).order_by('apellidos', 'nombres')
+    page = request.GET.get('page', '1')
 
-    if request.method == 'POST':
-        fecha_str = request.POST.get('fecha')
-        if fecha_str:
-            fecha = date.fromisoformat(fecha_str)
-        else:
-            fecha = date.today()
+    # ================================
+    # PAGE 1 - Registrar asistencia
+    # ================================
+    if page == "1":
+        if request.method == 'POST':
+            fecha_str = request.POST.get('fecha')
+            fecha = date.fromisoformat(fecha_str) if fecha_str else date.today()
+            cambios = 0
+            for alumno in alumnos:
+                estado = request.POST.get(f"estado_{alumno.id}")
+                if estado:
+                    Asistencia.objects.update_or_create(
+                        alumno=alumno,
+                        curso=curso,
+                        fecha=fecha,
+                        defaults={'estado': estado},
+                    )
+                    cambios += 1
 
-        cambios = 0
-        for alumno in alumnos:
-            estado = request.POST.get(f"estado_{alumno.id}")
-            if estado:
-                obj, created = Asistencia.objects.update_or_create(
-                    alumno=alumno,
-                    curso=curso,
-                    fecha=fecha,
-                    defaults={'estado': estado}
-                )
-                cambios += 1
+            messages.success(request, f"Asistencia guardada correctamente ({cambios} registros).")
+            return redirect(f"{reverse('usuarios:asistencia', args=[curso.id])}?page=1")
 
-        #  Registrar una sola acción resumen en el curso
-        registrar_accion(
-            request.user,
-            curso,
-            CHANGE,
-            f"Asistencia guardada para {cambios} registro(s) en fecha {fecha.isoformat()}"
+        # Estado actual (fecha seleccionada o hoy)
+        fecha_filtrada = request.GET.get('fecha') or date.today().isoformat()
+        asistencias = Asistencia.objects.filter(curso=curso, fecha=fecha_filtrada)
+        estados = {a.alumno.id: a.estado for a in asistencias}
+
+        return render(request, 'asistencia.html', {
+            'curso': curso,
+            'alumnos': alumnos,
+            'estados': estados,
+            'today': date.today(),
+            'page': '1',
+        })
+
+    # ================================
+    # PAGE 2 - Ver histórico
+    # ================================
+    elif page == "2":
+        asistencias = (
+            Asistencia.objects
+            .filter(curso=curso)
+            .select_related('alumno')
+            .order_by('-fecha', 'alumno__apellidos')
         )
 
-        messages.success(request, "Asistencia guardada correctamente.")
-        return redirect('usuarios:asistencia', curso_id=curso.id)
+        # Agrupar por fecha
+        from itertools import groupby
+        from operator import attrgetter
+        asistencia_por_dia = []
+        for fecha, registros in groupby(asistencias, key=attrgetter('fecha')):
+            registros = list(registros)
+            total = len(registros)
+            presentes = sum(1 for a in registros if a.estado.lower() == "presente")
+            porcentaje = round((presentes / total) * 100, 1) if total > 0 else 0
+            asistencia_por_dia.append({
+                'fecha': fecha,
+                'registros': registros,
+                'total': total,
+                'presentes': presentes,
+                'porcentaje': porcentaje,
+            })
 
-    # Filtrado por fecha (GET)
-    fecha_filtrada = request.GET.get('fecha')
-    if fecha_filtrada:
-        asistencias = Asistencia.objects.filter(curso=curso, fecha=fecha_filtrada)
-    else:
-        asistencias = Asistencia.objects.filter(curso=curso, fecha=date.today())
+        return render(request, 'asistencia_historico.html', {
+            'curso': curso,
+            'asistencia_por_dia': asistencia_por_dia,
+            'page': '2',
+        })
 
-    estados = {a.alumno.id: a.estado for a in asistencias}
-
-    return render(request, 'asistencia.html', {
-        'curso': curso,
-        'alumnos': alumnos,
-        'estados': estados,
-        'today': date.today(),
-    })
 
 # =========================================================
 # Notas (CON REGISTRO)
@@ -1029,11 +1055,11 @@ def libro_notas(request, curso_id, asignatura_id):
     ) or request.user.role in ["utp"] or request.user.is_superuser
 
     # ===========================
-    # Guardar notas (solo docente o UTP)
+    # Guardar notas
     # ===========================
     if request.method == "POST":
         if not puede_editar:
-            messages.error(request, " No tienes permisos para modificar estas notas.")
+            messages.error(request, "No tienes permisos para modificar estas notas.")
             return redirect("usuarios:libro_notas", curso_id=curso.id, asignatura_id=asignatura.id)
 
         cambios = 0
@@ -1045,11 +1071,21 @@ def libro_notas(request, curso_id, asignatura_id):
                 valor = request.POST.get(key)
 
                 if valor:
+                    # 🔹 Normalizar valor (coma → punto, eliminar espacios)
+                    valor = valor.replace(',', '.').strip()
                     try:
                         valor = float(valor)
                     except ValueError:
                         continue
 
+                    # 🔹 Validar rango permitido
+                    if valor < 1.0 or valor > 7.0:
+                        continue
+
+                    # 🔹 Redondear a un decimal
+                    valor = round(valor, 1)
+
+                    # 🔹 Crear o actualizar la nota
                     nota, created = Nota.objects.update_or_create(
                         alumno=alumno,
                         asignatura=asignatura,
@@ -1060,20 +1096,26 @@ def libro_notas(request, curso_id, asignatura_id):
                             "evaluacion": f"Nota {i}",
                         },
                     )
+
                     cambios += 1
                     cambios_detalle.append(
-                        f"{'Creada' if created else 'Actualizada'} Nota {i}: {valor:.1f} para {alumno.nombres} {alumno.apellidos}"
+                        f"{'Creada' if created else 'Actualizada'} Nota {i}: {valor:.1f} "
+                        f"para {alumno.nombres} {alumno.apellidos}"
                     )
 
-        # Registrar acción (solo una entrada consolidada)
-        registrar_accion(
-            request.user,
-            asignatura,
-            CHANGE,
-            f" Modificación de notas en {curso.nombre} - {asignatura.nombre}: {cambios} cambios.\n"
-            + "\n".join(cambios_detalle[:10])
-        )
-        messages.success(request, f" {cambios} notas guardadas correctamente.")
+        # Registrar acción consolidada
+        if cambios > 0:
+            registrar_accion(
+                request.user,
+                asignatura,
+                CHANGE,
+                f"Modificación de notas en {curso.nombre} - {asignatura.nombre}: {cambios} cambios.\n"
+                + "\n".join(cambios_detalle[:10])
+            )
+            messages.success(request, f"{cambios} notas guardadas correctamente.")
+        else:
+            messages.info(request, "No se realizaron cambios en las notas.")
+
         return redirect("usuarios:libro_notas", curso_id=curso.id, asignatura_id=asignatura.id)
 
     # ===========================
@@ -1094,7 +1136,7 @@ def libro_notas(request, curso_id, asignatura_id):
         }
 
     # ===========================
-    # Contexto para el template
+    # Contexto
     # ===========================
     context = {
         "curso": curso,
@@ -1106,6 +1148,7 @@ def libro_notas(request, curso_id, asignatura_id):
     }
 
     return render(request, "notas.html", context)
+
 
 # =========================================================
 # Anotaciones (CON REGISTRO)
