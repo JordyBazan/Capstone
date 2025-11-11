@@ -15,9 +15,7 @@
 </ul>
 {% endif %}
 
-<!-- ============================ -->
-<!-- Paginación superior -->
-<!-- ============================ -->
+<!-- Tabs -->
 <div class="page-head flex-between">
   <div>
     <a class="page-btn {% if page == '1' %}active{% endif %}" href="?page=1">Cursos</a>
@@ -26,9 +24,6 @@
   </div>
 </div>
 
-<!-- ============================ -->
-<!-- Página 1: Cursos -->
-<!-- ============================ -->
 {% if page == '1' %}
 <div class="page-head flex-between">
   <div>
@@ -42,27 +37,28 @@
 </div>
 
 <div class="table-wrap">
-  <table class="table">
+  <table class="table table-cursos">
     <thead>
       <tr>
-        <th>#</th>
-        <th>Año</th>
-        <th>Nombre</th>
-        <th>Sala</th>
-        <th>Asignaturas</th>
-        <th>Total alumnos</th>
-        <th>Profesor Jefe</th>
-        <th>Acciones</th>
+        <th class="col-idx">#</th>
+        <th class="col-anio">AÑO</th>
+        <th class="col-nombre">NOMBRE</th>
+        <th class="col-sala">SALA</th>
+        <th class="col-asign">ASIGNATURAS</th>
+        <th class="col-total">TOTAL<br>ALUMNOS</th>
+        <th class="col-pjefe">PROFESOR JEFE</th>
+        <th class="col-acciones">ACCIONES</th>
       </tr>
     </thead>
     <tbody>
       {% for c in cursos %}
       <tr>
-        <td>{{ forloop.counter }}</td>
-        <td>{{ c.año }}</td>
-        <td>{{ c.nombre }}</td>
-        <td>{{ c.sala }}</td>
-        <td>
+        <td class="col-idx">{{ forloop.counter }}</td>
+        <td class="col-anio">{{ c.año }}</td>
+        <td class="col-nombre">{{ c.nombre }}</td>
+        <td class="col-sala">{{ c.sala }}</td>
+
+        <td class="col-asign">
           {% with asigns=c.asignaturas.all %}
             {% if asigns %}
               <div class="chips">
@@ -81,39 +77,47 @@
                   </span>
                 {% endfor %}
               </div>
-            {% else %}
-              —
-            {% endif %}
+            {% else %} — {% endif %}
           {% endwith %}
         </td>
-        <td>
+
+        <td class="col-total">
           <a href="?page=3&curso={{ c.id }}" class="link">{{ c.num_alumnos }}</a>
         </td>
-        <td>
+
+        <td class="col-pjefe">
           {% if c.profesor_jefe %}
-            <div>{{ c.profesor_jefe.get_full_name|default:c.profesor_jefe.username }}</div>
+            <div class="pjefe-name">
+              {{ c.profesor_jefe.get_full_name|default:c.profesor_jefe.username }}
+            </div>
           {% else %}
             <div class="muted">—</div>
           {% endif %}
+
           <form method="post" action="{% url 'usuarios:asignar_profesor_jefe' %}" class="inline-form">
             {% csrf_token %}
             <input type="hidden" name="curso_id" value="{{ c.id }}">
             <select name="profesor_jefe" class="mini-select">
               <option value="">— Sin PJ —</option>
               {% for d in docentes %}
-                <option value="{{ d.id }}" {% if c.profesor_jefe_id == d.id %}selected{% endif %}>{{ d.get_full_name|default:d.username }}</option>
+                <option value="{{ d.id }}" {% if c.profesor_jefe_id == d.id %}selected{% endif %}>
+                  {{ d.get_full_name|default:d.username }}
+                </option>
               {% endfor %}
             </select>
             <button type="submit" class="btn mini">Guardar</button>
           </form>
         </td>
-        <td class="cell-actions">
-          <a class="link" href="{% url 'usuarios:curso_editar' c.id %}">Editar</a>
-          <form method="post" action="{% url 'usuarios:curso_eliminar' c.id %}" class="js-delete-form" data-confirm="¿Eliminar el curso '{{ c }}'? Esta acción no se puede deshacer.">
-            {% csrf_token %}
-            <button type="submit" class="btn-danger">Eliminar</button>
-          </form>
-          <a class="link" href="{% url 'usuarios:asignar_asignaturas_curso' c.id %}">Asignar asignaturas</a>
+
+        <td class="col-acciones">
+          <div class="cell-actions">
+            <a class="btn" href="{% url 'usuarios:curso_editar' c.id %}">Editar</a>
+            <form method="post" action="{% url 'usuarios:curso_eliminar' c.id %}" class="js-delete-form" data-confirm="¿Eliminar el curso '{{ c }}'? Esta acción no se puede deshacer.">
+              {% csrf_token %}
+              <button type="submit" class="btn-danger">Eliminar</button>
+            </form>
+            <a class="btn" href="{% url 'usuarios:asignar_asignaturas_curso' c.id %}">Asignar asignaturas</a>
+          </div>
         </td>
       </tr>
       {% empty %}
@@ -124,9 +128,6 @@
 </div>
 {% endif %}
 
-<!-- ============================ -->
-<!-- Página 2: Asignaturas -->
-<!-- ============================ -->
 {% if page == '2' %}
 <div class="page-head flex-between">
   <div>
@@ -138,16 +139,15 @@
   </div>
 </div>
 
-<!-- BLOQUE NUEVO: Asignar docente globalmente -->
-<div class="global-assign card" style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 10px;">
-  <h3 style="margin-bottom: 0.8rem;">Asignar docente globalmente</h3>
+<div class="global-assign card">
+  <h3>Asignar docente globalmente</h3>
   <form method="post" action="{% url 'usuarios:asignar_docente_global' %}" onsubmit="return confirm('¿Asignar este docente a todas las asignaturas con el mismo nombre en todos los cursos?');">
     {% csrf_token %}
-    <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+    <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;">
       <label>
         Asignatura:
         <select name="nombre_asignatura" required>
-          <option value="">Seleccionar...</option>
+          <option value="">Seleccionar…</option>
           {% for nombre in nombres_asignaturas %}
             <option value="{{ nombre }}">{{ nombre }}</option>
           {% endfor %}
@@ -156,7 +156,7 @@
       <label>
         Docente:
         <select name="docente_id" required>
-          <option value="">Seleccionar...</option>
+          <option value="">Seleccionar…</option>
           {% for d in docentes %}
             <option value="{{ d.id }}">{{ d.get_full_name|default:d.username }}</option>
           {% endfor %}
@@ -167,11 +167,9 @@
   </form>
 </div>
 
-<!-- FILTROS -->
 <div class="filter-bar">
   <form method="get">
     <input type="hidden" name="page" value="2">
-
     <label for="curso">Filtrar por curso:</label>
     <select name="curso" id="curso" onchange="this.form.submit()">
       <option value="">Todos los cursos</option>
@@ -192,23 +190,12 @@
   </form>
 </div>
 
-<!-- RESUMEN -->
 <div class="stats-grid">
-  <div class="card stat">
-    <h3>Total asignaturas</h3>
-    <p>{{ total_asignaturas }}</p>
-  </div>
-  <div class="card stat">
-    <h3>Con profesor</h3>
-    <p>{{ total_con_profesor }}</p>
-  </div>
-  <div class="card stat">
-    <h3>Sin profesor</h3>
-    <p>{{ total_sin_profesor }}</p>
-  </div>
+  <div class="card stat"><h3>Total asignaturas</h3><p>{{ total_asignaturas }}</p></div>
+  <div class="card stat"><h3>Con profesor</h3><p>{{ total_con_profesor }}</p></div>
+  <div class="card stat"><h3>Sin profesor</h3><p>{{ total_sin_profesor }}</p></div>
 </div>
 
-<!-- TABLA -->
 <div class="table-wrap mt-2">
   <table class="table">
     <thead>
@@ -228,10 +215,10 @@
         <td>{% if a.profesor %}{{ a.profesor.get_full_name|default:a.profesor.username }}{% else %}—{% endif %}</td>
         <td>{% if a.curso %}{{ a.curso.nombre }}{% else %}—{% endif %}</td>
         <td class="cell-actions">
-          <a class="link" href="{% url 'usuarios:asignatura_editar' a.id %}">Editar</a>
+          <a class="btn" href="{% url 'usuarios:asignatura_editar' a.id %}">Editar</a>
           <form method="post" action="{% url 'usuarios:asignatura_eliminar' a.id %}" class="js-delete-form" data-confirm="¿Eliminar la asignatura '{{ a.nombre }}'?">
             {% csrf_token %}
-            <button type="submit" class="link link-danger" style="background:none;border:none;padding:0;">Eliminar</button>
+            <button type="submit" class="btn-danger">Eliminar</button>
           </form>
         </td>
       </tr>
@@ -243,9 +230,6 @@
 </div>
 {% endif %}
 
-<!-- ============================ -->
-<!-- Página 3: Alumnos -->
-<!-- ============================ -->
 {% if page == '3' %}
 <div class="page-head flex-between">
   <div>
@@ -293,9 +277,9 @@
         <td>{{ alumno.apellidos }}</td>
         <td>{% if alumno.curso %}{{ alumno.curso.nombre }}{% else %}—{% endif %}</td>
         <td class="cell-actions">
-          <a class="link" href="{% url 'usuarios:editar_alumno' alumno.id %}">Editar</a>
-          <a class="link link-danger" href="{% url 'usuarios:eliminar_alumno' alumno.id %}" onclick="return confirm('¿Estás seguro de que deseas eliminar a este alumno?');">Eliminar</a>
-          <a href="{% url 'usuarios:reporte_alumno' alumno.id %}" class="btn primary">Reporte académico</a>
+          <a class="btn" href="{% url 'usuarios:editar_alumno' alumno.id %}">Editar</a>
+          <a class="btn-danger" href="{% url 'usuarios:eliminar_alumno' alumno.id %}" onclick="return confirm('¿Estás seguro de que deseas eliminar a este alumno?');">Eliminar</a>
+          <a href="{% url 'usuarios:reporte_alumno' alumno.id %}" class="btn">Reporte académico</a>
         </td>
       </tr>
       {% empty %}
