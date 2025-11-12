@@ -1,11 +1,21 @@
-# usuarios/models.py
+# =========================================================
+# Importaciones
+# =========================================================
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import RegexValidator
 from django.db.models.functions import Lower
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
+
+
+
+# =========================================================
 # Validadores
+# =========================================================
+
+# Alumno
 rut_validator = RegexValidator(
     regex=r'^\d{1,2}\.?\d{3}\.?\d{3}-[\dkK]$',
     message="El RUT debe tener un formato válido, por ejemplo: 12.345.678-9 o 12345678-9"
@@ -16,7 +26,34 @@ telefono_validator = RegexValidator(
     message="El número debe tener el formato chileno, por ejemplo: +56912345678"
 )
 
+
+
+# Curso
+año_validator = RegexValidator(
+    regex=r'^\d+$',
+    message="El campo 'Año' solo puede contener números."
+)
+
+sala_validator = RegexValidator(
+    regex=r'^[A-Za-z0-9\s-]+$',
+    message="El campo 'Sala' solo puede contener letras, números, guiones o espacios."
+)
+
+
+
+
+
+
+# =========================================================
+# Modelos
+# =========================================================
+
+
+
+# =========================================================
 # Modelo Usuario
+# =========================================================
+
 class Usuario(AbstractUser):
     nombres = models.CharField(max_length=100)
     apellidos = models.CharField(max_length=100)
@@ -36,22 +73,44 @@ class Usuario(AbstractUser):
         return f"{self.username} - {self.nombres} {self.apellidos}"
 
 
-# Otros modelos
+
+# =========================================================
+# Modelo Curso
+# =========================================================
 class Curso(models.Model):
-    año = models.CharField(max_length=15)
+    año = models.CharField(max_length=15, validators=[año_validator])
     nombre = models.CharField(max_length=30)
-    sala = models.CharField(max_length=10)
+    sala = models.CharField(max_length=10, validators=[sala_validator])
     profesor_jefe = models.ForeignKey(
         Usuario,
         on_delete=models.CASCADE,
-        null=True,
-        blank=True,
         limit_choices_to={'role': 'docente'},
         related_name='cursos_como_profesor_jefe'
     )
 
     def __str__(self):
         return f"{self.año} {self.nombre} - ({self.sala})"
+
+    def clean(self):
+        # Evita campos vacios
+        if not self.año.strip() or not self.nombre.strip() or not self.sala.strip():
+            raise ValidationError("Ningún campo puede quedar vacío.")
+
+        # Valida que haya profesor_jefe asignado
+        if not self.profesor_jefe:
+            raise ValidationError("Debe asignarse un profesor jefe al curso.")
+
+        # Evita duplicados
+        if Curso.objects.filter(
+            año__iexact=self.año,
+            nombre__iexact=self.nombre,
+            sala__iexact=self.sala
+        ).exclude(id=self.id).exists():
+            raise ValidationError("Ya existe un curso con el mismo año, nombre y sala.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()  # Ejecuta todas las validaciones antes de guardar
+        super().save(*args, **kwargs)
 
     class Meta:
         constraints = [
@@ -60,8 +119,14 @@ class Curso(models.Model):
                 name='uniq_curso_anio_nombre_sala_ci'
             )
         ]
+        verbose_name = "Curso"
+        verbose_name_plural = "Cursos"
 
 
+
+# =========================================================
+# Modelo Alumno
+# =========================================================
 class Alumno(models.Model):
     rut = models.CharField(
         max_length=12,
@@ -86,20 +151,68 @@ class Alumno(models.Model):
         ordering = ['apellidos', 'nombres']
 
 
+
+# =========================================================
+# Modelo Asignatura
+# =========================================================
+
 class Asignatura(models.Model):
     nombre = models.CharField(max_length=30)
-    descripcion = models.TextField(blank=True)
+    descripcion = models.TextField(blank=True)  # puede quedar vacio
     profesor = models.ForeignKey(
-        Usuario, on_delete=models.CASCADE, null=True, blank=True, limit_choices_to={'role': 'docente'}
+        Usuario,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'docente'}   # obligatorio
     )
     curso = models.ForeignKey(
-        'Curso', on_delete=models.CASCADE, related_name='asignaturas', null=True, blank=True
+        'Curso',
+        on_delete=models.CASCADE,
+        related_name='asignaturas'             # obligatorio
     )
 
     def __str__(self):
         return f"{self.nombre} ({self.curso.año} {self.curso.nombre})" if self.curso else self.nombre
 
+    # Validaciones de negocio
+    def clean(self):
+        # nombre no vacío (sin espacios)
+        if not self.nombre or not self.nombre.strip():
+            raise ValidationError("El campo 'Nombre' no puede quedar vacío.")
 
+        # profesor y curso obligatorios (defensa adicional)
+        if not self.profesor:
+            raise ValidationError("Debe asignarse un profesor (docente).")
+        if not self.curso:
+            raise ValidationError("Debe asignarse un curso.")
+
+        # evitar duplicados de nombre dentro del mismo curso (case-insensitive)
+        ya_existe = Asignatura.objects.filter(
+            nombre__iexact=self.nombre.strip(),
+            curso=self.curso
+        ).exclude(id=self.id).exists()
+        if ya_existe:
+            raise ValidationError("Ya existe una asignatura con ese nombre en este curso.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()  # corre validators + clean()
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Asignatura"
+        verbose_name_plural = "Asignaturas"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['nombre', 'curso'],
+                name='unique_asignatura_por_curso'
+            )
+        ]
+
+
+
+
+# =========================================================
+# Modelo ??
+# =========================================================
 class DocenteCurso(models.Model):
     docente = models.ForeignKey(
         Usuario,
@@ -112,6 +225,10 @@ class DocenteCurso(models.Model):
         unique_together = ('docente', 'curso')
 
 
+
+# =========================================================
+# Modelo Nota
+# =========================================================
 class Nota(models.Model):
     valor = models.FloatField()
     fecha_registro = models.DateField(auto_now_add=True)
@@ -140,6 +257,10 @@ class Nota(models.Model):
         unique_together = ("alumno", "asignatura", "numero")
 
 
+
+# =========================================================
+# Modelo Asistencia
+# =========================================================
 class Asistencia(models.Model):
     ESTADOS = [
         ("Presente", "Presente"),
@@ -162,6 +283,9 @@ class Asistencia(models.Model):
 
 
 
+# =========================================================
+# Modelo Anotacion
+# =========================================================
 class Anotacion(models.Model):
     texto = models.TextField()
     fecha = models.DateField(auto_now_add=True)
