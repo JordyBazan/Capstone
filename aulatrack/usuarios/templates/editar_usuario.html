@@ -4,42 +4,68 @@
 
 {% block content %}
 
-<h1>Editar Usuario</h1>
+<h1>
+  {% if modo_password %}
+    Cambiar contraseña
+  {% else %}
+    Editar Usuario
+  {% endif %}
+</h1>
 
 <form method="post">
   {% csrf_token %}
 
-  <div>
-    <label for="id_nombres">Nombres:</label>
-    <input type="text" name="nombres" id="id_nombres" value="{{ usuario.nombres }}" required>
-  </div>
+  {% if modo_password %}
+    <!-- FORMULARIO SOLO PARA CAMBIAR CONTRASEÑA -->
+    <div>
+      <label for="id_password1">Nueva contraseña:</label>
+      {{ form_pass.password1 }}
+      {{ form_pass.password1.errors }}
+    </div>
 
-  <div>
-    <label for="id_apellidos">Apellidos:</label>
-    <input type="text" name="apellidos" id="id_apellidos" value="{{ usuario.apellidos }}" required>
-  </div>
+    <div>
+      <label for="id_password2">Confirmar contraseña:</label>
+      {{ form_pass.password2 }}
+      {{ form_pass.password2.errors }}
+    </div>
 
-  <div>
-    <label for="id_rut">RUT:</label>
-    <input type="text" name="rut" id="id_rut" value="{{ usuario.rut }}" required>
-  </div>
+    <button type="submit">Guardar contraseña</button>
+    <a href="{% url 'usuarios:gestion_usuario' %}">Cancelar</a>
 
-  <div>
-    <label for="id_email">Correo electrónico:</label>
-    <input type="email" name="email" id="id_email" value="{{ usuario.email }}" required>
-  </div>
+  {% else %}
+    <!-- FORMULARIO NORMAL DE EDICIÓN -->
+    <div>
+      <label for="id_nombres">Nombres:</label>
+      <input type="text" name="nombres" id="id_nombres" value="{{ usuario.nombres }}" required>
+    </div>
 
-  <div>
-    <label for="id_role">Rol:</label>
-    <select name="role" id="id_role">
-      {% for key, value in roles %}
-        <option value="{{ key }}" {% if usuario.role == key %}selected{% endif %}>{{ value }}</option>
-      {% endfor %}
-    </select>
-  </div>
+    <div>
+      <label for="id_apellidos">Apellidos:</label>
+      <input type="text" name="apellidos" id="id_apellidos" value="{{ usuario.apellidos }}" required>
+    </div>
 
-  <button type="submit">Guardar cambios</button>
-  <a href="{% url 'usuarios:gestion_usuario' %}">Cancelar</a>
+    <div>
+      <label for="id_rut">RUT:</label>
+      <input type="text" name="rut" id="id_rut" value="{{ usuario.rut }}" required>
+    </div>
+
+    <div>
+      <label for="id_email">Correo electrónico:</label>
+      <input type="email" name="email" id="id_email" value="{{ usuario.email }}" required>
+    </div>
+
+    <div>
+      <label for="id_role">Rol:</label>
+      <select name="role" id="id_role">
+        {% for key, value in roles %}
+          <option value="{{ key }}" {% if usuario.role == key %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button type="submit">Guardar cambios</button>
+    <a href="{% url 'usuarios:gestion_usuario' %}">Cancelar</a>
+  {% endif %}
 </form>
 
 {% endblock %}

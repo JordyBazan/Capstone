@@ -31,6 +31,8 @@ urlpatterns = [
     path('asistencia/<int:curso_id>/', asistencia, name='asistencia'),
     path('curso/<int:curso_id>/notas/', seleccionar_asignatura, name='notas'),
     path('curso/<int:curso_id>/asignatura/<int:asignatura_id>/notas/', libro_notas, name='libro_notas'),
+    path("cambiar-password/<int:user_id>/", views.cambiar_password, name="cambiar_password"),
+
 
     # =============================
     # Anotaciones

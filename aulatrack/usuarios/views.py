@@ -11,6 +11,7 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
+from django.contrib.auth.hashers import make_password
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q, Count, Avg
@@ -29,6 +30,7 @@ from django.contrib.contenttypes.models import ContentType
 
 # Modelos
 from .models import Alumno, Curso, Asignatura, Nota, Asistencia, Anotacion, Usuario
+from django import forms
 
 # Formularios
 from .forms import (
@@ -1696,3 +1698,38 @@ def eliminar_asignacion(request, asignacion_id):
         return redirect("usuarios:asignar_docente_curso")
 
     return redirect("usuarios:asignar_docente_curso")
+
+class CambiarPasswordForm(forms.Form):
+    password1 = forms.CharField(
+        label="Nueva contraseña",
+        widget=forms.PasswordInput(attrs={"placeholder": "Nueva contraseña"})
+    )
+    password2 = forms.CharField(
+        label="Confirmar contraseña",
+        widget=forms.PasswordInput(attrs={"placeholder": "Confirmar contraseña"})
+    )
+
+def cambiar_password(request, user_id):
+    usuario = get_object_or_404(Usuario, id=user_id)
+
+    if request.method == "POST":
+        form = CambiarPasswordForm(request.POST)
+        if form.is_valid():
+            p1 = form.cleaned_data["password1"]
+            p2 = form.cleaned_data["password2"]
+
+            if p1 != p2:
+                messages.error(request, "Las contraseñas no coinciden.")
+            else:
+                usuario.password = make_password(p1)
+                usuario.save()
+                messages.success(request, "Contraseña actualizada correctamente.")
+                return redirect("usuarios:gestion_usuario")
+    else:
+        form = CambiarPasswordForm()
+
+    return render(request, "editar_usuario.html", {
+        "form_pass": form,
+        "usuario": usuario,
+        "modo_password": True
+    })
