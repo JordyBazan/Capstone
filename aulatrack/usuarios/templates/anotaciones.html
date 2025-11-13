@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+
 {% block title %}{{ alumno.nombres }} {{ alumno.apellidos }} - Anotaciones{% endblock %}
 
 {% block extra_css %}
@@ -7,6 +8,7 @@
 {% endblock %}
 
 {% block content %}
+
 <h2 class="sectionTitle">{{ alumno.nombres }} {{ alumno.apellidos }}</h2>
 <p class="hint">{{ curso.nombre }} | RUT: {{ alumno.rut }} | Contacto emergencia: {{ alumno.contacto_emergencia }}</p>
 <div class="divider"></div>
@@ -36,9 +38,122 @@
   <textarea name="texto" rows="3" placeholder="Escribe una nueva anotación..."></textarea>
   <button type="submit" class="btn primary">Agregar anotación</button>
 </form>
+
 <br>
 <a href="{% url 'usuarios:reporte_alumno' alumno.id %}" class="btn primary">Reporte académico</a>
 
 <br>
 <a href="{% url 'usuarios:anotaciones_curso' curso.id %}" class="btn">Volver al curso</a>
+
+<div class="divider"></div>
+
+<h3>Resumen de Asistencia</h3>
+
+<table class="notes-table" style="margin-top:10px;">
+    <thead>
+        <tr>
+            <th>Presente</th>
+            <th>Ausente</th>
+            <th>Justificado</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr style="text-align:center;">
+            <td>{{ pres }}</td>
+            <td>{{ aus }}</td>
+            <td>{{ jus }}</td>
+            <td><b>{{ total_dias }}</b></td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>Gráfico de Asistencia</h3>
+
+<div class="asistencia-chart">
+
+    <div class="fila">
+        <span class="label">Presente</span>
+        <div class="barra">
+            <div class="fill presente" data-val="{{ pres }}"></div>
+        </div>
+        <span class="num">{{ pres }}</span>
+    </div>
+
+    <div class="fila">
+        <span class="label">Ausente</span>
+        <div class="barra">
+            <div class="fill ausente" data-val="{{ aus }}"></div>
+        </div>
+        <span class="num">{{ aus }}</span>
+    </div>
+
+    
+
+    <div class="fila">
+        <span class="label">Justificado</span>
+        <div class="barra">
+            <div class="fill justificado" data-val="{{ jus }}"></div>
+        </div>
+        <span class="num">{{ jus }}</span>
+    </div>
+
+</div>
+
+<div class="divider"></div>
+
+<h3>Promedios por asignatura</h3>
+
+<table class="notes-table">
+    <thead>
+        <tr>
+            <th>Asignatura</th>
+            <th>Promedio</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% if promedios_asignaturas %}
+            {% for item in promedios_asignaturas %}
+            <tr>
+                <td>{{ item.asignatura__nombre }}</td>
+                <td>{{ item.promedio|floatformat:1 }}</td>
+            </tr>
+            {% endfor %}
+
+            <tr style="font-weight: bold; background: #f2f2f2;">
+                <td>Promedio General</td>
+                <td>{{ promedio|floatformat:1 }}</td>
+            </tr>
+
+        {% else %}
+            <tr>
+                <td colspan="2">No hay notas registradas.</td>
+            </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const fills = document.querySelectorAll(".fill");
+
+    // Obtener el valor más alto (para escalar proporcionalmente)
+    let max = 0;
+    fills.forEach(f => {
+        const val = parseInt(f.dataset.val);
+        if (val > max) max = val;
+    });
+
+    // Amplitud máxima de la barra
+    const MAX_WIDTH = 280; // px
+
+    // Asignar ancho proporcional
+    fills.forEach(f => {
+        const val = parseInt(f.dataset.val);
+        const width = (val / max) * MAX_WIDTH;
+        f.style.width = width + "px";
+    });
+});
+</script>
 {% endblock %}

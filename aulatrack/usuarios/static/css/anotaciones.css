@@ -168,3 +168,57 @@ button:hover {
   background-color: #5c40e0;
   transform: scale(1.03);
 }
+
+/* ============================
+   GRÁFICO DE ASISTENCIA
+   ============================ */
+
+.asistencia-chart {
+    margin-top: 15px;
+    background: #fff;
+    padding: 18px;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+}
+
+.asistencia-chart .fila {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    gap: 12px;
+}
+
+.asistencia-chart .label {
+    width: 100px;
+    font-weight: 600;
+    color: #333;
+}
+
+.asistencia-chart .barra {
+    flex: 1;
+    background: #f2f2f4;
+    height: 14px;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.asistencia-chart .fill {
+    height: 100%;
+    width: 0;
+    border-radius: 10px;
+    transition: width 0.8s ease;
+}
+
+/* Colores */
+.fill.presente { background: #16a34a; }
+.fill.ausente { background: #dc2626; }
+.fill.atraso { background: #ca8a04; }
+.fill.justificado { background: #3b82f6; }
+
+.asistencia-chart .num {
+    width: 40px;
+    text-align: right;
+    font-weight: bold;
+    color: #000;
+}

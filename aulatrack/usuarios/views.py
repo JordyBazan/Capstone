@@ -778,6 +778,53 @@ def cursos_export_pdf(request):
         resp["Content-Disposition"] = 'attachment; filename="informe_cursos.pdf"'
         return resp
 
+
+
+
+import math
+# =========================================================
+# Función de redondeo personalizado
+# =========================================================
+def redondear_personalizado(valor):
+    """
+    Regla especial:
+    - x.5 → redondea hacia arriba
+    - x.4 → redondea hacia abajo
+    - resto → round normal
+    Siempre entrega 1 decimal.
+    """
+    if valor is None:
+        return None
+
+    decimal = valor % 1
+
+    if abs(decimal - 0.5) < 0.001:
+        return math.ceil(valor * 10) / 10
+
+    if abs(decimal - 0.4) < 0.001:
+        return math.floor(valor * 10) / 10
+
+    return round(valor, 1)
+
+
+def formatear_punto_1_decimal(valor):
+    """
+    Aplica redondeo personalizado y devuelve string con 1 decimal usando punto.
+    Ej: 5.8
+    """
+    if valor is None:
+        return ""
+
+    valor = redondear_personalizado(valor)
+    return f"{valor:.1f}"        
+
+
+
+
+
+
+
+
 # =========================================================
 # Reporte de Alumno (PDF)
 # =========================================================
@@ -785,33 +832,63 @@ def reporte_alumno(request, alumno_id):
     alumno = get_object_or_404(Alumno, id=alumno_id)
     curso = alumno.curso
 
-    # Datos académicos del alumno
-    asignaturas = Asignatura.objects.filter(curso=curso).order_by("nombre")
+    from django.db.models import Avg
+
+    # ============================
+    # PROMEDIOS IGUAL QUE EL HTML
+    # ============================
+    qs_prom = (
+        Nota.objects.filter(alumno=alumno)
+        .values("asignatura__nombre", "asignatura_id")
+        .annotate(promedio=Avg("valor"))
+        .order_by("asignatura__nombre")
+    )
 
     asignaturas_data = []
-    for asignatura in asignaturas:
-        notas_qs = Nota.objects.filter(alumno=alumno, asignatura=asignatura).order_by("numero")
-        notas = [round(n.valor, 1) for n in notas_qs]
-        promedio_asig = round(sum(notas) / len(notas), 1) if notas else None
+
+    for item in qs_prom:
+        asignatura_id = item["asignatura_id"]
+        nombre = item["asignatura__nombre"]
+
+        notas_qs = Nota.objects.filter(alumno=alumno, asignatura_id=asignatura_id)
+
+        notas = [formatear_punto_1_decimal(n.valor) for n in notas_qs]
+
+        promedio_asig = formatear_punto_1_decimal(item["promedio"])
+
         asignaturas_data.append({
-            "nombre": asignatura.nombre,
-            "notas": notas,                 # lista con N1..Nn (hasta 11)
-            "promedio": promedio_asig,      # promedio de la asignatura
+            "nombre": nombre,
+            "notas": notas,
+            "promedio": promedio_asig,
         })
 
-    # Promedio general del alumno (promedio de promedios válidos)
-    promedios_validos = [a["promedio"] for a in asignaturas_data if a["promedio"] is not None]
-    promedio_general = round(sum(promedios_validos) / len(promedios_validos), 1) if promedios_validos else 0
+    # ============================
+    # PROMEDIO GENERAL
+    # ============================
+    promedios_validos = [a["promedio"] for a in asignaturas_data if a["promedio"] not in ("", None)]
 
-    # Asistencia
+    if promedios_validos:
+        prom_float = [float(p) for p in promedios_validos]
+        promedio_general_val = sum(prom_float) / len(prom_float)
+        promedio_general = formatear_punto_1_decimal(promedio_general_val)
+    else:
+        promedio_general = "0.0"
+
+    # ============================
+    # ASISTENCIA
+    # ============================
     total_asistencias = Asistencia.objects.filter(alumno=alumno).count()
     presentes = Asistencia.objects.filter(alumno=alumno, estado="presente").count()
     porcentaje_asistencia = round((presentes / total_asistencias * 100), 1) if total_asistencias > 0 else 0
 
-    # Anotaciones
+    # ============================
+    # ANOTACIONES
+    # ============================
     anotaciones = Anotacion.objects.filter(alumno=alumno).order_by("-fecha")
 
-    # PDF (ReportLab) - imports locales
+    # ============================
+    # PDF
+    # ============================
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.lib.units import mm
@@ -821,12 +898,13 @@ def reporte_alumno(request, alumno_id):
     buf = BytesIO()
     doc = SimpleDocTemplate(
         buf, pagesize=A4,
-        leftMargin=14*mm, rightMargin=14*mm, topMargin=18*mm, bottomMargin=18*mm
+        leftMargin=14*mm, rightMargin=14*mm,
+        topMargin=18*mm, bottomMargin=18*mm
     )
     styles = getSampleStyleSheet()
     story = []
 
-    # Encabezado
+    # ENCABEZADO
     story.append(Paragraph("<b>Informe Académico del Alumno</b>", styles["Title"]))
     story.append(Spacer(1, 4*mm))
     story.append(Paragraph(f"<b>Alumno:</b> {alumno.nombres} {alumno.apellidos}", styles["Normal"]))
@@ -835,31 +913,33 @@ def reporte_alumno(request, alumno_id):
     story.append(Paragraph(f"<b>Fecha de generación:</b> {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", styles["Normal"]))
     story.append(Spacer(1, 6*mm))
 
-    # Tabla de notas (N1..N11 + Prom.)
+    # TABLA DE NOTAS
     encabezados = ["Asignatura"] + [f"N{i}" for i in range(1, 11)] + ["Prom."]
     data = [encabezados]
 
-    # Estilo de celda centrado
     cell_style = ParagraphStyle("Cell", fontName="Helvetica", fontSize=10, alignment=1)
 
     for a in asignaturas_data:
         fila = [Paragraph(a["nombre"].upper(), cell_style)]
 
-        # Notas con color (rojo <4 / verde >=4)
-        for n in a["notas"]:
-            color = "#ff0000" if n < 4 else "#008000"
-            fila.append(Paragraph(f"<font color='{color}'>{n:.1f}</font>", cell_style))
+        # Notas
+        for n_str in a["notas"]:
+            if n_str == "":
+                fila.append(Paragraph("", cell_style))
+            else:
+                valor = float(n_str)
+                color = "#ff0000" if valor < 4 else "#008000"
+                fila.append(Paragraph(f"<font color='{color}'>{n_str}</font>", cell_style))
 
-        # Completar celdas hasta 11 notas
         faltantes = 10 - len(a["notas"])
-        for _ in range(max(faltantes, 0)):
+        for _ in range(faltantes):
             fila.append(Paragraph("", cell_style))
 
-        # Promedio por asignatura
         prom = a["promedio"]
-        if prom is not None:
-            color = "#ff0000" if prom < 4 else "#008000"
-            fila.append(Paragraph(f"<b><font color='{color}'>{prom:.1f}</font></b>", cell_style))
+        if prom != "":
+            valor = float(prom)
+            color = "#ff0000" if valor < 4 else "#008000"
+            fila.append(Paragraph(f"<b><font color='{color}'>{prom}</font></b>", cell_style))
         else:
             fila.append(Paragraph("", cell_style))
 
@@ -874,30 +954,34 @@ def reporte_alumno(request, alumno_id):
         ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
         ("FONTSIZE", (0,0), (-1,-1), 9),
     ]))
+
     story.append(tabla)
 
-    # Promedio general y asistencia
+    # PROMEDIO FINAL
     story.append(Spacer(1, 8*mm))
     story.append(Paragraph(f"<b>Promedio final del alumno:</b> {promedio_general}", styles["Normal"]))
     story.append(Paragraph(f"<b>Porcentaje de asistencia:</b> {porcentaje_asistencia}%", styles["Normal"]))
     story.append(Spacer(1, 8*mm))
 
-    # Anotaciones
+    # ANOTACIONES
     story.append(Paragraph("<b>Anotaciones registradas:</b>", styles["Heading3"]))
     if anotaciones:
         for an in anotaciones:
             prof = an.profesor.get_full_name() or an.profesor.username
-            story.append(Paragraph(f"<b>{an.fecha.strftime('%d/%m/%Y')}:</b> {an.texto} <i>({prof})</i>", styles["Normal"]))
+            story.append(Paragraph(
+                f"<b>{an.fecha.strftime('%d/%m/%Y')}:</b> {an.texto} <i>({prof})</i>",
+                styles["Normal"]
+            ))
     else:
         story.append(Paragraph("No hay anotaciones registradas.", styles["Normal"]))
     story.append(Spacer(1, 15*mm))
 
-    # Firmas
-    from reportlab.platypus import Table
+    # FIRMAS
     firma_data = [
         ["__________________________", "__________________________"],
         ["Firma Apoderado(a)", "Firma Docente / UTP"]
     ]
+    from reportlab.platypus import Table
     firma_table = Table(firma_data, colWidths=[90*mm, 90*mm])
     firma_table.setStyle(TableStyle([
         ("ALIGN", (0,0), (-1,-1), "CENTER"),
@@ -905,21 +989,24 @@ def reporte_alumno(request, alumno_id):
     ]))
     story.append(firma_table)
 
-    # Pie
+    # PIE
     story.append(Spacer(1, 6*mm))
     story.append(Paragraph(
         f"<font size='9'>Documento generado automáticamente por AulaTrack el {timezone.localtime().strftime('%d/%m/%Y %H:%M')}.</font>",
         styles["Normal"]
     ))
 
-    # Construcción y respuesta
     doc.build(story)
     pdf = buf.getvalue()
     buf.close()
 
     resp = HttpResponse(pdf, content_type="application/pdf")
-    resp["Content-Disposition"] = f'attachment; filename="reporte_{alumno.nombres}_{alumno.apellidos}.pdf"'
+    resp["Content-Disposition"] = f'attachment; filename=\"reporte_{alumno.nombres}_{alumno.apellidos}.pdf\"'
     return resp
+
+
+
+
 
 # =========================================================
 # Guardar Asistencia (CON REGISTRO)
@@ -1164,38 +1251,122 @@ def anotaciones_alumno(request, alumno_id):
     alumno = get_object_or_404(Alumno, id=alumno_id)
     curso = alumno.curso
 
-    # Calcular promedio de notas del alumno
-    promedio = Nota.objects.filter(alumno=alumno).aggregate(Avg('valor'))['valor__avg'] or 0
+    from django.db.models import Avg, Count
 
-    # Calcular porcentaje de asistencia
+    # ======================================
+    # PROMEDIOS POR ASIGNATURA (MISMA LÓGICA QUE PDF)
+    # ======================================
+    qs_prom = (
+        Nota.objects.filter(alumno=alumno)
+        .values("asignatura__nombre", "asignatura_id")
+        .annotate(promedio=Avg("valor"))
+        .order_by("asignatura__nombre")
+    )
+
+    promedios_asignaturas = [
+        {
+            "asignatura__nombre": item["asignatura__nombre"],
+            "promedio": redondear_personalizado(item["promedio"]),
+        }
+        for item in qs_prom
+    ]
+
+    # ======================================
+    # PROMEDIO GENERAL = PROMEDIO DE PROMEDIOS (igual PDF)
+    # ======================================
+    proms = [p["promedio"] for p in promedios_asignaturas if p["promedio"] is not None]
+
+    if proms:
+        promedio_general_val = sum(proms) / len(proms)
+        promedio = redondear_personalizado(promedio_general_val)
+    else:
+        promedio = 0.0
+
+    # ======================================
+    # ASISTENCIA (ARREGLADO)
+    # ======================================
     total_asistencias = Asistencia.objects.filter(alumno=alumno).count()
-    presentes = Asistencia.objects.filter(alumno=alumno, estado='presente').count()
+
+    presentes = Asistencia.objects.filter(
+        alumno=alumno,
+        estado__iexact="presente"
+    ).count()
+
     porcentaje_asistencia = round((presentes / total_asistencias * 100), 1) if total_asistencias > 0 else 0
 
-    # Anotaciones del alumno
-    anotaciones = Anotacion.objects.filter(alumno=alumno).order_by('-fecha')
+    # ======================================
+    # TABLA / GRÁFICO DE ASISTENCIA (tipo admin)
+    # ======================================
+    resumen_asistencia = (
+        Asistencia.objects
+        .filter(alumno=alumno)
+        .values("estado")
+        .annotate(total=Count("id"))
+    )
 
-    # Guardar nueva anotación
-    if request.method == 'POST':
-        texto = request.POST.get('texto')
+    # Normalizar valores
+    contador = {
+        "presente": 0,
+        "ausente": 0,
+        "atraso": 0,
+        "justificado": 0,
+    }
+
+    for item in resumen_asistencia:
+        estado = item["estado"].lower()
+        if estado in contador:
+            contador[estado] = item["total"]
+
+    pres = contador["presente"]
+    aus = contador["ausente"]
+    atr = contador["atraso"]
+    jus = contador["justificado"]
+
+    total_dias = pres + aus + atr + jus
+
+    # ======================================
+    # ANOTACIONES
+    # ======================================
+    anotaciones = Anotacion.objects.filter(alumno=alumno).order_by("-fecha")
+
+    # ======================================
+    # POST → crear anotación
+    # ======================================
+    if request.method == "POST":
+        texto = request.POST.get("texto")
         if texto:
             anota = Anotacion.objects.create(
                 texto=texto,
                 alumno=alumno,
-                profesor=request.user
+                profesor=request.user,
             )
-            #  Registrar creación de anotación (objeto real)
-            registrar_accion(request.user, anota, ADDITION, f"Anotación creada para {alumno.nombres} {alumno.apellidos}")
+            registrar_accion(request.user, anota, ADDITION, f"Anotación creada.")
             messages.success(request, "Anotación agregada correctamente.")
-            return redirect('usuarios:anotaciones_alumno', alumno_id=alumno.id)
+            return redirect("usuarios:anotaciones_alumno", alumno_id=alumno.id)
 
-    return render(request, 'anotaciones.html', {
-        'alumno': alumno,
-        'curso': curso,
-        'promedio': promedio,
-        'porcentaje_asistencia': porcentaje_asistencia,
-        'anotaciones': anotaciones
-    })
+    # ======================================
+    # RENDER
+    # ======================================
+    return render(
+        request,
+        "anotaciones.html",
+        {
+            "alumno": alumno,
+            "curso": curso,
+            "promedio": promedio,
+            "porcentaje_asistencia": porcentaje_asistencia,
+            "anotaciones": anotaciones,
+            "promedios_asignaturas": promedios_asignaturas,
+
+            # Nuevos datos para la tabla + gráfico
+            "pres": pres,
+            "aus": aus,
+            "atr": atr,
+            "jus": jus,
+            "total_dias": total_dias,
+        },
+    )
+
 
 # =========================================================
 # Gestión de Usuarios (UTP)
