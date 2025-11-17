@@ -1016,18 +1016,22 @@ def reporte_alumno(request, alumno_id):
 @login_required
 def asistencia(request, curso_id):
     from datetime import date
+    from itertools import groupby
+    from operator import attrgetter
+
     curso = get_object_or_404(Curso, id=curso_id)
     alumnos = Alumno.objects.filter(curso=curso).order_by('apellidos', 'nombres')
     page = request.GET.get('page', '1')
 
     # ================================
-    # PAGE 1 - Registrar asistencia
+    # PAGE 1 - Registrar / Editar asistencia
     # ================================
     if page == "1":
         if request.method == 'POST':
             fecha_str = request.POST.get('fecha')
             fecha = date.fromisoformat(fecha_str) if fecha_str else date.today()
             cambios = 0
+
             for alumno in alumnos:
                 estado = request.POST.get(f"estado_{alumno.id}")
                 if estado:
@@ -1040,9 +1044,9 @@ def asistencia(request, curso_id):
                     cambios += 1
 
             messages.success(request, f"Asistencia guardada correctamente ({cambios} registros).")
-            return redirect(f"{reverse('usuarios:asistencia', args=[curso.id])}?page=1")
+            return redirect(f"{reverse('usuarios:asistencia', args=[curso.id])}?page=1&fecha={fecha.isoformat()}")
 
-        # Estado actual (fecha seleccionada o hoy)
+        # GET → cargar asistencia de la fecha o de hoy
         fecha_filtrada = request.GET.get('fecha') or date.today().isoformat()
         asistencias = Asistencia.objects.filter(curso=curso, fecha=fecha_filtrada)
         estados = {a.alumno.id: a.estado for a in asistencias}
@@ -1051,26 +1055,28 @@ def asistencia(request, curso_id):
             'curso': curso,
             'alumnos': alumnos,
             'estados': estados,
-            'today': date.today(),
+            'fecha_filtrada': fecha_filtrada,
             'page': '1',
         })
 
     # ================================
-    # PAGE 2 - Ver histórico
+    # PAGE 2 - Histórico
     # ================================
     elif page == "2":
-        asistencias = (
+        fecha_filtrada = request.GET.get('fecha')
+
+        asistencias_qs = (
             Asistencia.objects
             .filter(curso=curso)
             .select_related('alumno')
             .order_by('-fecha', 'alumno__apellidos')
         )
 
-        # Agrupar por fecha
-        from itertools import groupby
-        from operator import attrgetter
+        if fecha_filtrada:
+            asistencias_qs = asistencias_qs.filter(fecha=fecha_filtrada)
+
         asistencia_por_dia = []
-        for fecha, registros in groupby(asistencias, key=attrgetter('fecha')):
+        for fecha, registros in groupby(asistencias_qs, key=attrgetter('fecha')):
             registros = list(registros)
             total = len(registros)
             presentes = sum(1 for a in registros if a.estado.lower() == "presente")
@@ -1086,9 +1092,9 @@ def asistencia(request, curso_id):
         return render(request, 'asistencia_historico.html', {
             'curso': curso,
             'asistencia_por_dia': asistencia_por_dia,
+            'fecha_filtrada': fecha_filtrada,
             'page': '2',
         })
-
 
 # =========================================================
 # Notas (CON REGISTRO)
