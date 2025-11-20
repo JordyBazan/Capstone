@@ -1,34 +1,58 @@
 {% extends "base.html" %}
 {% load static %}
+
 {% block title %}Anotaciones - {{ curso.nombre }}{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/anotaciones_lista.css' %}">
 {% endblock %}
 
 {% block content %}
-<h2 class="sectionTitle">Anotaciones - {{ curso.nombre }}</h2>
-<p class="hint">Selecciona un alumno para ver su resumen y agregar anotaciones</p>
-<div class="divider"></div>
+<div class="main-container">
+    
+    <div class="header-section">
+        <h2 class="sectionTitle">Anotaciones: {{ curso.nombre }}</h2>
+        <p class="hint">Selecciona un alumno para ver su hoja de vida y registrar observaciones.</p>
+    </div>
 
-<table class="grades-table">
-  <thead>
-    <tr>
-      <th>N°</th>
-      <th>Alumno</th>
-      <th>Acción</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for alumno in alumnos %}
-    <tr>
-      <td>{{ forloop.counter }}</td>
-      <td>{{ alumno.nombres }} {{ alumno.apellidos }}</td>
-      <td><a href="{% url 'usuarios:anotaciones_alumno' alumno.id %}" class="btn primary">Ver Detalles</a></td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="3">No hay alumnos registrados.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="anotaciones-table">
+                <thead>
+                    <tr>
+                        <th class="col-id">#</th>
+                        <th>Alumno</th>
+                        <th>RUT</th>
+                        <th class="col-accion">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alumno in alumnos %}
+                    <tr>
+                        <td class="col-id">{{ forloop.counter }}</td>
+                        <td class="col-alumno">
+                            {{ alumno.apellidos }}, {{ alumno.nombres }}
+                        </td>
+                        <td style="color: #6b7280; font-size: 0.9rem;">
+                            {{ alumno.rut }}
+                        </td>
+                        <td class="col-accion">
+                            <a href="{% url 'usuarios:anotaciones_alumno' alumno.id %}" class="btn-detalles">
+                                Ver Detalles
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 2rem; color: #6b7280;">
+                            No hay alumnos registrados en este curso.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
 {% endblock %}

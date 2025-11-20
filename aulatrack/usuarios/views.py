@@ -611,105 +611,6 @@ def asignatura_eliminar(request, pk):
         return redirect(f"{reverse('usuarios:cursos_lista')}?page=2")
     return render(request, "confirm_delete.html", {"obj": asignatura, "tipo": "Asignatura"})
 
-# =========================================================
-# Exportación PDF (WeasyPrint si está disponible, ReportLab como fallback)
-# =========================================================
-@user_passes_test(es_utp)
-def cursos_export_pdf(request):
-    cursos = (
-        Curso.objects
-        .select_related("profesor_jefe")
-        .prefetch_related("asignaturas", "asignaturas__profesor")
-        .annotate(
-            num_asignaturas=Count("asignaturas", distinct=True),
-            num_alumnos=Count("alumno", distinct=True),
-        )
-        .order_by("año", "nombre")
-    )
-
-    total_cursos = cursos.count()
-    total_alumnos = sum(c.num_alumnos for c in cursos)
-    total_asignaturas_matriz = sum(c.num_asignaturas for c in cursos)
-
-    # Conteo de asignaturas
-    asig_counter = Counter()
-    asignaturas_sin_prof = set()
-    asig_ids_unicos = set()
-    for c in cursos:
-        for a in c.asignaturas.all():
-            asig_ids_unicos.add(a.id)
-            asig_counter[a.nombre] += 1
-            if not a.profesor_id:
-                asignaturas_sin_prof.add(a.nombre)
-    asignaturas_distintas = len(asig_ids_unicos)
-
-    cursos_sin_pj = [c for c in cursos if not c.profesor_jefe_id]
-    cursos_sin_asignaturas = [c for c in cursos if c.num_asignaturas == 0]
-
-    def nivel_de(c):
-        s = f"{c.año or ''} {c.nombre or ''}".lower()
-        if "basico" in s or "básico" in s:
-            return "Básico"
-        if "medio" in s:
-            return "Medio"
-        return "Otros"
-
-    dist_nivel_counter = Counter(nivel_de(c) for c in cursos)
-    dist_basico = dist_nivel_counter.get("Básico", 0)
-    dist_medio = dist_nivel_counter.get("Medio", 0)
-    dist_otros = dist_nivel_counter.get("Otros", 0)
-
-    top_pj = Counter(
-        (c.profesor_jefe.get_full_name() or c.profesor_jefe.username)
-        for c in cursos if c.profesor_jefe_id
-    ).most_common(5)
-
-    top_asignaturas = asig_counter.most_common(8)
-
-    if total_cursos:
-        pct_con_pj = round(100 * (1 - (len(cursos_sin_pj) / total_cursos)), 1)
-        pct_con_asignaturas = round(100 * (1 - (len(cursos_sin_asignaturas) / total_cursos)), 1)
-    else:
-        pct_con_pj = 0
-        pct_con_asignaturas = 0
-
-    ctx = {
-        "titulo": "Informe Ejecutivo de Cursos",
-        "generado": timezone.localtime(),
-        "usuario": request.user,
-        "cursos": cursos,
-        "total_cursos": total_cursos,
-        "total_alumnos": total_alumnos,
-        "total_asignaturas_matriz": total_asignaturas_matriz,
-        "asignaturas_distintas": asignaturas_distintas,
-        "pct_con_pj": pct_con_pj,
-        "pct_con_asignaturas": pct_con_asignaturas,
-        "dist_nivel": {"Básico": dist_basico, "Medio": dist_medio, "Otros": dist_otros},
-        "top_pj": top_pj,
-        "top_asignaturas": top_asignaturas,
-        "asignaturas_sin_prof": sorted(asignaturas_sin_prof),
-        "cursos_sin_pj": cursos_sin_pj,
-        "cursos_sin_asignaturas": cursos_sin_asignaturas,
-    }
-
-    # ================================
-    #  Generar PDF con Xhtml2pdf
-    # ================================
-    from xhtml2pdf import pisa
-    from django.template.loader import get_template
-
-    template = get_template("pdf/cursos_export_pdf.html")
-    html = template.render(ctx)
-
-    pdf_bytes = BytesIO()
-    pisa_status = pisa.CreatePDF(html, dest=pdf_bytes)
-
-    if pisa_status.err:
-        return HttpResponse("Error generando PDF")
-
-    response = HttpResponse(pdf_bytes.getvalue(), content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="informe_cursos.pdf"'
-    return response
 
 
 
@@ -750,12 +651,6 @@ def formatear_punto_1_decimal(valor):
 
     valor = redondear_personalizado(valor)
     return f"{valor:.1f}"        
-
-
-
-
-
-
 
 
 # =========================================================
@@ -1180,6 +1075,20 @@ def libro_notas(request, curso_id, asignatura_id):
 # Anotaciones (CON REGISTRO)
 # =========================================================
 @login_required
+def eliminar_anotacion(request, anotacion_id):
+    anotacion = get_object_or_404(Anotacion, id=anotacion_id)
+    alumno_id = anotacion.alumno.id  # Guardamos el ID para volver
+    
+ 
+
+    if request.method == "POST":
+        registrar_accion(request.user, anotacion, DELETION, "Anotación eliminada.")
+        anotacion.delete()
+        messages.success(request, "Anotación eliminada correctamente.")
+    
+    return redirect("usuarios:anotaciones_alumno", alumno_id=alumno_id)
+
+@login_required
 def anotaciones_curso(request, curso_id):
     curso = get_object_or_404(Curso, id=curso_id)
     alumnos = Alumno.objects.filter(curso=curso).order_by('apellidos', 'nombres')
@@ -1190,10 +1099,11 @@ def anotaciones_alumno(request, alumno_id):
     alumno = get_object_or_404(Alumno, id=alumno_id)
     curso = alumno.curso
 
-    from django.db.models import Avg, Count
+    # Importaciones necesarias para cálculos
+    from django.db.models import Avg, Count, Min, Max
 
     # ======================================
-    # PROMEDIOS POR ASIGNATURA (MISMA LÓGICA QUE PDF)
+    # 1. PROMEDIOS POR ASIGNATURA
     # ======================================
     qs_prom = (
         Nota.objects.filter(alumno=alumno)
@@ -1211,7 +1121,7 @@ def anotaciones_alumno(request, alumno_id):
     ]
 
     # ======================================
-    # PROMEDIO GENERAL = PROMEDIO DE PROMEDIOS (igual PDF)
+    # 2. PROMEDIO GENERAL
     # ======================================
     proms = [p["promedio"] for p in promedios_asignaturas if p["promedio"] is not None]
 
@@ -1222,54 +1132,60 @@ def anotaciones_alumno(request, alumno_id):
         promedio = 0.0
 
     # ======================================
-    # ASISTENCIA (ARREGLADO)
+    # 3. ASISTENCIA (Lógica Mejorada)
     # ======================================
-    total_asistencias = Asistencia.objects.filter(alumno=alumno).count()
-
-    presentes = Asistencia.objects.filter(
-        alumno=alumno,
-        estado__iexact="presente"
-    ).count()
-
-    porcentaje_asistencia = round((presentes / total_asistencias * 100), 1) if total_asistencias > 0 else 0
-
-    # ======================================
-    # TABLA / GRÁFICO DE ASISTENCIA (tipo admin)
-    # ======================================
-    resumen_asistencia = (
-        Asistencia.objects
-        .filter(alumno=alumno)
-        .values("estado")
-        .annotate(total=Count("id"))
+    qs_asistencia = Asistencia.objects.filter(alumno=alumno)
+    
+    # A. Totales y Rango de Fechas (Nuevo)
+    datos_agregados = qs_asistencia.aggregate(
+        total=Count('id'),
+        inicio=Min('fecha'),
+        fin=Max('fecha')
     )
+    
+    total_asistencias = datos_agregados['total']
+    inicio_asistencia = datos_agregados['inicio']
+    fin_asistencia = datos_agregados['fin']
 
-    # Normalizar valores
+    # B. Desglose por estado (Presente, Ausente, Justificado)
+    # Usamos un diccionario para normalizar mayúsculas/minúsculas
     contador = {
         "presente": 0,
         "ausente": 0,
-        "atraso": 0,
         "justificado": 0,
     }
 
-    for item in resumen_asistencia:
-        estado = item["estado"].lower()
-        if estado in contador:
-            contador[estado] = item["total"]
+    # Agrupamos por estado para eficiencia
+    resumen_asistencia = (
+        qs_asistencia
+        .values("estado")
+        .annotate(cant=Count("id"))
+    )
 
+    for item in resumen_asistencia:
+        # Convertimos a minúscula para asegurar coincidencia
+        estado_key = item["estado"].lower()
+        if estado_key in contador:
+            contador[estado_key] = item["cant"]
+
+    # Asignación a variables finales
     pres = contador["presente"]
     aus = contador["ausente"]
-    atr = contador["atraso"]
     jus = contador["justificado"]
 
-    total_dias = pres + aus + atr + jus
+    # Calculamos porcentaje solo sobre el total registrado
+    porcentaje_asistencia = round((pres / total_asistencias * 100), 1) if total_asistencias > 0 else 0
+    
+    # Total de días hábiles contabilizados
+    total_dias = pres + aus + jus
 
     # ======================================
-    # ANOTACIONES
+    # 4. ANOTACIONES
     # ======================================
     anotaciones = Anotacion.objects.filter(alumno=alumno).order_by("-fecha")
 
     # ======================================
-    # POST → crear anotación
+    # 5. CREAR ANOTACIÓN (POST)
     # ======================================
     if request.method == "POST":
         texto = request.POST.get("texto")
@@ -1279,30 +1195,36 @@ def anotaciones_alumno(request, alumno_id):
                 alumno=alumno,
                 profesor=request.user,
             )
-            registrar_accion(request.user, anota, ADDITION, f"Anotación creada.")
+            registrar_accion(request.user, anota, ADDITION, "Anotación creada.")
             messages.success(request, "Anotación agregada correctamente.")
             return redirect("usuarios:anotaciones_alumno", alumno_id=alumno.id)
 
     # ======================================
-    # RENDER
+    # 6. RENDER
     # ======================================
     return render(
         request,
         "anotaciones.html",
         {
+            # Datos básicos
             "alumno": alumno,
             "curso": curso,
+            
+            # Académico
             "promedio": promedio,
-            "porcentaje_asistencia": porcentaje_asistencia,
-            "anotaciones": anotaciones,
             "promedios_asignaturas": promedios_asignaturas,
-
-            # Nuevos datos para la tabla + gráfico
+            "anotaciones": anotaciones,
+            
+            # Asistencia (Datos depurados)
+            "porcentaje_asistencia": porcentaje_asistencia,
             "pres": pres,
             "aus": aus,
-            "atr": atr,
             "jus": jus,
             "total_dias": total_dias,
+            
+            # Nuevos datos de rango
+            "inicio_asistencia": inicio_asistencia,
+            "fin_asistencia": fin_asistencia,
         },
     )
 
@@ -1331,27 +1253,35 @@ def gestion_usuario(request):
 def editar_usuario(request, id):
     usuario = get_object_or_404(Usuario, id=id)
 
-    #  Evitar editar el superusuario
+    # Evitar editar el superusuario si no eres tú mismo (o bloquearlo totalmente)
     if usuario.is_superuser:
-        messages.warning(request, " No puedes editar al usuario administrador del sistema.")
+        messages.warning(request, "No puedes editar al usuario administrador principal.")
         return redirect('usuarios:gestion_usuario')
 
     roles = Usuario.ROLE_CHOICES
 
     if request.method == 'POST':
-        usuario.nombres = request.POST.get('nombres')
-        usuario.apellidos = request.POST.get('apellidos')
-        usuario.email = request.POST.get('email')
-        usuario.rut = request.POST.get('rut')
+        # --- NUEVO: Capturar el username ---
+        nuevo_username = request.POST.get('username')
+        
+        # Validación simple: Verificar que el username no esté ocupado por OTRO usuario
+        if Usuario.objects.filter(username=nuevo_username).exclude(pk=usuario.pk).exists():
+            messages.error(request, f"El nombre de usuario '{nuevo_username}' ya está en uso.")
+        else:
+            usuario.username = nuevo_username
+            usuario.nombres = request.POST.get('nombres')
+            usuario.apellidos = request.POST.get('apellidos')
+            usuario.email = request.POST.get('email')
+            usuario.rut = request.POST.get('rut')
 
-        nuevo_role = request.POST.get('role')
-        if nuevo_role in dict(roles):
-            usuario.role = nuevo_role
+            nuevo_role = request.POST.get('role')
+            if nuevo_role in dict(roles):
+                usuario.role = nuevo_role
 
-        usuario.save()
-        registrar_accion(request.user, usuario, CHANGE, "Usuario editado desde vista personalizada")
-        messages.success(request, "Usuario actualizado correctamente.")
-        return redirect('usuarios:gestion_usuario')
+            usuario.save()
+            registrar_accion(request.user, usuario, CHANGE, "Usuario editado (incluyendo username)")
+            messages.success(request, "Usuario actualizado correctamente.")
+            return redirect('usuarios:gestion_usuario')
 
     return render(request, 'editar_usuario.html', {'usuario': usuario, 'roles': roles})
 

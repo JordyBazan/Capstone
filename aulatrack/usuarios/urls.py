@@ -9,7 +9,7 @@ from .views import (
     anotaciones_curso, anotaciones_alumno, reportes,
     crear_curso, crear_asignatura,
     curso_editar, curso_eliminar, asignar_asignaturas_curso,
-    curso_quitar_asignatura,cursos_export_pdf,
+    curso_quitar_asignatura,
     asignatura_list, asignatura_editar, asignatura_eliminar,
     asignar_profesor_jefe, asignar_profesor_jefe_inline,
     agregar_alumno, editar_alumno, cursos_lista, MiLoginView, registro
@@ -39,7 +39,7 @@ urlpatterns = [
     # =============================
     path('anotaciones/<int:curso_id>/', anotaciones_curso, name='anotaciones_curso'),
     path('anotaciones/alumno/<int:alumno_id>/', anotaciones_alumno, name='anotaciones_alumno'),
-
+    path('anotacion/eliminar/<int:anotacion_id>/', views.eliminar_anotacion, name='eliminar_anotacion'),
     # =============================
     # Reportes
     # =============================
@@ -65,7 +65,6 @@ urlpatterns = [
     path('cursos/<int:pk>/eliminar/', curso_eliminar, name='curso_eliminar'),
     path('cursos/<int:curso_id>/asignaturas/', asignar_asignaturas_curso, name='asignar_asignaturas_curso'),
     path('cursos/<int:curso_id>/asignaturas/<int:asignatura_id>/quitar/', curso_quitar_asignatura, name='curso_quitar_asignatura'),
-    path('cursos/export/pdf/', cursos_export_pdf, name='cursos_export_pdf'),
     path("mis_cursos/", RedirectView.as_view(pattern_name="usuarios:home_page"), name="mis_cursos"),
     path("reporte_alumno/<int:alumno_id>/pdf/", views.reporte_alumno, name="reporte_alumno"),
     path('asignar-docente-curso/', views.asignar_docente_curso, name='asignar_docente_curso'),

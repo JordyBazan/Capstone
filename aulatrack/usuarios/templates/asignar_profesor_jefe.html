@@ -9,16 +9,9 @@
 
 {% block content %}
 <div class="card">
-  <h1>QUITAR PROFES REPETIDOS</h1>
   <h1>Asignar profesor jefe</h1>
 
-  {% if messages %}
-    <ul class="messages">
-      {% for message in messages %}
-        <li class="msg {{ message.tags }}">{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
+  
 
   <form method="post" class="form">
     {% csrf_token %}

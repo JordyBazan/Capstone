@@ -1,156 +1,142 @@
+/* static/css/registro.css */
+
 :root {
-  --bg: #ffffff;
-  --text: #0f172a;
-  --text-strong: #111827;
-  --muted: #64748b;
-  --border: #e5e7eb;
-  --focus: #7c3aed;
-  --warn: #b91c1c;
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --bg-card: #ffffff;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --border-input: #d1d5db;
+    --focus-ring: rgba(99, 102, 241, 0.25);
+    --radius: 0.75rem;
+    --error-bg: #fef2f2;
+    --error-text: #991b1b;
+    --success-bg: #ecfdf5;
+    --success-text: #065f46;
 }
 
-/* General */
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Inter", "Poppins", sans-serif;
-  margin: 0;
-  padding: 2rem 0;
+/* --- NUEVO: Contenedor Wrapper --- 
+   Esto reemplaza el estilo que teníamos antes en el 'body'.
+   Permite centrar el formulario SIN romper la barra lateral.
+*/
+.registro-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Alineado arriba con margen, se ve mejor en dashboard */
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    width: 100%;
 }
 
-/* Contenedor general */
-.container {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+/* La Tarjeta */
+.card-registro {
+    background-color: var(--bg-card);
+    width: 100%;
+    max-width: 550px; /* Un poco más ancho para que respire */
+    padding: 2.5rem;
+    border-radius: var(--radius);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb; /* Borde sutil para definirla mejor sobre fondo blanco */
 }
 
-/* Tarjeta de registro */
-.card {
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
-  padding: 1.5rem;
-  width: 100%;
-  max-width: 480px;
+/* Tipografía */
+.card-registro h2 {
+    color: var(--text-main);
+    font-weight: 800;
+    font-size: 1.75rem;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
 }
 
-.card h2 {
-  text-align: center;
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: var(--text-strong);
-  margin-bottom: 1rem;
+.subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
 }
 
-/* Alertas */
-.alert {
-  border-radius: 10px;
-  padding: 0.8rem 1rem;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-}
-
-.alert-danger {
-  background: #fee2e2;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
-}
-
-.alert-success {
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
-  color: #065f46;
-}
-
-/* Campos */
+/* Labels */
 .form-label {
-  font-weight: 700;
-  color: var(--text-strong);
-  margin-bottom: 0.35rem;
-  display: block;
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 0.4rem;
 }
 
-input,
-select,
-textarea {
-  width: 100%;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: #fff;
-  color: var(--text);
-  font-size: 0.95rem;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+/* Inputs */
+.input-aula {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    background-color: #fff;
+    border: 1px solid var(--border-input);
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    box-sizing: border-box;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
-  outline: none;
-  border-color: var(--focus);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+.input-aula:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
-/* Botón principal */
-.btn-1 {
-  
-  padding: 0.65rem;
-  border-radius: 10px;
-  border: 1px solid var(--focus);
-  background: var(--focus);
-  color: #fff;
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: filter 0.2s ease, transform 0.2s ease;
+/* Select (Flecha) */
+select.input-aula {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
 }
 
-.btn:hover {
-  filter: brightness(1.05);
-  transform: translateY(-1px);
+/* Botón */
+.btn-submit {
+    display: block;
+    width: 100%;
+    padding: 0.9rem;
+    margin-top: 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: var(--primary);
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
-/* Texto inferior */
-p {
-  margin-top: 1rem;
-  text-align: center;
-  font-size: 0.95rem;
-  color: var(--muted);
+.btn-submit:hover {
+    background-color: var(--primary-hover);
 }
 
-p a {
-  color: var(--focus);
-  font-weight: 700;
-  text-decoration: none;
+/* Alertas y Errores */
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+}
+.alert-success { background-color: var(--success-bg); color: var(--success-text); border: 1px solid #a7f3d0; }
+.alert-error, .alert-danger { background-color: var(--error-bg); color: var(--error-text); border: 1px solid #fecaca; }
+
+.errorlist {
+    list-style: none;
+    margin: 0.25rem 0 0 0;
+    padding: 0;
+    color: #dc2626;
+    font-size: 0.85rem;
 }
 
-p a:hover {
-  text-decoration: underline;
+.footer-link {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
 }
-
-/* Errores de campo */
-ul {
-  margin: 0;
-  padding-left: 1.2rem;
-}
-
-li {
-  font-size: 0.9rem;
-  color: var(--warn);
-}
-
-/* Responsividad */
-@media (max-width: 576px) {
-  body {
-    padding: 1rem;
-  }
-
-  .card {
-    padding: 1.2rem;
-  }
-
-  .card h2 {
-    font-size: 1.4rem;
-  }
-}
+.footer-link a { color: var(--primary); text-decoration: none; font-weight: 600; }

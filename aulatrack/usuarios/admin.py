@@ -16,7 +16,7 @@ class AsistenciaForm(forms.ModelForm):
         model = Asistencia
         fields = "__all__"
         widgets = {
-            "fecha": forms.DateInput(attrs={"type": "date"}),  # ✅ Selector de calendario
+            "fecha": forms.DateInput(attrs={"type": "date"}),  #  Selector de calendario
         }
 
 
@@ -46,7 +46,7 @@ class AsistenciaAdmin(admin.ModelAdmin):
     # ----------- Link directo al historial -----------
     def ver_historial_link(self, obj):
         url = f"/admin/usuarios/asistencia/historial/{obj.alumno.id}/"
-        return format_html(f'<a href="{url}" class="button">📅 Ver historial</a>')
+        return format_html(f'<a href="{url}" class="button"> Ver historial</a>')
     ver_historial_link.short_description = "Historial"
 
     # ----------- Página de historial -----------

@@ -1,158 +1,184 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}{{ alumno.nombres }} {{ alumno.apellidos }} - Anotaciones{% endblock %}
+{% block title %}{{ alumno.nombres }} - Historial{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/anotaciones.css' %}">
+    <link rel="stylesheet" href="{% static 'css/anotaciones.css' %}">
 {% endblock %}
 
 {% block content %}
+<div class="main-container">
 
-<h2 class="sectionTitle">{{ alumno.nombres }} {{ alumno.apellidos }}</h2>
-<p class="hint">{{ curso.nombre }} | RUT: {{ alumno.rut }} | Contacto emergencia: {{ alumno.contacto_emergencia }}</p>
-<div class="divider"></div>
-
-<div class="info-grid">
-  <p><strong>Promedio general:</strong> {{ promedio|floatformat:1 }}</p>
-  <p><strong>Asistencia:</strong> {{ porcentaje_asistencia }}%</p>
-</div>
-
-<h3>Anotaciones</h3>
-<ul class="notes-list">
-  {% for anotacion in anotaciones %}
-    <li>
-      <div class="note">
-        <span class="date">{{ anotacion.fecha }}</span>
-        <p>{{ anotacion.texto }}</p>
-        <span class="profesor">Por: {{ anotacion.profesor.first_name }} {{ anotacion.profesor.last_name }}</span>
-      </div>
-    </li>
-  {% empty %}
-    <p>No hay anotaciones registradas.</p>
-  {% endfor %}
-</ul>
-
-<form method="post">
-  {% csrf_token %}
-  <textarea name="texto" rows="3" placeholder="Escribe una nueva anotación..."></textarea>
-  <button type="submit" class="btn primary">Agregar anotación</button>
-</form>
-
-<br>
-<a href="{% url 'usuarios:reporte_alumno' alumno.id %}" class="btn primary">Reporte académico</a>
-
-<br>
-<a href="{% url 'usuarios:anotaciones_curso' curso.id %}" class="btn">Volver al curso</a>
-
-<div class="divider"></div>
-
-<h3>Resumen de Asistencia</h3>
-
-<table class="notes-table" style="margin-top:10px;">
-    <thead>
-        <tr>
-            <th>Presente</th>
-            <th>Ausente</th>
-            <th>Justificado</th>
-            <th>Total</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr style="text-align:center;">
-            <td>{{ pres }}</td>
-            <td>{{ aus }}</td>
-            <td>{{ jus }}</td>
-            <td><b>{{ total_dias }}</b></td>
-        </tr>
-    </tbody>
-</table>
-
-<h3>Gráfico de Asistencia</h3>
-
-<div class="asistencia-chart">
-
-    <div class="fila">
-        <span class="label">Presente</span>
-        <div class="barra">
-            <div class="fill presente" data-val="{{ pres }}"></div>
-        </div>
-        <span class="num">{{ pres }}</span>
+    <div class="header-section">
+        <h2 class="sectionTitle">{{ alumno.nombres }} {{ alumno.apellidos }}</h2>
+        <p class="hint">
+            Curso: {{ curso.nombre }} | RUT: {{ alumno.rut }} | Emergencia: {{ alumno.contacto_emergencia }}
+        </p>
     </div>
 
-    <div class="fila">
-        <span class="label">Ausente</span>
-        <div class="barra">
-            <div class="fill ausente" data-val="{{ aus }}"></div>
+    <div class="profile-grid">
+
+        <div class="main-content">
+            
+            <div class="card">
+                <h3>Nueva Anotación</h3>
+                <form method="post" class="note-form">
+                    {% csrf_token %}
+                    <textarea name="texto" rows="3" placeholder="Escribe una observación sobre el alumno..." required></textarea>
+                    <button type="submit" class="btn btn-primary">Registrar anotación</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>Historial de Observaciones</h3>
+                <ul class="notes-list">
+                    {% for anotacion in anotaciones %}
+                    <li>
+                        <div class="note">
+                            <div class="meta">
+                                <span class="date">{{ anotacion.fecha }}</span>
+                                
+                                <div class="meta-actions">
+                                    <span class="profesor">{{ anotacion.profesor.get_full_name|default:anotacion.profesor.username }}</span>
+                                    
+                                    {% if request.user == anotacion.profesor or request.user.role == 'utp' or request.user.is_superuser %}
+                                        <form action="{% url 'usuarios:eliminar_anotacion' anotacion.id %}" method="POST" 
+                                              onsubmit="return confirm('¿Eliminar esta anotación?');"
+                                              style="display:inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-trash" title="Eliminar">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <p>{{ anotacion.texto }}</p>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <p style="color: #6b7280; font-style: italic;">No hay anotaciones registradas para este alumno.</p>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
-        <span class="num">{{ aus }}</span>
-    </div>
 
-    
+        <aside class="profile-sidebar">
+            
+            <div class="card">
+                <h3>Resumen Académico</h3>
+                <div class="info-stats">
+                    <div class="stat-box">
+                        <span class="value">{{ promedio|floatformat:1 }}</span>
+                        <span class="label">Promedio</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="value">{{ porcentaje_asistencia }}%</span>
+                        <span class="label">Asistencia</span>
+                    </div>
+                </div>
+                
+                <a href="{% url 'usuarios:reporte_alumno' alumno.id %}" class="btn btn-primary" style="margin-bottom: 0.5rem;">
+                    Descargar Reporte PDF
+                </a>
+                <a href="{% url 'usuarios:anotaciones_curso' curso.id %}" class="btn btn-outline">
+                    Volver al curso
+                </a>
+            </div>
 
-    <div class="fila">
-        <span class="label">Justificado</span>
-        <div class="barra">
-            <div class="fill justificado" data-val="{{ jus }}"></div>
-        </div>
-        <span class="num">{{ jus }}</span>
-    </div>
+            <div class="card">
+                <h3>Asistencia</h3>
+                <div class="asistencia-chart">
+                    
+                    <div class="chart-row">
+                        <span class="chart-label">Presente</span>
+                        <div class="chart-bar-bg">
+                            <div class="chart-fill presente" style="width: 0%" data-val="{{ pres }}"></div>
+                        </div>
+                        <span class="chart-num">{{ pres }}</span>
+                    </div>
 
-</div>
+                    <div class="chart-row">
+                        <span class="chart-label">Ausente</span>
+                        <div class="chart-bar-bg">
+                            <div class="chart-fill ausente" style="width: 0%" data-val="{{ aus }}"></div>
+                        </div>
+                        <span class="chart-num">{{ aus }}</span>
+                    </div>
 
-<div class="divider"></div>
+                    <div class="chart-row">
+                        <span class="chart-label">Justif.</span>
+                        <div class="chart-bar-bg">
+                            <div class="chart-fill justificado" style="width: 0%" data-val="{{ jus }}"></div>
+                        </div>
+                        <span class="chart-num">{{ jus }}</span>
+                    </div>
 
-<h3>Promedios por asignatura</h3>
+                </div>
+                
+                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; text-align: center;">
+                    <p style="margin: 0; font-size: 0.95rem; color: #111827;">
+                        Total días registrados: <strong>{{ total_dias }}</strong>
+                    </p>
+                    
+                    {% if inicio_asistencia and fin_asistencia %}
+                    <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: #6b7280;">
+                        Período: {{ inicio_asistencia|date:"d M" }} — {{ fin_asistencia|date:"d M Y" }}
+                    </p>
+                    {% else %}
+                    <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: #6b7280;">
+                        (Sin registros de fecha)
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
 
-<table class="notes-table">
-    <thead>
-        <tr>
-            <th>Asignatura</th>
-            <th>Promedio</th>
-        </tr>
-    </thead>
+            <div class="card">
+                <h3>Rendimiento por Asignatura</h3>
+                <table class="mini-table">
+                    <thead>
+                        <tr>
+                            <th>Asignatura</th>
+                            <th style="text-align: right;">Prom.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in promedios_asignaturas %}
+                        <tr>
+                            <td>{{ item.asignatura__nombre }}</td>
+                            <td style="text-align: right; font-weight: 600;" 
+                                class="{% if item.promedio and item.promedio < 4.0 %}nota-roja{% endif %}">
+                                {{ item.promedio|floatformat:1|default:"—" }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2">Sin notas registradas.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
 
-    <tbody>
-        {% if promedios_asignaturas %}
-            {% for item in promedios_asignaturas %}
-            <tr>
-                <td>{{ item.asignatura__nombre }}</td>
-                <td>{{ item.promedio|floatformat:1 }}</td>
-            </tr>
-            {% endfor %}
+        </aside>
 
-            <tr style="font-weight: bold; background: #f2f2f2;">
-                <td>Promedio General</td>
-                <td>{{ promedio|floatformat:1 }}</td>
-            </tr>
-
-        {% else %}
-            <tr>
-                <td colspan="2">No hay notas registradas.</td>
-            </tr>
-        {% endif %}
-    </tbody>
-</table>
+    </div> </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    const fills = document.querySelectorAll(".fill");
-
-    // Obtener el valor más alto (para escalar proporcionalmente)
-    let max = 0;
-    fills.forEach(f => {
-        const val = parseInt(f.dataset.val);
-        if (val > max) max = val;
+    const fills = document.querySelectorAll(".chart-fill");
+    let maxVal = 0;
+    fills.forEach(el => {
+        const val = parseInt(el.getAttribute('data-val')) || 0;
+        if (val > maxVal) maxVal = val;
     });
-
-    // Amplitud máxima de la barra
-    const MAX_WIDTH = 280; // px
-
-    // Asignar ancho proporcional
-    fills.forEach(f => {
-        const val = parseInt(f.dataset.val);
-        const width = (val / max) * MAX_WIDTH;
-        f.style.width = width + "px";
+    if (maxVal === 0) maxVal = 1;
+    fills.forEach(el => {
+        const val = parseInt(el.getAttribute('data-val')) || 0;
+        const pct = (val / maxVal) * 100;
+        el.style.width = pct + "%";
     });
 });
 </script>

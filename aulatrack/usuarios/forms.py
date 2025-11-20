@@ -1,41 +1,39 @@
 # =========================================================
-# Importaciones
+# forms.py - AulaTrack
 # =========================================================
-from pyexpat.errors import messages
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.forms import CheckboxSelectMultiple
 from django.db.models.functions import Lower
-from django.shortcuts import get_object_or_404, redirect, redirect
 
-from .models import Curso, Asignatura, Usuario, Alumno
+# Modelos
+from .models import Curso, Asignatura, Usuario, Alumno, DocenteCurso
+
+Usuario = get_user_model()
 
 # =========================================================
-# 1) Autenticación
+# 1) Autenticación (Login)
 # =========================================================
-from django.contrib.auth import get_user_model
-
-Usuario = get_user_model()  
-
 class LoginForm(AuthenticationForm):
     username = forms.CharField(
         label="Usuario",
-        widget=forms.TextInput(attrs={"autofocus": True, "placeholder": "Tu nombre de usuario"})
+        widget=forms.TextInput(attrs={"autofocus": True, "placeholder": "RUT o Usuario"})
     )
     password = forms.CharField(
         label="Contraseña",
         widget=forms.PasswordInput(attrs={"placeholder": "••••••••"})
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Aplicar estilo AulaTrack a todos los campos del Login
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'form-control input-aula'
 
 # =========================================================
-# 2) Registro
+# 2) Registro de Usuario
 # =========================================================
-from django.contrib.auth.hashers import make_password
-from .models import Usuario
-
-
 class RegistroForm(UserCreationForm):
     class Meta:
         model = Usuario
@@ -46,23 +44,30 @@ class RegistroForm(UserCreationForm):
             'rut',
             'email',
             'role',
-            'password1',
-            'password2',
         ]
-        widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'nombres': forms.TextInput(attrs={'class': 'form-control'}),
-            'apellidos': forms.TextInput(attrs={'class': 'form-control'}),
-            'rut': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'role': forms.Select(attrs={'class': 'form-select'}),
-            'password1': forms.PasswordInput(attrs={'class': 'form-control'}),
-            'password2': forms.PasswordInput(attrs={'class': 'form-control'}),
-        }
+        # Nota: UserCreationForm ya maneja password1 y password2 internamente,
+        # no es necesario declararlos en 'fields' si usas la clase base, 
+        # pero si los quieres explícitos para el orden, está bien.
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # --- INYECCIÓN DE ESTILOS CSS ---
+        for field_name, field in self.fields.items():
+            # Clase base para todos
+            css_class = 'form-control input-aula'
+            
+            # Ajuste especial para Selects (como el Rol)
+            if isinstance(field.widget, forms.Select):
+                css_class = 'form-select input-aula'
+            
+            field.widget.attrs.update({
+                'class': css_class,
+                'placeholder': field.label  # Placeholder automático
+            })
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        # Esto asegura que los campos extra se guarden bien
         user.nombres = self.cleaned_data.get('nombres')
         user.apellidos = self.cleaned_data.get('apellidos')
         user.rut = self.cleaned_data.get('rut')
@@ -71,9 +76,11 @@ class RegistroForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
 # =========================================================
 # 3) Gestión Académica
 # =========================================================
+
 # 3.1) Asignatura
 class AsignaturaForm(forms.ModelForm):
     class Meta:
@@ -86,10 +93,10 @@ class AsignaturaForm(forms.ModelForm):
             "curso": "Curso",
         }
         widgets = {
-            "nombre": forms.TextInput(attrs={"placeholder": "Ej: Matemáticas"}),
-            "descripcion": forms.Textarea(attrs={"placeholder": "Breve descripción", "rows": 2}),
-            "profesor": forms.Select(),
-            "curso": forms.Select(),
+            "nombre": forms.TextInput(attrs={"placeholder": "Ej: Matemáticas", "class": "form-control input-aula"}),
+            "descripcion": forms.Textarea(attrs={"placeholder": "Breve descripción", "rows": 2, "class": "form-control input-aula"}),
+            "profesor": forms.Select(attrs={"class": "form-select input-aula"}),
+            "curso": forms.Select(attrs={"class": "form-select input-aula"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -111,27 +118,25 @@ class CursoForm(forms.ModelForm):
             "profesor_jefe": "Profesor Jefe (Docente)",
         }
         widgets = {
-            "año": forms.TextInput(attrs={"placeholder": "Ej: 2025"}),
-            "nombre": forms.TextInput(attrs={"placeholder": "Ej: 1° Básico A"}),
-            "sala": forms.TextInput(attrs={"placeholder": "Ej: Aula 1"}),
-            "profesor_jefe": forms.Select(attrs={"data-placeholder": "Seleccione un Docente"}),
+            "año": forms.TextInput(attrs={"placeholder": "Ej: 2025", "class": "form-control input-aula"}),
+            "nombre": forms.TextInput(attrs={"placeholder": "Ej: 1° Básico A", "class": "form-control input-aula"}),
+            "sala": forms.TextInput(attrs={"placeholder": "Ej: Aula 1", "class": "form-control input-aula"}),
+            "profesor_jefe": forms.Select(attrs={"data-placeholder": "Seleccione un Docente", "class": "form-select input-aula"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Usar el modelo Usuario y filtrar por rol DOCENTE
         self.fields["profesor_jefe"].queryset = (
             Usuario.objects.filter(is_active=True, role=Usuario.ROLE_DOCENTE)
             .order_by('nombres', 'apellidos', 'username')
         )
-        # Mostrar nombre completo y username
         self.fields["profesor_jefe"].label_from_instance = (
             lambda u: f"{u.get_full_name()} ({u.username})".strip() if u.get_full_name() else f"{u.username}"
         )
 
     def clean_profesor_jefe(self):
         prof = self.cleaned_data.get("profesor_jefe")
-        if prof and prof.role != Usuario.ROLE_DOCENTE:
+        if prof and getattr(prof, 'role', '') != Usuario.ROLE_DOCENTE:
             raise forms.ValidationError("El usuario seleccionado no tiene rol de Docente.")
         return prof
 
@@ -165,7 +170,7 @@ class CursoAsignaturasForm(forms.ModelForm):
     asignaturas = forms.ModelMultipleChoiceField(
         queryset=Asignatura.objects.select_related("profesor").order_by("nombre"),
         required=False,
-        widget=CheckboxSelectMultiple,
+        widget=CheckboxSelectMultiple, # Los checkboxes suelen llevar estilos distintos, no input-aula
         label="Asignaturas del curso",
     )
 
@@ -175,37 +180,37 @@ class CursoAsignaturasForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         def etiqueta(a: Asignatura):
             if a.profesor:
                 prof = (a.profesor.get_full_name() or a.profesor.username).strip()
                 return f"{a.nombre} — {prof}"
             return a.nombre
-
         self.fields["asignaturas"].label_from_instance = etiqueta
-
 
 class CursoEditForm(forms.ModelForm):
     class Meta:
         model = Curso
-        fields = ['año', 'nombre', 'sala'] 
+        fields = ['año', 'nombre', 'sala']
+        widgets = {
+             "año": forms.TextInput(attrs={"class": "form-control input-aula"}),
+             "nombre": forms.TextInput(attrs={"class": "form-control input-aula"}),
+             "sala": forms.TextInput(attrs={"class": "form-control input-aula"}),
+        }
 
 # =========================================================
-# 4) Docente ↔ Curso (asignación 1 a 1 por fila)
+# 4) Asignaciones Docentes
 # =========================================================
-
-
 
 class AsignarProfesorJefeForm(forms.Form):
     curso = forms.ModelChoiceField(
         queryset=Curso.objects.all().order_by('año', 'nombre'),
         label="Curso",
-        widget=forms.Select(attrs={"class": "form-select"})
+        widget=forms.Select(attrs={"class": "form-select input-aula"})
     )
     docente = forms.ModelChoiceField(
         queryset=Usuario.objects.filter(role='docente').order_by('username'),
         label="Docente (profesor jefe)",
-        widget=forms.Select(attrs={"class": "form-select"})
+        widget=forms.Select(attrs={"class": "form-select input-aula"})
     )
 
     def __init__(self, *args, **kwargs):
@@ -213,34 +218,6 @@ class AsignarProfesorJefeForm(forms.Form):
         super().__init__(*args, **kwargs)
         if initial_curso:
             self.fields["curso"].initial = initial_curso
-
-from django.views.decorators.http import require_POST
-from django.core.exceptions import PermissionDenied
-get_object_or_404, redirect, messages
-
-
-@require_POST
-def asignar_profesor_jefe(request):
-    if getattr(request.user.usuario, 'role', None) != 'utp':
-        raise PermissionDenied("Solo UTP puede asignar profesor jefe.")
-
-    curso_id = request.POST.get('curso_id')
-    pj_id = request.POST.get('profesor_jefe')  
-
-    curso = get_object_or_404(Curso, pk=curso_id)
-
-    if pj_id:
-        pj = get_object_or_404(User, pk=pj_id, usuario__role='docente')
-        curso.profesor_jefe = pj
-        msg = f"Profesor Jefe asignado: {pj.get_full_name() or pj.username}"
-    else:
-        curso.profesor_jefe = None
-        msg = "Profesor Jefe eliminado."
-
-    curso.save(update_fields=['profesor_jefe'])
-    messages.success(request, msg)
-    return redirect('curso_editar', pk=curso.pk)
-
 
 # =========================================================
 # 5) Alumno
@@ -251,7 +228,12 @@ class AlumnoForm(forms.ModelForm):
         model = Alumno
         fields = ['rut', 'nombres', 'apellidos', 'fecha_nacimiento', 'contacto_emergencia', 'curso']
         widgets = {
-            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
+            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date', 'class': 'form-control input-aula'}),
+            'rut': forms.TextInput(attrs={'class': 'form-control input-aula'}),
+            'nombres': forms.TextInput(attrs={'class': 'form-control input-aula'}),
+            'apellidos': forms.TextInput(attrs={'class': 'form-control input-aula'}),
+            'contacto_emergencia': forms.TextInput(attrs={'class': 'form-control input-aula'}),
+            'curso': forms.Select(attrs={'class': 'form-select input-aula'}),
         }
 
 class AsignarAsignaturasForm(forms.Form):
@@ -262,15 +244,13 @@ class AsignarAsignaturasForm(forms.Form):
         label="Asignaturas disponibles"
     )
 
-from .models import DocenteCurso, Usuario, Curso
-
 class AsignarDocenteCursoForm(forms.ModelForm):
     class Meta:
         model = DocenteCurso
         fields = ["docente", "curso"]
         widgets = {
-            "docente": forms.Select(attrs={"class": "form-control"}),
-            "curso": forms.Select(attrs={"class": "form-control"}),
+            "docente": forms.Select(attrs={"class": "form-select input-aula"}),
+            "curso": forms.Select(attrs={"class": "form-select input-aula"}),
         }
 
     def clean(self):
@@ -278,10 +258,9 @@ class AsignarDocenteCursoForm(forms.ModelForm):
         docente = cleaned_data.get("docente")
         curso = cleaned_data.get("curso")
 
-        #  Evitar duplicados
         if docente and curso:
             if DocenteCurso.objects.filter(docente=docente, curso=curso).exists():
                 raise forms.ValidationError(
-                    f" El docente «{docente.username}» ya está asignado al curso «{curso.nombre}»."
+                    f"El docente «{docente.username}» ya está asignado al curso «{curso.nombre}»."
                 )
         return cleaned_data

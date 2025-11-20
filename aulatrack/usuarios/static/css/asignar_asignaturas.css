@@ -1,0 +1,178 @@
+/* ===========================
+   ASIGNAR ASIGNATURAS – AULATRACK
+   Estilo moderno, centrado y profesional
+   =========================== */
+
+/* ---------- LAYOUT GENERAL ---------- */
+.page-head {
+  margin-bottom: 25px;
+}
+
+.page-head h1 {
+  font-size: 32px;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 6px;
+}
+
+.hint {
+  color: #64748b;
+  font-size: 15px;
+  margin-top: 4px;
+}
+
+/* ---------- CONTENEDOR PRINCIPAL ---------- */
+.form-container {
+  background: #ffffff;
+  padding: 35px;
+  margin: 40px auto;            /* Centrado perfecto */
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  animation: fadeIn 0.4s ease;
+  max-width: 780px;             /* Un poco más ancho */
+  width: 90%;
+}
+
+/* ---------- HEADERS ---------- */
+.form-container h3 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 12px;
+}
+
+/* ---------- ANIMACIÓN ---------- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- FORMULARIO ---------- */
+.form-group {
+  margin-bottom: 25px;
+}
+
+.form-group ul {
+  list-style: none;
+  padding: 0;
+}
+
+.form-group li {
+  margin-bottom: 10px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: #f8f9fc;
+  border: 1px solid #e5e8ef;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.form-group li:hover {
+  background: #eef2ff;
+  border-color: #d0d8ff;
+}
+
+/* ---------- BOTONES ---------- */
+.btn-group {
+  margin-top: 22px;
+  display: flex;
+  gap: 14px;
+}
+
+.btn-primary {
+  background: #4361ee;
+  color: #fff;
+  padding: 11px 26px;
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
+  transition: 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #3a53d2;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: #e5e7eb;
+  color: #1f2937;
+  padding: 11px 26px;
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
+  transition: 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: #d1d5db;
+  transform: translateY(-2px);
+}
+
+/* ---------- DIVISOR ---------- */
+.divider {
+  height: 1px;
+  background: #e6e7ec;
+  margin: 32px 0 25px 0;
+  border-radius: 4px;
+}
+
+/* ---------- LISTA DE ASIGNATURAS ACTUALES ---------- */
+.list-current {
+  margin-top: 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.current-item {
+  padding: 13px 16px;
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+.current-item:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.prof-info {
+  margin-left: 8px;
+  color: #475569;
+}
+
+/* ---------- TEXTO MUTED ---------- */
+.text-muted {
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 600px) {
+  .form-container {
+    padding: 22px;
+    margin: 20px auto;
+  }
+
+  .btn-group {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    text-align: center;
+  }
+
+  .current-item {
+    flex-direction: column;
+    gap: 6px;
+  }
+}

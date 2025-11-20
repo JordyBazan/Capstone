@@ -9,13 +9,7 @@
 {% endblock %}
 
 {% block content %}
-{% if messages %}
-  <ul class="messages">
-    {% for message in messages %}
-      <li class="msg {{ message.tags }}">{{ message }}</li>
-    {% endfor %}
-  </ul>
-{% endif %}
+
 
 <h2 class="sectionTitle">{{ asignatura.nombre }} - {{ curso.año }} {{ curso.nombre }}</h2>
 <p class="hint">

@@ -8,48 +8,66 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-head flex-between">
-  <div>
-    <h1>Asignar asignaturas</h1>
-    <div class="hint">
-      Curso: <b>{{ curso.nombre }}</b> - ({{ curso.sala|default:"Sin sala asignada" }})
-    </div>
-  </div>
+<div class="page-head">
+  <h1>Asignar asignaturas</h1>
+  <p class="hint">
+    Curso: <b>{{ curso.nombre }}</b> — 
+    <span>{{ curso.sala|default:"Sin sala asignada" }}</span>
+  </p>
 </div>
 
 <div class="form-container">
-  <form method="post">
+
+  <!-- FORMULARIO PRINCIPAL -->
+  <form method="post" class="asignaturas-form">
     {% csrf_token %}
+
     <h3>Selecciona asignaturas</h3>
-    <p class="hint">Selecciona las asignaturas que pertenecen al curso <b>{{ curso.nombre }}</b>.</p>
+    <p class="hint">
+      Marca las asignaturas que pertenecen al curso 
+      <b>{{ curso.nombre }}</b>.
+    </p>
 
     <div class="form-group">
       {{ form.asignaturas }}
     </div>
 
     <div class="btn-group">
-      <button type="submit" class="btn-primary"> Guardar cambios</button>
-      <a href="{% url 'usuarios:cursos_lista' %}?page=2" class="btn-secondary">Cancelar</a>
+      <button type="submit" class="btn-primary">
+        Guardar cambios
+      </button>
+
+      <a href="{% url 'usuarios:cursos_lista' %}?page=2" class="btn-secondary">
+        Cancelar
+      </a>
     </div>
   </form>
 
+  <!-- ASIGNATURAS ACTUALMENTE ASIGNADAS -->
   {% if asignaturas_actuales %}
-  <hr>
+  <div class="divider"></div>
+
   <h3>Asignaturas actualmente asignadas</h3>
+
   <ul class="list-current">
     {% for asignatura in asignaturas_actuales %}
-      <li>
-        <b>{{ asignatura.nombre }}</b>
-        {% if asignatura.profesor %}
-          — Profesor: {{ asignatura.profesor.get_full_name|default:asignatura.profesor.username }}
-        {% else %}
-          — <span class="text-muted">Sin profesor asignado</span>
-        {% endif %}
+      <li class="current-item">
+        <div>
+          <b>{{ asignatura.nombre }}</b>
+          <span class="prof-info">
+            {% if asignatura.profesor %}
+              — Profesor: {{ asignatura.profesor.get_full_name|default:asignatura.profesor.username }}
+            {% else %}
+              — <span class="text-muted">Sin profesor asignado</span>
+            {% endif %}
+          </span>
+        </div>
       </li>
     {% empty %}
       <li class="text-muted">No hay asignaturas asignadas aún.</li>
     {% endfor %}
   </ul>
   {% endif %}
+
 </div>
 {% endblock %}

@@ -1,159 +1,214 @@
+/* static/css/asistencia.css */
+
+:root {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --bg-page: #ffffff;
+    --text-main: #111827;
+    --border: #e2e8f0;
+    
+    /* Colores de Estado */
+    --color-presente: #10b981; /* Verde */
+    --color-ausente: #ef4444;  /* Rojo */
+    --color-justificado: #3b82f6; /* Azul */
+}
+
 /* ==========================
-   SWITCH / BOTONES DE PÁGINA
+   LAYOUT GENERAL
    ========================== */
+.main-container {
+    padding: 1rem;
+    background-color: var(--bg-page);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.sectionTitle {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 0.25rem;
+}
+
+.hint {
+    color: #64748b;
+    margin-bottom: 1.5rem;
+}
+
+/* ==========================
+   CONTROLES SUPERIORES
+   ========================== */
+.controls-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
 .page-switch {
-  margin-bottom: 1rem;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+    display: flex;
+    gap: 0.5rem;
 }
+
 .page-btn {
-  padding: 6px 14px;
-  border-radius: 6px;
-  background: #f3f4f6;
-  text-decoration: none;
-  color: #111827;
-  font-weight: 500;
-  transition: background 0.2s;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background: #f1f5f9;
+    text-decoration: none;
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
 }
-.page-btn:hover { background: #e5e7eb; }
+
+.page-btn:hover { background: #e2e8f0; }
+
 .page-btn.active {
-  background: #2563eb;
-  color: white;
+    background: var(--primary);
+    color: white;
+}
+
+/* Selector de fecha */
+.date-picker {
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    font-family: inherit;
+    color: var(--text-main);
+    background: #fff;
+    cursor: pointer;
 }
 
 /* ==========================
-   TARJETAS HISTÓRICO
+   TABLA
    ========================== */
-.asistencia-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  background: #ffffff;
+.table-responsive {
+    overflow-x: auto;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
+
 .asistencia-tabla {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: .5rem;
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    min-width: 700px; 
 }
-.asistencia-tabla th,
+
+.asistencia-tabla th {
+    background: #f8fafc;
+    text-align: left;
+    padding: 1rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    border-bottom: 1px solid var(--border);
+}
+
 .asistencia-tabla td {
-  border: 1px solid #e5e7eb;
-  padding: 6px 10px;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    color: var(--text-main);
+}
+
+.asistencia-tabla tr:last-child td {
+    border-bottom: none;
+}
+
+.asistencia-tabla tr:hover {
+    background-color: #fcfcfe;
 }
 
 /* ==========================
-   TEMA CLARO PROFESIONAL
+   BOTONES DE ESTADO (RADIO GROUP)
    ========================== */
-.main {
-  background:#ffffff;
-  color:#0f172a;
+.radio-group {
+    display: flex;
+    gap: 0.5rem;
 }
-.main h1,
-.main h2,
-.main h3 {
-  color:#111827;
+
+.radio-group input[type="radio"] {
+    display: none;
 }
-.main .sectionTitle { color:#111827; }
-.main .hint { color:#64748b; }
-.main .divider { background:#e5e7eb; }
+
+.radio-group label {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #64748b;
+    background: #fff;
+    min-width: 80px;
+    text-align: center;
+}
+
+.radio-group label:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+/* Estados Activos */
+.radio-group input[value="Presente"]:checked + label {
+    background-color: var(--color-presente);
+    color: white;
+    border-color: var(--color-presente);
+}
+
+.radio-group input[value="Ausente"]:checked + label {
+    background-color: var(--color-ausente);
+    color: white;
+    border-color: var(--color-ausente);
+}
+
+.radio-group input[value="Justificado"]:checked + label {
+    background-color: var(--color-justificado);
+    color: white;
+    border-color: var(--color-justificado);
+}
 
 /* ==========================
-   INPUT DATE (TOPBAR)
+   BARRA INFERIOR (BOTÓN GUARDAR)
    ========================== */
-.main input[type="date"].search {
-  max-width:260px;
-  background:#f1f5f9;
-  border:1.5px solid #d7dcef;
-  color:#0f172a;
-  padding:.6rem .75rem;
-  border-radius:10px;
-  outline:0;
-  transition:border .2s, box-shadow .2s, background .2s;
-  background-image:none;
-}
-.main input[type="date"].search:focus {
-  background:#ffffff;
-  border-color:#a78bfa;
-  box-shadow:0 0 0 3px rgba(168,85,247,.25), 0 6px 16px rgba(124,58,237,.10);
+.bottom-actions {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    display: flex;
+    justify-content: flex-end; /* Alinea a la derecha */
+    align-items: center;
 }
 
-/* ==========================
-   TABLA PRINCIPAL DE ASISTENCIA
-   ========================== */
-.main table {
-  width:100%;
-  border-collapse:separate;
-  border-spacing:0;
-  background:#ffffff;
-  border:2px solid #cbd3f0;
-  border-radius:14px;
-  overflow:hidden;
-  box-shadow:0 8px 22px rgba(2,6,23,.08);
-  margin-top:10px;
+.btn-save-main {
+    background-color: var(--primary);
+    color: white;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0.85rem 2.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+    transition: transform 0.2s, background-color 0.2s;
 }
 
-/* Encabezado sticky */
-.main thead th {
-  position:sticky;
-  top:0;
-  z-index:2;
-  background:#eef2ff;
-  color:#0f172a;
-  text-align:left;
-  padding:14px 12px;
-  border-bottom:2px solid #c1c9ec;
-  font-weight:700;
-  letter-spacing:.2px;
+.btn-save-main:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
 }
 
-/* Celdas */
-.main tbody td {
-  padding:14px 12px;
-  border-bottom:1.5px solid #e1e6f6;
-  color:#0f172a;
-}
-
-/* Líneas verticales */
-.main thead th + th,
-.main tbody td + td {
-  border-left:1px solid #e1e6f6;
-}
-
-/* Zebra */
-.main tbody tr:nth-child(odd) {
-  background:#fbfbff;
-}
-
-/* Hover con acento */
-.main tbody tr:hover {
-  background:#f2f6ff;
-  box-shadow: inset 3px 0 0 0 #7c3aed;
-}
-
-/* Padding especial */
-.main tbody td:first-child,
-.main thead th:first-child { padding-left:16px; }
-
-.main tbody td:last-child,
-.main thead th:last-child { padding-right:16px; }
-
-/* ==========================
-   SELECTS (ESTADO)
-   ========================== */
-.main td select {
-  min-width:180px;
-  background:#f8fafc;
-  border:1.5px solid #bfc4d4;
-  color:#0f172a;
-  padding:.5rem .65rem;
-  border-radius:10px;
-  outline:0;
-  transition:border .2s, box-shadow .2s, background .2s;
-}
-.main td select:focus {
-  background:#ffffff;
-  border-color:#a78bfa;
-  box-shadow:0 0 0 3px rgba(168,85,247,.25);
+.btn-save-main:active {
+    transform: translateY(0);
 }

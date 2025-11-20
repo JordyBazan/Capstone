@@ -47,7 +47,17 @@
 
     <button type="submit" class="btn-primary">Filtrar</button>
     <a href="{% url 'usuarios:historial_admin' %}" class="btn-secondary">Limpiar</a>
-    <a href="?pdf=1" class="btn-blue">Exportar PDF</a>
+
+    <!--  BOTÓN PDF YA CORREGIDO -->
+    <a href="
+    ?pdf=1
+    {% if usuario_filtrado %}&usuario={{ usuario_filtrado }}{% endif %}
+    {% if accion_filtrada %}&accion={{ accion_filtrada }}{% endif %}
+    {% if modelo_filtrado %}&modelo={{ modelo_filtrado }}{% endif %}
+    " class="btn-blue">
+      Exportar PDF
+    </a>
+    <!--  FIN DEL CAMBIO -->
   </form>
 
   <!-- Tabla -->

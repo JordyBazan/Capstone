@@ -1,0 +1,116 @@
+/* static/css/anotaciones_lista.css */
+
+:root {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --bg-page: #ffffff;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --border: #e2e8f0;
+}
+
+/* Contenedor Principal */
+.main-container {
+    padding: 1rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Encabezado */
+.header-section {
+    margin-bottom: 2rem;
+}
+
+.sectionTitle {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.hint {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+/* Tarjeta de la Tabla */
+.table-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    overflow: hidden; /* Para que los bordes redondeados corten la tabla */
+}
+
+.table-responsive {
+    overflow-x: auto;
+    width: 100%;
+}
+
+/* Tabla */
+.anotaciones-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+.anotaciones-table th {
+    background: #f8fafc;
+    text-align: left;
+    padding: 1rem 1.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+}
+
+.anotaciones-table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-main);
+    vertical-align: middle;
+}
+
+.anotaciones-table tr:last-child td {
+    border-bottom: none;
+}
+
+.anotaciones-table tr:hover {
+    background-color: #fcfcfe;
+}
+
+/* Columnas específicas */
+.col-id {
+    width: 60px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.col-alumno {
+    font-weight: 600;
+}
+
+.col-accion {
+    width: 150px;
+    text-align: right;
+}
+
+/* Botón de acción */
+.btn-detalles {
+    display: inline-block;
+    background-color: var(--primary);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-detalles:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+}

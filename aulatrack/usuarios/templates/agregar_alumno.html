@@ -10,13 +10,7 @@
   <h1>Agregar Alumno</h1>
   <div class="hint">Completa los datos del nuevo alumno</div>
 
-  {% if messages %}
-    {% for message in messages %}
-      <div class="alert {% if message.tags %}{{ message.tags }}{% endif %}">
-        {{ message }}
-      </div>
-    {% endfor %}
-  {% endif %}
+  
 
   {% if form.non_field_errors %}
     <div class="alert error">

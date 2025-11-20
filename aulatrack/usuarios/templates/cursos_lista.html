@@ -7,15 +7,7 @@
 {% endblock %}
 
 {% block content %}
-{% if messages %}
-<ul class="messages">
-  {% for message in messages %}
-    <li class="msg {{ message.tags }}">{{ message }}</li>
-  {% endfor %}
-</ul>
-{% endif %}
 
-<!-- Tabs -->
 <div class="page-head flex-between">
   <div>
     <a class="page-btn {% if page == '1' %}active{% endif %}" href="?page=1">Cursos</a>
@@ -32,7 +24,6 @@
   </div>
   <div class="head-actions">
     <a class="btn" href="{% url 'usuarios:crear_curso' %}?from=cursos_lista">+ Crear curso</a>
-    <a class="btn-prim" href="{% url 'usuarios:cursos_export_pdf' %}">Exportar PDF</a>
   </div>
 </div>
 

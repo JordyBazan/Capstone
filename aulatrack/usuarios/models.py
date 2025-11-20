@@ -9,8 +9,6 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 
 
-
-
 # =========================================================
 # Validadores
 # =========================================================
@@ -26,8 +24,6 @@ telefono_validator = RegexValidator(
     message="El número debe tener el formato chileno, por ejemplo: +56912345678"
 )
 
-
-
 # Curso
 año_validator = RegexValidator(
     regex=r'^\d+$',
@@ -40,20 +36,13 @@ sala_validator = RegexValidator(
 )
 
 
-
-
-
-
 # =========================================================
-# Modelos
+# Modelos Principales
 # =========================================================
 
-
-
-# =========================================================
+# ---------------------------------------------------------
 # Modelo Usuario
-# =========================================================
-
+# ---------------------------------------------------------
 class Usuario(AbstractUser):
     nombres = models.CharField(max_length=100)
     apellidos = models.CharField(max_length=100)
@@ -73,14 +62,18 @@ class Usuario(AbstractUser):
         return f"{self.username} - {self.nombres} {self.apellidos}"
 
 
-
-# =========================================================
+# ---------------------------------------------------------
 # Modelo Curso
-# =========================================================
+# ---------------------------------------------------------
 class Curso(models.Model):
     año = models.CharField(max_length=15, validators=[año_validator])
-    nombre = models.CharField(max_length=30)
-    sala = models.CharField(max_length=10, validators=[sala_validator])
+    
+    # MODIFICADO: Aumentado a 50 para nombres largos
+    nombre = models.CharField(max_length=50) 
+    
+    # MODIFICADO: Aumentado a 50 para permitir "Laboratorio de Computación" etc.
+    sala = models.CharField(max_length=50, validators=[sala_validator]) 
+    
     profesor_jefe = models.ForeignKey(
         Usuario,
         on_delete=models.CASCADE,
@@ -109,7 +102,7 @@ class Curso(models.Model):
             raise ValidationError("Ya existe un curso con el mismo año, nombre y sala.")
 
     def save(self, *args, **kwargs):
-        self.full_clean()  # Ejecuta todas las validaciones antes de guardar
+        self.full_clean()  # Ejecuta validaciones antes de guardar
         super().save(*args, **kwargs)
 
     class Meta:
@@ -123,10 +116,9 @@ class Curso(models.Model):
         verbose_name_plural = "Cursos"
 
 
-
-# =========================================================
+# ---------------------------------------------------------
 # Modelo Alumno
-# =========================================================
+# ---------------------------------------------------------
 class Alumno(models.Model):
     rut = models.CharField(
         max_length=12,
@@ -137,8 +129,10 @@ class Alumno(models.Model):
     nombres = models.CharField(max_length=100)
     apellidos = models.CharField(max_length=100)
     fecha_nacimiento = models.DateField()
+    
+    # MODIFICADO: Aumentado a 50 para permitir notas como "Mamá: +569..."
     contacto_emergencia = models.CharField(
-        max_length=15,
+        max_length=50, 
         validators=[telefono_validator],
         help_text="Formato: +569XXXXXXXX"
     )
@@ -151,41 +145,38 @@ class Alumno(models.Model):
         ordering = ['apellidos', 'nombres']
 
 
-
-# =========================================================
+# ---------------------------------------------------------
 # Modelo Asignatura
-# =========================================================
-
+# ---------------------------------------------------------
 class Asignatura(models.Model):
-    nombre = models.CharField(max_length=30)
-    descripcion = models.TextField(blank=True)  # puede quedar vacio
+    # MODIFICADO: Aumentado a 100 para nombres largos (El error original)
+    nombre = models.CharField(max_length=100) 
+    
+    descripcion = models.TextField(blank=True)
     profesor = models.ForeignKey(
         Usuario,
         on_delete=models.CASCADE,
-        limit_choices_to={'role': 'docente'}   # obligatorio
+        limit_choices_to={'role': 'docente'}
     )
     curso = models.ForeignKey(
         'Curso',
         on_delete=models.CASCADE,
-        related_name='asignaturas'             # obligatorio
+        related_name='asignaturas'
     )
 
     def __str__(self):
         return f"{self.nombre} ({self.curso.año} {self.curso.nombre})" if self.curso else self.nombre
 
-    # Validaciones de negocio
     def clean(self):
-        # nombre no vacío (sin espacios)
         if not self.nombre or not self.nombre.strip():
             raise ValidationError("El campo 'Nombre' no puede quedar vacío.")
 
-        # profesor y curso obligatorios (defensa adicional)
         if not self.profesor:
             raise ValidationError("Debe asignarse un profesor (docente).")
         if not self.curso:
             raise ValidationError("Debe asignarse un curso.")
 
-        # evitar duplicados de nombre dentro del mismo curso (case-insensitive)
+        # Evitar duplicados case-insensitive
         ya_existe = Asignatura.objects.filter(
             nombre__iexact=self.nombre.strip(),
             curso=self.curso
@@ -194,7 +185,7 @@ class Asignatura(models.Model):
             raise ValidationError("Ya existe una asignatura con ese nombre en este curso.")
 
     def save(self, *args, **kwargs):
-        self.full_clean()  # corre validators + clean()
+        self.full_clean()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -208,11 +199,9 @@ class Asignatura(models.Model):
         ]
 
 
-
-
-# =========================================================
-# Modelo ??
-# =========================================================
+# ---------------------------------------------------------
+# Modelo DocenteCurso (Tabla Intermedia)
+# ---------------------------------------------------------
 class DocenteCurso(models.Model):
     docente = models.ForeignKey(
         Usuario,
@@ -225,14 +214,16 @@ class DocenteCurso(models.Model):
         unique_together = ('docente', 'curso')
 
 
-
-# =========================================================
+# ---------------------------------------------------------
 # Modelo Nota
-# =========================================================
+# ---------------------------------------------------------
 class Nota(models.Model):
     valor = models.FloatField()
     fecha_registro = models.DateField(auto_now_add=True)
-    evaluacion = models.CharField(max_length=50)
+    
+    # MODIFICADO: Aumentado a 100 para descripciones largas de pruebas
+    evaluacion = models.CharField(max_length=100) 
+    
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
     asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE)
     profesor = models.ForeignKey(Usuario, on_delete=models.CASCADE)
@@ -243,13 +234,11 @@ class Nota(models.Model):
         return f"{self.evaluacion} - {self.valor} ({self.alumno})"
 
     def detalle_registro(self):
-        """Texto útil para mostrar quién y cuándo registró."""
         prof = self.profesor.get_full_name() or self.profesor.username
         fecha = self.ultima_actualizacion.strftime("%d/%m/%Y %H:%M")
         return f"{prof} · {fecha}"
 
     def fue_editada_recientemente(self):
-        """Indica si la nota fue modificada hace menos de 24 horas."""
         return (timezone.now() - self.ultima_actualizacion).days < 1
 
     class Meta:
@@ -257,10 +246,9 @@ class Nota(models.Model):
         unique_together = ("alumno", "asignatura", "numero")
 
 
-
-# =========================================================
+# ---------------------------------------------------------
 # Modelo Asistencia
-# =========================================================
+# ---------------------------------------------------------
 class Asistencia(models.Model):
     ESTADOS = [
         ("Presente", "Presente"),
@@ -270,11 +258,11 @@ class Asistencia(models.Model):
 
     fecha = models.DateField(
         verbose_name="Fecha",
-        help_text="Selecciona la fecha de asistencia",
         null=False,
         blank=False
     )
-    estado = models.CharField(max_length=15, choices=ESTADOS)
+    # Mantenemos el max_length en 20 por seguridad, aunque sobre espacio
+    estado = models.CharField(max_length=20, choices=ESTADOS)
     alumno = models.ForeignKey("Alumno", on_delete=models.CASCADE)
     curso = models.ForeignKey("Curso", on_delete=models.CASCADE)
 
@@ -282,10 +270,9 @@ class Asistencia(models.Model):
         return f"{self.alumno} - {self.fecha} ({self.estado})"
 
 
-
-# =========================================================
+# ---------------------------------------------------------
 # Modelo Anotacion
-# =========================================================
+# ---------------------------------------------------------
 class Anotacion(models.Model):
     texto = models.TextField()
     fecha = models.DateField(auto_now_add=True)

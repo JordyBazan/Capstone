@@ -4,34 +4,41 @@
 {% block title %}{{ modo|default:"crear"|capfirst }} asignatura{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/asignatura_form.css' %}">
+    <link rel="stylesheet" href="{% static 'css/asignatura_form.css' %}">
 {% endblock %}
 
 {% block content %}
 <main class="asig-container">
   <div class="asig-card">
-    <h1>{{ modo|default:"crear"|capfirst }} asignatura</h1>
+    
+    <h1>{{ modo|default:"Crear"|capfirst }} asignatura</h1>
     <p class="hint">Completa los campos para {{ modo|default:"crear" }} una nueva asignatura en el sistema.</p>
-
-    {% if messages %}
-    <ul class="messages">
-      {% for message in messages %}
-        <li class="msg {{ message.tags }}">{{ message }}</li>
-      {% endfor %}
-    </ul>
-    {% endif %}
 
     <form method="post" class="asig-form">
       {% csrf_token %}
-      <div class="form-grid">
-        {{ form.as_p }}
+      
+      {% for field in form %}
+      <div>
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+            <div style="color: #991b1b; font-size: 0.85rem; margin-top: 0.25rem;">
+                {{ field.errors }}
+            </div>
+        {% endif %}
       </div>
+      {% endfor %}
 
       <div class="form-actions">
-        <button class="btn-primary" type="submit"> Guardar</button>
-        <a class="btn-secondary" href="{% url 'usuarios:cursos_lista' %}">Cancelar</a>
+        <button class="btn-primary" type="submit">
+            Guardar
+        </button>
+        <a class="btn-secondary" href="{% url 'usuarios:cursos_lista' %}?page=2">
+            Cancelar
+        </a>
       </div>
     </form>
+
   </div>
 </main>
 {% endblock %}
