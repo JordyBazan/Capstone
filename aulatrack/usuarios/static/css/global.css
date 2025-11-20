@@ -10,7 +10,7 @@ body, html, .main {
 }
 
 /* ===============================================
-   🔹 Botones Globales
+    Botones Globales
    =============================================== */
 .btn, .btn-prim, .btn-secondary {
   display: inline-flex;
@@ -63,7 +63,7 @@ body, html, .main {
 }
 
 /* ===============================================
-   🔹 Botones de navegación (Atrás / Inicio)
+    Botones de navegación (Atrás / Inicio)
    =============================================== */
 .nav-buttons {
   display: flex;
@@ -87,7 +87,7 @@ body, html, .main {
 }
 
 /* ===============================================
-   🔹 Tablas / Contenedores globales
+    Tablas / Contenedores globales
    =============================================== */
 .table {
   width: 100%;
@@ -106,7 +106,7 @@ body, html, .main {
 }
 
 /* ===============================================
-   🔹 Reforzar consistencia visual de fondos y textos
+    Reforzar consistencia visual de fondos y textos
    =============================================== */
 h1, h2, h3, h4, h5 {
   color: #111827;

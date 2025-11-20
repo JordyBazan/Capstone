@@ -24,7 +24,7 @@ from django.core.paginator import Paginator
 from django.urls import reverse, reverse_lazy
 from django.db.models import Q, Prefetch
 
-# 🔹 Para registrar acciones
+#  Para registrar acciones
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 from django.contrib.contenttypes.models import ContentType
 
@@ -62,7 +62,7 @@ def _clave_grado(nombre: str):
     return (prioridad, num, s)
 
 # =========================================================
-# 🔹 Función genérica para registrar acciones
+#  Función genérica para registrar acciones
 # =========================================================
 def registrar_accion(user, objeto, tipo_accion, mensaje=""):
     """
@@ -437,10 +437,10 @@ def asignar_asignaturas_curso(request, curso_id):
     if request.method == "POST":
         form = AsignarAsignaturasForm(request.POST)
         if form.is_valid():
-            # 🔹 Primero quitamos asignaciones previas
+            #  Primero quitamos asignaciones previas
             Asignatura.objects.filter(curso=curso).update(curso=None)
 
-            # 🔹 Luego asignamos las nuevas
+            #  Luego asignamos las nuevas
             nuevas_asignaturas = form.cleaned_data["asignaturas"]
             for a in nuevas_asignaturas:
                 a.curso = curso
@@ -631,7 +631,7 @@ def cursos_export_pdf(request):
     total_alumnos = sum(c.num_alumnos for c in cursos)
     total_asignaturas_matriz = sum(c.num_asignaturas for c in cursos)
 
-    # Conteos de asignaturas
+    # Conteo de asignaturas
     asig_counter = Counter()
     asignaturas_sin_prof = set()
     asig_ids_unicos = set()
@@ -643,14 +643,12 @@ def cursos_export_pdf(request):
                 asignaturas_sin_prof.add(a.nombre)
     asignaturas_distintas = len(asig_ids_unicos)
 
-    # Alertas
     cursos_sin_pj = [c for c in cursos if not c.profesor_jefe_id]
     cursos_sin_asignaturas = [c for c in cursos if c.num_asignaturas == 0]
 
-    # Distribución por nivel
     def nivel_de(c):
         s = f"{c.año or ''} {c.nombre or ''}".lower()
-        if re.search(r"bas(i|í)co", s):
+        if "basico" in s or "básico" in s:
             return "Básico"
         if "medio" in s:
             return "Medio"
@@ -661,14 +659,13 @@ def cursos_export_pdf(request):
     dist_medio = dist_nivel_counter.get("Medio", 0)
     dist_otros = dist_nivel_counter.get("Otros", 0)
 
-    # Top PJs y top asignaturas
     top_pj = Counter(
         (c.profesor_jefe.get_full_name() or c.profesor_jefe.username)
         for c in cursos if c.profesor_jefe_id
     ).most_common(5)
+
     top_asignaturas = asig_counter.most_common(8)
 
-    # KPIs derivados
     if total_cursos:
         pct_con_pj = round(100 * (1 - (len(cursos_sin_pj) / total_cursos)), 1)
         pct_con_asignaturas = round(100 * (1 - (len(cursos_sin_asignaturas) / total_cursos)), 1)
@@ -695,90 +692,24 @@ def cursos_export_pdf(request):
         "cursos_sin_asignaturas": cursos_sin_asignaturas,
     }
 
-    # Intento con WeasyPrint
-    try:
-        from weasyprint import HTML  # import local
-        html = render_to_string("pdf/cursos_export_pdf.html", ctx)
-        pdf = HTML(string=html, base_url=request.build_absolute_uri("/")).write_pdf()
-        resp = HttpResponse(pdf, content_type="application/pdf")
-        resp["Content-Disposition"] = 'attachment; filename="informe_cursos.pdf"'
-        return resp
-    except Exception:
-        # Fallback ReportLab
-        from reportlab.lib.pagesizes import A4
-        from reportlab.lib.units import mm
-        from reportlab.lib import colors
-        from reportlab.platypus import (
-            SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak,
-            ListFlowable, ListItem
-        )
-        from reportlab.lib.styles import getSampleStyleSheet
+    # ================================
+    #  Generar PDF con Xhtml2pdf
+    # ================================
+    from xhtml2pdf import pisa
+    from django.template.loader import get_template
 
-        buf = BytesIO()
-        doc = SimpleDocTemplate(
-            buf, pagesize=A4,
-            leftMargin=14*mm, rightMargin=14*mm, topMargin=18*mm, bottomMargin=18*mm
-        )
-        styles = getSampleStyleSheet()
-        story = []
+    template = get_template("pdf/cursos_export_pdf.html")
+    html = template.render(ctx)
 
-        title = Paragraph("<b>Informe Ejecutivo de Cursos</b>", styles["Title"])
-        meta = Paragraph(
-            f"Generado: {timezone.localtime().strftime('%d/%m/%Y %H:%M')} · Usuario: {request.user.get_full_name() or request.user.username}",
-            styles["Normal"]
-        )
-        story += [title, Spacer(1, 4*mm), meta, Spacer(1, 8*mm)]
+    pdf_bytes = BytesIO()
+    pisa_status = pisa.CreatePDF(html, dest=pdf_bytes)
 
-        kpi_text = (
-            f"<b>Total de cursos:</b> {total_cursos}  |  "
-            f"<b>Total de alumnos:</b> {total_alumnos}  |  "
-            f"<b>Asignaturas distintas:</b> {asignaturas_distintas}  |  "
-            f"<b>Relaciones curso-asignatura:</b> {total_asignaturas_matriz}<br/>"
-            f"<b>% cursos con PJ:</b> {pct_con_pj}%  |  "
-            f"<b>% cursos con asignaturas:</b> {pct_con_asignaturas}%"
-        )
-        story += [Paragraph(kpi_text, styles["BodyText"]), Spacer(1, 6*mm)]
+    if pisa_status.err:
+        return HttpResponse("Error generando PDF")
 
-        data = [["Año", "Nombre", "Sala", "# Asig.", "# Alumn.", "Profesor Jefe"]]
-        for c in cursos:
-            pj = (c.profesor_jefe.get_full_name() or c.profesor_jefe.username) if c.profesor_jefe else "—"
-            data.append([c.año, c.nombre, c.sala, c.num_asignaturas, c.num_alumnos, pj])
-
-        table = Table(data, repeatRows=1, colWidths=[22*mm, 42*mm, 18*mm, 20*mm, 22*mm, 60*mm])
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#f8fafc")),
-            ("TEXTCOLOR", (0,0), (-1,0), colors.HexColor("#6b7280")),
-            ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-            ("FONTSIZE", (0,0), (-1,0), 9),
-            ("ALIGN", (3,1), (4,-1), "RIGHT"),
-            ("GRID", (0,0), (-1,-1), 0.25, colors.HexColor("#e5e7eb")),
-            ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.white, colors.HexColor("#fbfdff")]),
-            ("VALIGN", (0,0), (-1,-1), "TOP"),
-            ("LEFTPADDING", (0,0), (-1,-1), 6),
-            ("RIGHTPADDING", (0,0), (-1,-1), 6),
-            ("TOPPADDING", (0,0), (-1,-1), 4),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 4),
-        ]))
-        story += [table]
-
-        story += [PageBreak(), Paragraph("<b>Alertas</b>", styles["Heading1"]), Spacer(1, 3*mm)]
-        bullets = []
-        if cursos_sin_pj:
-            bullets.append(Paragraph(f"Cursos sin Profesor Jefe: {len(cursos_sin_pj)}", styles["BodyText"]))
-        if cursos_sin_asignaturas:
-            bullets.append(Paragraph(f"Cursos sin asignaturas: {len(cursos_sin_asignaturas)}", styles["BodyText"]))
-        if asignaturas_sin_prof:
-            bullets.append(Paragraph(f"Asignaturas sin profesor (al menos en un curso): {len(asignaturas_sin_prof)}", styles["BodyText"]))
-        if not bullets:
-            bullets.append(Paragraph("Sin alertas relevantes.", styles["BodyText"]))
-        story += [ListFlowable([ListItem(b) for b in bullets], bulletType="bullet", leftIndent=12)]
-
-        doc.build(story)
-        pdf_bytes = buf.getvalue()
-        buf.close()
-        resp = HttpResponse(pdf_bytes, content_type="application/pdf")
-        resp["Content-Disposition"] = 'attachment; filename="informe_cursos.pdf"'
-        return resp
+    response = HttpResponse(pdf_bytes.getvalue(), content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="informe_cursos.pdf"'
+    return response
 
 
 
@@ -1166,21 +1097,21 @@ def libro_notas(request, curso_id, asignatura_id):
                 valor = request.POST.get(key)
 
                 if valor:
-                    # 🔹 Normalizar valor (coma → punto, eliminar espacios)
+                    #  Normalizar valor (coma → punto, eliminar espacios)
                     valor = valor.replace(',', '.').strip()
                     try:
                         valor = float(valor)
                     except ValueError:
                         continue
 
-                    # 🔹 Validar rango permitido
+                    #  Validar rango permitido
                     if valor < 1.0 or valor > 7.0:
                         continue
 
-                    # 🔹 Redondear a un decimal
+                    #  Redondear a un decimal
                     valor = round(valor, 1)
 
-                    # 🔹 Crear o actualizar la nota
+                    #  Crear o actualizar la nota
                     nota, created = Nota.objects.update_or_create(
                         alumno=alumno,
                         asignatura=asignatura,
@@ -1527,7 +1458,7 @@ def historial_acciones_admin(request):
                 Paragraph(detalle, style_normal),
             ])
 
-        # 🔹 Ajuste de anchos balanceados
+        #  Ajuste de anchos balanceados
         table = Table(
             data,
             repeatRows=1,
@@ -1635,7 +1566,7 @@ def asignar_docente_curso(request):
     else:
         form = AsignarDocenteCursoForm()
 
-    # 🔹 Lista de docentes con cursos y sus asignaturas
+    #  Lista de docentes con cursos y sus asignaturas
     asignaciones = (
         DocenteCurso.objects
         .select_related('docente', 'curso')
