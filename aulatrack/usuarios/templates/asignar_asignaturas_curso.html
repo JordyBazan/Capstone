@@ -1,24 +1,25 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Asignar Asignaturas{% endblock %}
+{% block title %}Anotaciones - {{ curso.nombre }}{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/asignar_asignaturas.css' %}">
+    <link rel="stylesheet" href="{% static 'css/asignar_asignaturas.css' %}">
 {% endblock %}
 
+{# --- IMPORTANTE: Abrimos el bloque de contenido aquí --- #}
 {% block content %}
+
+{# Opcional: Agregué el encabezado visual que definimos en el CSS para que no se vea cortado #}
 <div class="page-head">
   <h1>Asignar asignaturas</h1>
   <p class="hint">
-    Curso: <b>{{ curso.nombre }}</b> — 
-    <span>{{ curso.sala|default:"Sin sala asignada" }}</span>
+    Curso: <b>{{ curso.nombre }}</b>
   </p>
 </div>
 
 <div class="form-container">
 
-  <!-- FORMULARIO PRINCIPAL -->
   <form method="post" class="asignaturas-form">
     {% csrf_token %}
 
@@ -29,7 +30,23 @@
     </p>
 
     <div class="form-group">
-      {{ form.asignaturas }}
+        {% if form.asignaturas.errors %}
+            <div class="alert alert-danger">
+                {{ form.asignaturas.errors }}
+            </div>
+        {% endif %}
+
+        <ul>
+            {% for checkbox in form.asignaturas %}
+            <li>
+                {{ checkbox.tag }} 
+                
+                <label for="{{ checkbox.id_for_label }}" style="cursor: pointer; width: 100%; margin: 0;">
+                    {{ checkbox.choice_label }}
+                </label>
+            </li>
+            {% endfor %}
+        </ul>
     </div>
 
     <div class="btn-group">
@@ -37,37 +54,36 @@
         Guardar cambios
       </button>
 
-      <a href="{% url 'usuarios:cursos_lista' %}?page=2" class="btn-secondary">
+      <a href="{% url 'usuarios:cursos_lista' %}" class="btn-secondary">
         Cancelar
       </a>
     </div>
   </form>
 
-  <!-- ASIGNATURAS ACTUALMENTE ASIGNADAS -->
   {% if asignaturas_actuales %}
   <div class="divider"></div>
-
   <h3>Asignaturas actualmente asignadas</h3>
-
   <ul class="list-current">
     {% for asignatura in asignaturas_actuales %}
       <li class="current-item">
         <div>
           <b>{{ asignatura.nombre }}</b>
           <span class="prof-info">
+             <i class="bi bi-person-badge"></i>
             {% if asignatura.profesor %}
-              — Profesor: {{ asignatura.profesor.get_full_name|default:asignatura.profesor.username }}
+               {{ asignatura.profesor.get_full_name|default:asignatura.profesor.username }}
             {% else %}
-              — <span class="text-muted">Sin profesor asignado</span>
+              <span class="text-muted">Sin profesor</span>
             {% endif %}
           </span>
         </div>
+        <span style="color: #10b981; font-size: 1.2em;">●</span>
       </li>
-    {% empty %}
-      <li class="text-muted">No hay asignaturas asignadas aún.</li>
     {% endfor %}
   </ul>
   {% endif %}
 
 </div>
+
+{# --- Cerramos el bloque de contenido al final --- #}
 {% endblock %}

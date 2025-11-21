@@ -429,34 +429,51 @@ def curso_editar(request, pk):
         'docentes': docentes,
     })
 
-
 @user_passes_test(es_utp)
 def asignar_asignaturas_curso(request, curso_id):
     curso = get_object_or_404(Curso, pk=curso_id)
 
     if request.method == "POST":
-        form = AsignarAsignaturasForm(request.POST)
+        # PASO CLAVE: Pasamos 'curso=curso' también en el POST para validar
+        form = AsignarAsignaturasForm(request.POST, curso=curso)
+        
         if form.is_valid():
-            #  Primero quitamos asignaciones previas
-            Asignatura.objects.filter(curso=curso).update(curso=None)
+            asignaturas_seleccionadas = form.cleaned_data["asignaturas"]
+            
+            # 1. Lógica de ELIMINACIÓN (Cascada)
+            # Identificamos las que eran de este curso pero NO están en la nueva selección
+            asignaturas_a_eliminar = Asignatura.objects.filter(curso=curso).exclude(
+                id__in=asignaturas_seleccionadas.values_list('id', flat=True)
+            )
+            
+            cant_eliminadas = asignaturas_a_eliminar.count()
+            # ¡Cuidado! Esto borra Notas y Asistencias asociadas.
+            asignaturas_a_eliminar.delete() 
 
-            #  Luego asignamos las nuevas
-            nuevas_asignaturas = form.cleaned_data["asignaturas"]
-            for a in nuevas_asignaturas:
-                a.curso = curso
-                a.save()
+            # 2. Lógica de ASIGNACIÓN/ACTUALIZACIÓN
+            # Traemos las asignaturas huérfanas al curso
+            cant_actualizadas = asignaturas_seleccionadas.update(curso=curso)
 
-            messages.success(request, f" Se asignaron {nuevas_asignaturas.count()} asignaturas al curso {curso}.")
+            messages.success(
+                request, 
+                f"Proceso completado en {curso.nombre}: {cant_actualizadas} asignaturas confirmadas. "
+                f"Se eliminaron {cant_eliminadas} registros desmarcados."
+            )
+            
             return redirect("usuarios:cursos_lista")
         else:
-            messages.error(request, " Error al procesar el formulario.")
+            messages.error(request, "Error en el formulario. Verifique los datos.")
     else:
-        # Solo mostrar asignaturas sin curso o ya asignadas a este curso
-        form = AsignarAsignaturasForm(initial={
-            "asignaturas": Asignatura.objects.filter(curso=curso)
-        })
+
+        asignaturas_del_curso = Asignatura.objects.filter(curso=curso)
+        
+        form = AsignarAsignaturasForm(
+            curso=curso, 
+            initial={"asignaturas": asignaturas_del_curso}
+        )
 
     asignaturas_actuales = Asignatura.objects.filter(curso=curso)
+
 
     return render(request, "asignar_asignaturas_curso.html", {
         "curso": curso,

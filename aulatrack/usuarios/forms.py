@@ -9,6 +9,7 @@ from django.db.models.functions import Lower
 
 # Modelos
 from .models import Curso, Asignatura, Usuario, Alumno, DocenteCurso
+from django.db.models import Q
 
 Usuario = get_user_model()
 
@@ -237,30 +238,42 @@ class AlumnoForm(forms.ModelForm):
         }
 
 class AsignarAsignaturasForm(forms.Form):
+    # Inicialmente queryset vacío, lo llenamos en el __init__
     asignaturas = forms.ModelMultipleChoiceField(
-        queryset=Asignatura.objects.filter(curso__isnull=True).order_by("nombre"),
+        queryset=Asignatura.objects.none(),
         widget=forms.CheckboxSelectMultiple,
         required=False,
-        label="Asignaturas disponibles"
+        label="Asignaturas Disponibles"
     )
+
+    def __init__(self, *args, **kwargs):
+        # Extraemos el argumento 'curso' que pasaremos desde la vista
+        curso = kwargs.pop('curso', None) 
+        super().__init__(*args, **kwargs)
+
+        if curso:
+    
+            self.fields['asignaturas'].queryset = Asignatura.objects.filter(
+                Q(curso=curso) | Q(curso__isnull=True)
+            )
 
 class AsignarDocenteCursoForm(forms.ModelForm):
     class Meta:
-        model = DocenteCurso
-        fields = ["docente", "curso"]
+        model = Curso
+        # Asumimos que el campo en el modelo Curso es 'profesor_jefe'
+        fields = ['profesor_jefe']
+        
         widgets = {
-            "docente": forms.Select(attrs={"class": "form-select input-aula"}),
-            "curso": forms.Select(attrs={"class": "form-select input-aula"}),
+            'profesor_jefe': forms.Select(attrs={'class': 'form-select'}),
+        }
+        
+        labels = {
+            'profesor_jefe': 'Seleccionar Profesor Jefe',
         }
 
-    def clean(self):
-        cleaned_data = super().clean()
-        docente = cleaned_data.get("docente")
-        curso = cleaned_data.get("curso")
-
-        if docente and curso:
-            if DocenteCurso.objects.filter(docente=docente, curso=curso).exists():
-                raise forms.ValidationError(
-                    f"El docente «{docente.username}» ya está asignado al curso «{curso.nombre}»."
-                )
-        return cleaned_data
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # FILTRO CRÍTICO: Solo mostrar usuarios que tengan el rol de 'Docente'
+        # Ajusta 'Docente' si en tu base de datos los roles se guardan de otra forma (ej: 'DOC')
+        self.fields['profesor_jefe'].queryset = Usuario.objects.filter(role='docente')
+        self.fields['profesor_jefe'].empty_label = "Seleccione un docente..."
