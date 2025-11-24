@@ -91,13 +91,15 @@
     border-radius: 0.75rem;
     border: 1px solid var(--border);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    /* Scroll suave en iOS */
+    -webkit-overflow-scrolling: touch;
 }
 
 .asistencia-tabla {
     width: 100%;
     border-collapse: collapse;
     background: #fff;
-    min-width: 700px; 
+    min-width: 700px; /* Fuerza scroll en pantallas chicas */
 }
 
 .asistencia-tabla th {
@@ -211,4 +213,77 @@
 
 .btn-save-main:active {
     transform: translateY(0);
+}
+
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+    
+    .main-container {
+        padding: 0;
+        margin-top: 1rem;
+    }
+
+    .sectionTitle {
+        font-size: 1.5rem;
+        padding: 0 1rem;
+    }
+    
+    .hint {
+        padding: 0 1rem;
+    }
+
+    /* Controles apilados */
+    .controls-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    .date-picker {
+        width: 100%;
+        box-sizing: border-box;
+        height: 45px;
+    }
+
+    .page-switch {
+        width: 100%;
+    }
+    
+    .page-btn {
+        flex: 1; /* Botones ocupan mitad y mitad */
+        text-align: center;
+        padding: 10px;
+    }
+
+    /* Tabla: Scroll y ajuste */
+    .table-responsive {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        box-shadow: none;
+    }
+
+    .radio-group label {
+        padding: 8px 6px; /* Más compacto para que quepan */
+        min-width: 60px;
+        font-size: 0.8rem;
+    }
+
+    /* Barra inferior fija o completa */
+    .bottom-actions {
+        margin-top: 1rem;
+        padding: 1rem;
+        flex-direction: column;
+        border-radius: 0;
+        border: none;
+        background: transparent;
+    }
+
+    .btn-save-main {
+        width: 100%;
+        padding: 14px;
+    }
 }

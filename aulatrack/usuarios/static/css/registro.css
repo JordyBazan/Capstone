@@ -15,14 +15,11 @@
     --success-text: #065f46;
 }
 
-/* --- NUEVO: Contenedor Wrapper --- 
-   Esto reemplaza el estilo que teníamos antes en el 'body'.
-   Permite centrar el formulario SIN romper la barra lateral.
-*/
+/* Contenedor Wrapper */
 .registro-wrapper {
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Alineado arriba con margen, se ve mejor en dashboard */
+    align-items: flex-start;
     padding-top: 2rem;
     padding-bottom: 2rem;
     width: 100%;
@@ -32,12 +29,12 @@
 .card-registro {
     background-color: var(--bg-card);
     width: 100%;
-    max-width: 550px; /* Un poco más ancho para que respire */
+    max-width: 550px;
     padding: 2.5rem;
     border-radius: var(--radius);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
                 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    border: 1px solid #e5e7eb; /* Borde sutil para definirla mejor sobre fondo blanco */
+    border: 1px solid #e5e7eb;
 }
 
 /* Tipografía */
@@ -140,3 +137,33 @@ select.input-aula {
     color: var(--text-muted);
 }
 .footer-link a { color: var(--primary); text-decoration: none; font-weight: 600; }
+
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+    
+    .registro-wrapper {
+        padding: 1rem; /* Menos padding externo */
+    }
+
+    .card-registro {
+        padding: 1.5rem; /* Menos relleno interno */
+        box-shadow: none; /* Diseño más plano */
+        border: 1px solid #e5e7eb;
+    }
+
+    .card-registro h2 {
+        font-size: 1.5rem;
+    }
+
+    /* Inputs cómodos y sin zoom */
+    .input-aula {
+        font-size: 16px !important; 
+        padding: 12px;
+    }
+
+    .btn-submit {
+        padding: 14px; /* Botón más alto */
+    }
+}

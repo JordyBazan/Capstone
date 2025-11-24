@@ -1,3 +1,7 @@
+/* =========================================
+   HOME STYLES (Cards, Filters, Grid)
+   ========================================= */
+
 .main {
   background: #fafbff;
   color: #0f172a;
@@ -233,16 +237,6 @@
   font-size: 0.9rem;
 }
 
-/* Responsive */
-@media (max-width: 900px) {
-  .courses { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
-}
-
-@media (max-width: 520px) {
-  .courses { grid-template-columns: 1fr; }
-}
-
-
 /* Ajuste para que el badge del año no tape el texto */
 .courseCard.is-mi-curso .badge {
   top: 10px;
@@ -268,4 +262,87 @@
 /* Para dar espacio antes del título */
 .courseCard.is-mi-curso .title {
   margin-top: 60px;
+}
+
+/* =========================================
+   RESPONSIVE PARA HOME (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+
+    /* 1. Grilla a 1 Columna */
+    .courses {
+        display: grid;
+        grid-template-columns: 1fr !important; /* Una sola columna */
+        gap: 20px; /* Espacio vertical entre tarjetas */
+        margin: 16px 0;
+    }
+
+    /* 2. Tarjetas más cómodas */
+    .courseCard {
+        min-height: auto; /* Quitar altura mínima si existe */
+        padding: 16px 16px 70px; /* Espacio inferior para botones */
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* Sombra más suave */
+    }
+
+    /* 3. Títulos más grandes y legibles */
+    .courseCard .title {
+        font-size: 1.2rem; /* Letra más grande */
+        margin-top: 50px; /* Espacio para badges */
+    }
+
+    /* 4. Badges no se solapan */
+    .courseCard .badge {
+        top: 12px;
+        left: 12px;
+        font-size: 0.85rem;
+    }
+    
+    .badge-mi-curso {
+        top: 12px;
+        left: auto;
+        right: 12px; /* Mover "Profesor Jefe" a la derecha para no tapar el año */
+    }
+
+    /* 5. Botones de Acción (Abajo) */
+    .courseCard .actions {
+        padding: 12px;
+        flex-direction: column; /* Botones uno arriba del otro */
+        gap: 8px;
+        position: static; /* Ya no absoluto, fluyen con el contenido */
+        background: transparent;
+        border-top: none;
+        margin-top: 10px;
+    }
+
+    /* Botones ocupan todo el ancho */
+    .courseCard .actions .btn {
+        width: 100%; 
+        height: 42px; /* Más altos para el dedo */
+        font-size: 1rem;
+    }
+
+    /* 6. Filtros Superiores (Barra de búsqueda/filtro) */
+    .filter-bar {
+        flex-direction: column; /* Filtros uno abajo del otro */
+        align-items: stretch; /* Ancho completo */
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .filter-bar label {
+        margin-bottom: 4px;
+    }
+
+    .filter-bar select {
+        width: 100%; /* Select ocupa todo el ancho */
+        height: 40px;
+        font-size: 1rem; /* Evita zoom en iPhone */
+    }
+
+    .topCta {
+        text-align: center;
+        display: block;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
 }

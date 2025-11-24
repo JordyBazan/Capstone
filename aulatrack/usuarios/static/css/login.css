@@ -1,104 +1,211 @@
-/* ===== Reset básico ===== */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: system-ui, sans-serif;
+/* =============================================================
+   LOGIN / REGISTRO (Estilo Centrado y Limpio)
+   ============================================================= */
+
+/* Reset básico para esta vista */
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+  font-family: "Inter", system-ui, sans-serif; 
 }
 
 body, html {
   height: 100%;
+  width: 100%;
 }
 
 body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(160deg, #f5f3ff, #ede9fe);
-  color: #1f1d36;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); /* Gradiente suave */
+  color: #1f2937;
+  padding: 1rem; /* Espacio de seguridad */
 }
 
-/* ===== Contenedor principal ===== */
+/* ===== Contenedor principal (Tarjeta) ===== */
 main {
   width: 100%;
-  max-width: 640px;
-  background: #fff;
-  border-radius: 12px;
-  padding: 32px 28px;
-  box-shadow: 0 6px 20px rgba(0,0,0,.08);
+  max-width: 440px; /* Un ancho más elegante para login */
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 40px 32px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ===== Header ===== */
 header {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 header h1 {
-  font-size: 24px;
-  font-weight: 700;
-  color: #7c3aed; /* morado */
+  font-size: 2rem;
+  font-weight: 800;
+  color: #7c3aed; /* Brand 700 */
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+}
+
+header p {
+  color: #6b7280;
+  font-size: 0.95rem;
 }
 
 /* ===== Formulario ===== */
 form {
-  display: grid;
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
+/* Labels (si los usas) */
+label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* Inputs */
 input {
   width: 100%;
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid #ddd6fe;
-  font-size: 15px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 0.95rem;
   outline: none;
-  transition: 0.2s ease;
+  transition: all 0.2s ease;
+  background: #f9fafb; /* Fondo gris muy suave */
+  color: #111827;
 }
 
 input:focus {
   border-color: #7c3aed;
-  box-shadow: none;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+}
+
+input::placeholder {
+  color: #9ca3af;
 }
 
 /* ===== Enlaces ===== */
-form a {
-  font-size: 14px;
-  color: #7c3aed;
-  text-decoration: none;
-  display: block;
+.form-footer {
   text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: #6b7280;
 }
 
-form a:hover {
+a {
+  color: #7c3aed;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: #6d28d9;
   text-decoration: underline;
 }
 
 /* ===== Botones ===== */
-button, form > a:last-of-type {
-  display: block;
+button, .btn-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 100%;
-  text-align: center;
   border: 0;
   border-radius: 12px;
   padding: 14px 16px;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1rem;
   cursor: pointer;
   color: white;
-  background: linear-gradient(135deg, #7c3aed, #a78bfa);
-  box-shadow: none;
-  transition: .15s ease;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+  transition: all .2s ease;
   text-decoration: none;
 }
 
 button:hover, 
-form > a:last-of-type:hover {
+.btn-link:hover {
   filter: brightness(1.05);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(124, 58, 237, 0.35);
 }
 
-button:active,
-form > a:last-of-type:active {
+button:active {
   transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+}
+
+/* Botón secundario (ej: ir a registro) */
+form > a:last-of-type, .btn-secondary {
+  background: white;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
+  margin-top: 10px;
+}
+
+form > a:last-of-type:hover, .btn-secondary:hover {
+  background: #f9fafb;
+  color: #111827;
+  border-color: #d1d5db;
+  transform: none;
+  box-shadow: none;
+}
+
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  
+  body {
+    background: #ffffff; /* Fondo blanco sólido (Estilo App Nativa) */
+    padding: 0;
+    align-items: flex-start; /* Permitir scroll si el teclado sube */
+  }
+
+  main {
+    max-width: 100%;
+    height: 100vh; /* Ocupa toda la pantalla */
+    border-radius: 0; /* Sin bordes redondeados */
+    border: none;
+    box-shadow: none;
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Centrado vertical del contenido */
+  }
+
+  header {
+    margin-bottom: 2rem;
+  }
+
+  header h1 {
+    font-size: 2.2rem; /* Título más grande e impactante */
+  }
+
+  /* Inputs anti-zoom iOS */
+  input {
+    font-size: 16px !important; 
+    padding: 16px; /* Más área táctil */
+  }
+
+  button {
+    padding: 16px; /* Botón más alto */
+    font-size: 1.1rem;
+  }
 }

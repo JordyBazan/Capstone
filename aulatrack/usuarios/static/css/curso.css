@@ -1,39 +1,179 @@
-.main{ background:#ffffff; color:#0f172a; }
-.main h1, .main h2, .main h3{ color:#111827; }
-.main .sectionTitle{ color:#111827; }
-.main .hint{ color:#64748b; }
-.main .divider{ background:#e5e7eb; }
+/* =============================================================
+   VISTA DE CURSO (Menú de Opciones)
+   ============================================================= */
 
-.main .input, .main select{
-  background:#f1f5f9; border:1px solid #e5e7eb; color:#0f172a;
-  padding:.6rem .75rem; border-radius:10px; outline:0;
-  transition:border .2s, box-shadow .2s, background .2s;
-}
-.main .input::placeholder{ color:#6b7280; }
-.main .input:focus, .main select:focus{ border-color:var(--brand-600); box-shadow:0 0 0 3px var(--ring); }
-
-.main thead th{ background:#f8fafc; color:#0f172a; border-bottom:1px solid #e5e7eb; padding:.85rem; }
-.main tbody td{ border-bottom:1px solid #e5e7eb; color:#0f172a; }
-.main tbody tr:hover{ background:#f9fafb; }
-
-.curso-options{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-  gap:14px; justify-content:start;
+.main { 
+  background: #ffffff; 
+  color: #0f172a; 
 }
 
-.curso-card{
-  background:#ffffff;
-  border:1px solid #323865;           
-  border-left:6px solid var(--brand-600);
-  border-radius:16px;
-  padding:16px;
-  color:#0f172a;
+/* Encabezados */
+.main h1, .main h2, .main h3 { 
+  color: #111827; 
+  margin-top: 0;
 }
-.curso-card h3{ margin:0 0 6px; font-weight:800; color:#111827; }
-.curso-card p{ color:#475569; }
-.curso-card a{
-  display:inline-flex; margin-top:10px; background:#111827; color:#fff;
-  padding:.45rem .8rem; border-radius:10px;
+
+.sectionTitle { 
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #111827; 
+  margin-bottom: 0.5rem;
 }
-.curso-card a:hover{ background:#0b1220; }
+
+.hint { 
+  color: #64748b; 
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.divider { 
+  height: 1px;
+  background: #e5e7eb; 
+  margin: 1.5rem 0;
+}
+
+/* Inputs y Selects (si los hubiera en esta vista) */
+.main .input, .main select {
+  background: #ffffff; 
+  border: 1px solid #e5e7eb; 
+  color: #0f172a;
+  padding: .6rem .75rem; 
+  border-radius: 10px; 
+  outline: 0;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border .2s, box-shadow .2s;
+}
+
+.main .input::placeholder { color: #9ca3af; }
+
+.main .input:focus, .main select:focus { 
+  border-color: #7c3aed; 
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15); 
+}
+
+/* Tablas (si hay listas de alumnos) */
+.main thead th { 
+  background: #f8fafc; 
+  color: #475569; 
+  border-bottom: 1px solid #e5e7eb; 
+  padding: 1rem; 
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.main tbody td { 
+  border-bottom: 1px solid #e5e7eb; 
+  color: #1e293b; 
+  padding: 0.8rem 1rem;
+}
+
+.main tbody tr:hover { 
+  background: #f9fafb; 
+}
+
+/* --- GRILLA DE OPCIONES (Tarjetas de Acción) --- */
+.curso-options {
+  display: grid;
+  /* Ajuste automático: mínimo 260px por tarjeta */
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px; 
+  justify-content: start;
+  margin-top: 2rem;
+}
+
+.curso-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;          
+  border-left: 5px solid #7c3aed; /* Borde morado institucional */
+  border-radius: 14px;
+  padding: 1.5rem;
+  color: #0f172a;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.curso-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border-color: #d1d5db;
+}
+
+.curso-card h3 { 
+  margin: 0 0 8px; 
+  font-size: 1.2rem;
+  font-weight: 800; 
+  color: #111827; 
+}
+
+.curso-card p { 
+  color: #475569; 
+  font-size: 0.95rem;
+  margin-bottom: 1.2rem;
+  line-height: 1.5;
+}
+
+/* Botones dentro de las cards */
+.curso-card a {
+  display: inline-flex; 
+  align-items: center;
+  justify-content: center;
+  margin-top: auto; /* Empuja el botón al fondo */
+  background: #1f2937; /* Gris oscuro casi negro */
+  color: #fff;
+  padding: .6rem 1rem; 
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.curso-card a:hover { 
+  background: #111827; 
+}
+
+/* Variaciones de color para las cards (Opcional) */
+.curso-card.accent-blue { border-left-color: #3b82f6; }
+.curso-card.accent-green { border-left-color: #10b981; }
+.curso-card.accent-orange { border-left-color: #f97316; }
+
+
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  
+  .sectionTitle {
+    font-size: 1.5rem;
+  }
+
+  /* Grilla a 1 sola columna */
+  .curso-options {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .curso-card {
+    padding: 1.25rem;
+    /* Eliminar hover en táctil para evitar estados pegados */
+    transform: none !important; 
+  }
+
+  .curso-card h3 {
+    font-size: 1.1rem;
+  }
+
+  /* Botón ancho completo para facilitar toque */
+  .curso-card a {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+  }
+}

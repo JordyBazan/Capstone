@@ -10,20 +10,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 
-    <!--  Estilos base -->
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
 
-    <!--  Estilos específicos por vista -->
     {% block extra_css %}{% endblock %}
     <link rel="stylesheet" href="{% static 'css/global.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
+
 <main class="app">
-    <!-- =======================
-         SIDEBAR (oscuro)
-    ======================= -->
-    <aside class="sidebar" aria-label="Barra lateral">
+    
+    <div class="overlay" onclick="toggleMenu()"></div>
+
+    <aside class="sidebar" id="sidebar" aria-label="Barra lateral">
         <div class="sidebar-content">
             <div class="brand">
                 <div class="logo">AT</div>
@@ -83,7 +82,6 @@
             {% endif %}
         </div>
 
-        <!--  Botón fijo inferior -->
         {% if user.is_authenticated %}
         <div class="logout-fixed">
             <form method="post" action="{% url 'usuarios:logout' %}">
@@ -94,15 +92,19 @@
         {% endif %}
     </aside>
 
-    <!-- =======================
-         CONTENIDO PRINCIPAL
-    ======================= -->
     <section class="main">
         <header class="topbar">
+            <button class="menu-toggle" onclick="toggleMenu()" aria-label="Abrir menú">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+
             {% block topbar %}{% endblock %}
         </header>
 
-        <!--  BOTONES GLOBALES (Atrás / Inicio) -->
         {% if request.path != '/' and request.path != '/home/' %}
         <div class="nav-buttons fade-in">
             <button onclick="window.history.back()" class="btn btn-secondary">⬅ Atrás</button>
@@ -115,6 +117,16 @@
         </div>
     </section>
 </main>
+
+<script>
+    function toggleMenu() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.querySelector('.overlay');
+        
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+</script>
 
 </body>
 </html>

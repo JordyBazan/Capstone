@@ -1,42 +1,159 @@
-.main{ background:#fff; color:#0f172a; }
+/* =============================================================
+   CREAR CURSO (Formulario en Grilla)
+   ============================================================= */
 
-.page{ max-width:760px; margin:16px 0; }
-.page h1{ margin:0 0 .25rem; font-size:1.5rem; font-weight:800; color:#111827; }
-.hint{ color:#64748b; margin-bottom:1rem; }
+.main { background: #fff; color: #0f172a; }
 
-.form-card{
-  background:#fff; border:1px solid #e5e7eb; border-radius:14px;
-  padding:1.25rem; box-shadow:0 6px 18px rgba(2,6,23,.06);
+.page { 
+  max-width: 760px; 
+  margin: 16px 0; 
 }
 
-.grid{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-.field{ display:flex; flex-direction:column; gap:.35rem; }
-.field.full{ grid-column:1/-1; }
+.page h1 { 
+  margin: 0 0 .25rem; 
+  font-size: 1.5rem; 
+  font-weight: 800; 
+  color: #111827; 
+}
 
-.label{ font-weight:700; color:#111827; }
+.hint { 
+  color: #64748b; 
+  margin-bottom: 1rem; 
+}
 
+/* Tarjeta del formulario */
+.form-card {
+  background: #fff; 
+  border: 1px solid #e5e7eb; 
+  border-radius: 14px;
+  padding: 1.5rem; 
+  box-shadow: 0 6px 18px rgba(2,6,23,.06);
+}
+
+/* Grilla de campos */
+.grid { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 1.2rem; 
+}
+
+.field { 
+  display: flex; 
+  flex-direction: column; 
+  gap: .35rem; 
+}
+
+.field.full { 
+  grid-column: 1 / -1; /* Ocupa todo el ancho */
+}
+
+.label { 
+  font-weight: 700; 
+  color: #111827; 
+  font-size: 0.9rem;
+}
+
+/* Estilos de Inputs */
 .form-card input[type="text"],
-.form-card select{
-  width:100%; box-sizing:border-box; min-height:40px;
-  border:1px solid #d1d5db; border-radius:10px;
-  padding:.55rem .75rem;
-  background:#fff !important; color:#111827 !important;
-  outline:none;
-}
-.form-card input:focus, .form-card select:focus{
-  border-color:#974be4; box-shadow:0 0 0 3px rgba(151,75,228,.18);
+.form-card input[type="number"],
+.form-card select {
+  width: 100%; 
+  box-sizing: border-box; 
+  min-height: 42px;
+  border: 1px solid #d1d5db; 
+  border-radius: 10px;
+  padding: .55rem .75rem;
+  background: #fff !important; 
+  color: #111827 !important;
+  outline: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.actions{ display:flex; gap:.6rem; margin-top:.5rem; }
-.btn{
-  display:inline-flex; align-items:center; justify-content:center; height:38px;
-  padding:0 .95rem; border-radius:10px; border:1px solid #e5e7eb;
-  background:#fff; color:#111827; font-weight:700; text-decoration:none;
+.form-card input:focus, .form-card select:focus {
+  border-color: #974be4; 
+  box-shadow: 0 0 0 3px rgba(151,75,228,.18);
 }
-.btn:hover{ border-color:#974be4; box-shadow:0 0 0 3px rgba(151,75,228,.15); }
-.btn.primary{ background:#9333ea; border-color:#9333ea; color:#fff; }
-.btn.primary:hover{ background:#7e22ce; }
 
-@media (max-width:720px){
-  .grid{ grid-template-columns:1fr; }
+/* Botones */
+.actions { 
+  display: flex; 
+  gap: .8rem; 
+  margin-top: 1.5rem; 
+  justify-content: flex-end;
+}
+
+.btn {
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  height: 40px;
+  padding: 0 1.2rem; 
+  border-radius: 10px; 
+  border: 1px solid #e5e7eb;
+  background: #fff; 
+  color: #111827; 
+  font-weight: 700; 
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn:hover { 
+  border-color: #974be4; 
+  box-shadow: 0 0 0 3px rgba(151,75,228,.15); 
+}
+
+.btn.primary { 
+  background: #9333ea; 
+  border-color: #9333ea; 
+  color: #fff; 
+}
+
+.btn.primary:hover { 
+  background: #7e22ce; 
+}
+
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  
+  .page {
+    margin: 0;
+    max-width: 100%;
+  }
+
+  /* Tarjeta sin bordes laterales */
+  .form-card {
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    padding: 1rem;
+  }
+
+  /* Romper la grilla a 1 columna */
+  .grid { 
+    grid-template-columns: 1fr; 
+    gap: 1rem;
+  }
+
+  /* Inputs más grandes para tocar */
+  .form-card input,
+  .form-card select {
+    font-size: 16px !important; /* Evita zoom en iOS */
+    min-height: 45px;
+  }
+
+  /* Botones en columna */
+  .actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn {
+    width: 100%;
+    height: 45px;
+  }
 }

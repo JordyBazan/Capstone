@@ -1,3 +1,7 @@
+/* =============================================================
+   FORMULARIO ASIGNATURA (Crear/Editar)
+   ============================================================= */
+
 /* === Fondo general === */
 body, .main, .app {
   background: #ffffff !important;
@@ -17,7 +21,7 @@ body, .main, .app {
   width: 100%;
   max-width: 700px;
   background: #ffffff;
-  padding: 2rem 2.5rem;
+  padding: 2.5rem;
   border-radius: 16px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   border: 1px solid #e5e7eb;
@@ -41,58 +45,67 @@ body, .main, .app {
 .asig-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.2rem;
 }
 
 .asig-form label {
   font-weight: 600;
   color: #111827;
-  margin-bottom: .25rem;
+  margin-bottom: .4rem;
   display: block;
+  font-size: 0.95rem;
 }
 
-/* Aplicamos estilo a los inputs generados por Django */
+/* Estilo a los inputs generados por Django */
 .asig-form input[type="text"],
 .asig-form input[type="email"],
 .asig-form input[type="password"],
+.asig-form input[type="number"],
 .asig-form textarea,
 .asig-form select {
   width: 100%;
-  padding: .6rem .8rem;
+  padding: .7rem .9rem;
   border: 1px solid #d1d5db;
   border-radius: 10px;
   font-size: .95rem;
   color: #111827;
   background: #fff;
   transition: all .2s ease;
-  box-sizing: border-box; /* Importante para que no se salgan del contenedor */
+  box-sizing: border-box; 
+  font-family: inherit;
 }
 
 .asig-form input:focus,
 .asig-form textarea:focus,
 .asig-form select:focus {
   border-color: #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
   outline: none;
+}
+
+/* Ajuste para textarea */
+.asig-form textarea {
+    min-height: 100px;
+    resize: vertical;
 }
 
 /* === Botones === */
 .form-actions {
   display: flex;
   gap: 1rem;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
 }
 
 .btn-primary, .btn-secondary {
-  flex: 1; /* Para que tengan el mismo ancho */
+  flex: 1; /* Mismo ancho */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: .4rem;
-  padding: 0.7rem 1.2rem;
+  gap: .5rem;
+  padding: 0.8rem 1.5rem;
   border-radius: 10px;
   border: none;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   text-decoration: none;
   transition: all .2s ease;
@@ -102,22 +115,59 @@ body, .main, .app {
 .btn-primary {
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
   color: #fff;
-  box-shadow: 0 3px 10px rgba(124, 58, 237, 0.25);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
 }
-.btn-primary:hover { filter: brightness(1.05); }
+.btn-primary:hover { 
+    filter: brightness(1.05); 
+    transform: translateY(-1px);
+}
 
 .btn-secondary {
   background: #f3f4f6;
-  color: #111827;
+  color: #1f2937;
+  border: 1px solid #e5e7eb;
 }
-.btn-secondary:hover { background: #e5e7eb; }
+.btn-secondary:hover { 
+    background: #e5e7eb; 
+    color: #111827;
+}
 
-/* === Responsive === */
-@media (max-width: 640px) {
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  
+  .asig-container {
+    padding: 1rem; /* Menos padding externo */
+    align-items: stretch;
+  }
+
   .asig-card {
     padding: 1.5rem;
+    box-shadow: none; /* Diseño más plano en móvil */
+    border: none;
   }
+
+  .asig-card h1 {
+    font-size: 1.5rem;
+  }
+
+  /* Inputs más grandes para tocar */
+  .asig-form input, 
+  .asig-form select, 
+  .asig-form textarea {
+    font-size: 16px !important; /* Evita zoom en iPhone */
+    padding: 12px;
+  }
+
+  /* Botones en columna */
   .form-actions {
     flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    padding: 14px; /* Botones más altos */
   }
 }

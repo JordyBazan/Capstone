@@ -1,130 +1,281 @@
+/* =============================================================
+   LIBRO DE NOTAS (Semáforo y Scroll)
+   ============================================================= */
+
+:root {
+  --primary: #6366f1;       /* Índigo */
+  --primary-dark: #4f46e5;
+  --bg-body: #f8fafc;
+  --surface: #ffffff;
+  --text-main: #1e293b;
+  --text-light: #64748b;
+  --border: #e2e8f0;
+
+  /* Semáforo Notas Chile (1.0 - 7.0) */
+  --grade-red: #dc2626;      /* Rojo (< 4.0) */
+  --grade-red-bg: #fef2f2;   /* Fondo rojo suave */
+  --grade-green: #16a34a;    /* Verde (>= 4.0) */
+  --grade-green-bg: #ecfdf5; /* Fondo verde suave */
+}
+
+/* === Layout General === */
+.dashboard-container {
+  padding: 2rem;
+  max-width: 100%;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.header-section {
+  margin-bottom: 1.5rem;
+}
+
 .sectionTitle {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #1e1e2f;
-  margin-bottom: 4px;
+  color: var(--text-main);
+  margin: 0;
+  letter-spacing: -0.5px;
 }
 
-.hint {
-  color: #6b7280;
+.subTitle {
+  color: var(--text-light);
   font-size: 0.95rem;
-  margin-bottom: 12px;
+  margin-top: 0.25rem;
 }
 
-.divider {
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, #7c3aed, #c084fc);
-  border-radius: 8px;
-  margin-bottom: 1.2rem;
+/* Badges de estado */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-top: 10px;
+  letter-spacing: 0.05em;
+}
+.status-edit { background: #e0e7ff; color: var(--primary); }
+.status-read { background: #f1f5f9; color: var(--text-light); }
+
+/* === Tarjeta y Tabla (Card Style) === */
+.grades-card {
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border);
+  overflow: hidden; 
+  position: relative;
 }
 
-/* Tabla principal */
 .grades-scroll {
   overflow-x: auto;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.06);
+  width: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
 }
 
 .grades-table {
   width: 100%;
-  border-collapse: collapse;
-  min-width: 900px;
-  text-align: center;
-  font-size: 0.95rem;
+  border-collapse: separate; 
+  border-spacing: 0;
+  min-width: 1000px; /* Fuerza scroll horizontal en pantallas chicas */
 }
 
+/* Cabeceras */
 .grades-table th {
   background: #f8fafc;
-  color: #374151;
+  color: var(--text-light);
+  font-size: 0.75rem;
   font-weight: 700;
-  padding: 10px;
-  border-bottom: 2px solid #e5e7eb;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1rem;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 
 .grades-table td {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 8px;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 
-.grades-table tr:hover {
-  background: #f9fafb;
+.grades-table tr:last-child td {
+  border-bottom: none;
 }
 
-/* Inputs */
+.grades-table tr:hover td {
+  background-color: #f8fafc;
+}
+
+/* === Columna Sticky (Nombre Alumno) === */
+.col-alumno {
+  position: sticky;
+  left: 0;
+  z-index: 30; /* Mayor que el resto de celdas */
+  background: var(--surface);
+  border-right: 2px solid var(--border);
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+  padding-left: 1.5rem;
+}
+
+th.col-alumno {
+  background: #f8fafc;
+  z-index: 40; /* Mayor que th normales */
+}
+
+.alumno-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.alumno-apellidos { font-weight: 700; color: var(--text-main); }
+.alumno-nombres { font-size: 0.85rem; color: var(--text-light); }
+
+/* === Inputs de Notas === */
+.nota-container {
+  display: flex;
+  justify-content: center;
+}
+
 .nota-input {
-  width: 60px;
-  padding: 4px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  width: 50px;
+  height: 38px;
   text-align: center;
-  font-weight: 600;
-  color: #111827;
-  background: #f9fafb;
-  transition: 0.2s;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  border: 1px solid transparent; /* Invisible por defecto */
+  border-radius: 8px;
+  background: transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-main);
 }
 
 .nota-input:focus {
-  border-color: #7c3aed;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
   outline: none;
-}
-
-.nota-input.low {
-  color: #dc2626;
-  font-weight: 700;
-}
-
-.nota-input.high {
-  color: #16a34a;
-  font-weight: 700;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+  border-color: var(--primary);
+  transform: scale(1.05);
+  z-index: 10;
 }
 
 .nota-input[readonly] {
-  background: #f3f4f6;
-  color: #6b7280;
-  cursor: not-allowed;
+  color: #cbd5e1;
+  cursor: default;
+}
+
+/* Colores Semáforo */
+.nota-input.low { color: var(--grade-red); }
+.nota-input.low:focus { 
+  background: var(--grade-red-bg); 
+  border-color: var(--grade-red);
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15);
+}
+
+.nota-input.high { color: var(--grade-green); }
+.nota-input.high:focus { 
+  background: var(--grade-green-bg);
+  border-color: var(--grade-green);
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.15);
 }
 
 /* Promedio */
-.promedio {
-  font-weight: 700;
+.prom-cell {
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.1rem;
 }
-.promedio.ok {
-  color: #16a34a;
-}
-.promedio.bad {
-  color: #dc2626;
+.prom-cell.bad { color: var(--grade-red); }
+.prom-cell.ok { color: var(--grade-green); }
+
+/* === Botón Guardar Flotante === */
+.actions-bar {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
 }
 
-/* Botón guardar */
-.save-container {
-  margin-top: 1.5rem;
-  text-align: right;
-}
-.save-btn {
-  background: linear-gradient(90deg, #7c3aed, #6d28d9);
-  color: #fff;
+.btn-save {
+  background: var(--primary);
+  color: white;
+  padding: 0.8rem 2rem;
   border: none;
-  padding: 0.6rem 1.4rem;
   border-radius: 10px;
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 1rem;
   cursor: pointer;
-  transition: all 0.25s ease;
-}
-.save-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Mensajes */
-.msg.success {
-  background: #dcfce7;
-  color: #065f46;
-  padding: 10px 14px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  font-weight: 600;
+.btn-save:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+}
+
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  
+  .dashboard-container {
+    padding: 0; /* Aprovechar ancho completo */
+    margin-top: 1rem;
+  }
+
+  .header-section {
+    padding: 0 1rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.4rem;
+  }
+
+  /* Ajustes de tabla para móvil */
+  .grades-card {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    box-shadow: none;
+  }
+
+  /* Reducir ancho columna alumno para ver más notas */
+  .col-alumno {
+    width: 160px;
+    min-width: 160px;
+    max-width: 160px;
+    padding-left: 10px;
+  }
+
+  .alumno-nombres {
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Botón guardar fijo abajo o bloque completo */
+  .actions-bar {
+    margin: 1rem;
+    flex-direction: column;
+  }
+
+  .btn-save {
+    width: 100%;
+    justify-content: center;
+    padding: 14px; /* Botón más alto para tocar */
+  }
 }

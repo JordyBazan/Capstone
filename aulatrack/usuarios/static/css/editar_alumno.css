@@ -17,6 +17,7 @@
     justify-content: center;
     padding: 2rem 1rem;
     width: 100%;
+    box-sizing: border-box;
 }
 
 /* La tarjeta blanca */
@@ -39,6 +40,7 @@
     margin-bottom: 2rem;
     border-bottom: 2px solid #f3f4f6;
     padding-bottom: 1rem;
+    margin-top: 0;
 }
 
 /* Grupos de formulario */
@@ -65,6 +67,7 @@
     border-radius: 0.5rem;
     transition: all 0.2s ease;
     box-sizing: border-box;
+    font-family: inherit;
 }
 
 .input-aula:focus {
@@ -73,7 +76,7 @@
     box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
 }
 
-/* Estilo especial para el Select (flecha) */
+/* Estilo especial para el Select (flecha custom) */
 select.input-aula {
     appearance: none;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
@@ -120,8 +123,48 @@ select.input-aula {
     font-size: 1rem;
     text-align: center;
     transition: background-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-cancel:hover {
     background-color: #e5e7eb;
+}
+
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+    
+    .alumno-wrapper {
+        padding: 1rem; /* Menos padding externo */
+    }
+
+    .card-alumno {
+        padding: 1.5rem; /* Menos padding interno */
+        box-shadow: none; /* Diseño más plano */
+        border: 1px solid #e5e7eb;
+    }
+
+    .card-alumno h1 {
+        font-size: 1.5rem;
+    }
+
+    /* Inputs más grandes para tocar y sin zoom */
+    .input-aula {
+        font-size: 16px !important; /* Evita zoom en iOS */
+        padding: 12px;
+    }
+
+    /* Botones en columna (Uno arriba del otro) */
+    .actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn-save, .btn-cancel {
+        width: 100%;
+        padding: 14px; /* Más área táctil */
+    }
 }

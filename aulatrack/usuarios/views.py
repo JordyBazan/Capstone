@@ -673,182 +673,262 @@ def formatear_punto_1_decimal(valor):
 # =========================================================
 # Reporte de Alumno (PDF)
 # =========================================================
+
+@login_required
 def reporte_alumno(request, alumno_id):
-    alumno = get_object_or_404(Alumno, id=alumno_id)
-    curso = alumno.curso
-
-    from django.db.models import Avg
-
-    # ============================
-    # PROMEDIOS IGUAL QUE EL HTML
-    # ============================
-    qs_prom = (
-        Nota.objects.filter(alumno=alumno)
-        .values("asignatura__nombre", "asignatura_id")
-        .annotate(promedio=Avg("valor"))
-        .order_by("asignatura__nombre")
-    )
-
-    asignaturas_data = []
-
-    for item in qs_prom:
-        asignatura_id = item["asignatura_id"]
-        nombre = item["asignatura__nombre"]
-
-        notas_qs = Nota.objects.filter(alumno=alumno, asignatura_id=asignatura_id)
-
-        notas = [formatear_punto_1_decimal(n.valor) for n in notas_qs]
-
-        promedio_asig = formatear_punto_1_decimal(item["promedio"])
-
-        asignaturas_data.append({
-            "nombre": nombre,
-            "notas": notas,
-            "promedio": promedio_asig,
-        })
-
-    # ============================
-    # PROMEDIO GENERAL
-    # ============================
-    promedios_validos = [a["promedio"] for a in asignaturas_data if a["promedio"] not in ("", None)]
-
-    if promedios_validos:
-        prom_float = [float(p) for p in promedios_validos]
-        promedio_general_val = sum(prom_float) / len(prom_float)
-        promedio_general = formatear_punto_1_decimal(promedio_general_val)
-    else:
-        promedio_general = "0.0"
-
-    # ============================
-    # ASISTENCIA
-    # ============================
-    total_asistencias = Asistencia.objects.filter(alumno=alumno).count()
-    presentes = Asistencia.objects.filter(alumno=alumno, estado="presente").count()
-    porcentaje_asistencia = round((presentes / total_asistencias * 100), 1) if total_asistencias > 0 else 0
-
-    # ============================
-    # ANOTACIONES
-    # ============================
-    anotaciones = Anotacion.objects.filter(alumno=alumno).order_by("-fecha")
-
-    # ============================
-    # PDF
-    # ============================
-    from reportlab.lib.pagesizes import A4
+    import io
+    from django.db.models import Avg, Q
+    from django.utils import timezone
+    from django.http import HttpResponse
+    
+    # ReportLab Imports
+    from reportlab.lib.pagesizes import landscape, A4
     from reportlab.lib import colors
     from reportlab.lib.units import mm
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 
-    buf = BytesIO()
-    doc = SimpleDocTemplate(
-        buf, pagesize=A4,
-        leftMargin=14*mm, rightMargin=14*mm,
-        topMargin=18*mm, bottomMargin=18*mm
-    )
-    styles = getSampleStyleSheet()
-    story = []
+    # 1. OBTENER DATOS
+    alumno = get_object_or_404(Alumno, id=alumno_id)
+    curso = alumno.curso
 
-    # ENCABEZADO
-    story.append(Paragraph("<b>Informe Académico del Alumno</b>", styles["Title"]))
-    story.append(Spacer(1, 4*mm))
-    story.append(Paragraph(f"<b>Alumno:</b> {alumno.nombres} {alumno.apellidos}", styles["Normal"]))
-    story.append(Paragraph(f"<b>Curso:</b> {curso.nombre}", styles["Normal"]))
-    story.append(Paragraph(f"<b>RUT:</b> {alumno.rut}", styles["Normal"]))
-    story.append(Paragraph(f"<b>Fecha de generación:</b> {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", styles["Normal"]))
-    story.append(Spacer(1, 6*mm))
+    # --- Helper interno para formato (X.Y) ---
+    def formatear_nota(valor):
+        if valor is None: return ""
+        val = round(valor, 1)
+        return f"{val:.1f}" # Fuerza el punto decimal
 
-    # TABLA DE NOTAS
-    encabezados = ["Asignatura"] + [f"N{i}" for i in range(1, 11)] + ["Prom."]
-    data = [encabezados]
+    # 2. PROCESAR NOTAS
+    asignaturas_qs = Asignatura.objects.filter(curso=curso).order_by('nombre')
+    
+    table_data_notas = []
+    
+    # Estilos de párrafo
+    style_center = ParagraphStyle('center', alignment=TA_CENTER, fontName='Helvetica', fontSize=9)
+    style_left_bold = ParagraphStyle('left', alignment=TA_LEFT, fontName='Helvetica-Bold', fontSize=9)
 
-    cell_style = ParagraphStyle("Cell", fontName="Helvetica", fontSize=10, alignment=1)
+    suma_promedios = 0
+    count_promedios = 0
 
-    for a in asignaturas_data:
-        fila = [Paragraph(a["nombre"].upper(), cell_style)]
-
-        # Notas
-        for n_str in a["notas"]:
-            if n_str == "":
-                fila.append(Paragraph("", cell_style))
+    for asig in asignaturas_qs:
+        notas = Nota.objects.filter(alumno=alumno, asignatura=asig).order_by('numero')
+        notas_map = {n.numero: n.valor for n in notas}
+        
+        row = [Paragraph(asig.nombre.upper(), style_left_bold)]
+        
+        suma_notas = 0
+        count_notas = 0
+        
+        for i in range(1, 11):
+            val = notas_map.get(i)
+            if val is not None:
+                suma_notas += val
+                count_notas += 1
+                txt_val = formatear_nota(val)
+                if val < 4.0:
+                    txt = f"<font color='#dc2626'><b>{txt_val}</b></font>"
+                else:
+                    txt = f"<font color='#1f2937'>{txt_val}</font>"
+                row.append(Paragraph(txt, style_center))
             else:
-                valor = float(n_str)
-                color = "#ff0000" if valor < 4 else "#008000"
-                fila.append(Paragraph(f"<font color='{color}'>{n_str}</font>", cell_style))
-
-        faltantes = 10 - len(a["notas"])
-        for _ in range(faltantes):
-            fila.append(Paragraph("", cell_style))
-
-        prom = a["promedio"]
-        if prom != "":
-            valor = float(prom)
-            color = "#ff0000" if valor < 4 else "#008000"
-            fila.append(Paragraph(f"<b><font color='{color}'>{prom}</font></b>", cell_style))
+                row.append(Paragraph("-", style_center))
+        
+        promedio = None
+        if count_notas > 0:
+            promedio = round(suma_notas / count_notas, 1)
+            suma_promedios += promedio
+            count_promedios += 1
+            txt_prom = formatear_nota(promedio)
+            if promedio < 4.0:
+                txt = f"<font color='#dc2626'><b>{txt_prom}</b></font>"
+            else:
+                txt = f"<font color='#1f2937'><b>{txt_prom}</b></font>"
+            row.append(Paragraph(txt, style_center))
         else:
-            fila.append(Paragraph("", cell_style))
+            row.append(Paragraph("-", style_center))
+            
+        table_data_notas.append(row)
 
-        data.append(fila)
+    # 3. CÁLCULOS FINALES
+    promedio_general = 0.0
+    if count_promedios > 0:
+        promedio_general = round(suma_promedios / count_promedios, 1)
 
-    tabla = Table(data, repeatRows=1)
-    tabla.setStyle(TableStyle([
-        ("GRID", (0,0), (-1,-1), 0.25, colors.black),
-        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#f0f0f0")),
-        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-        ("ALIGN", (1,0), (-1,-1), "CENTER"),
-        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-        ("FONTSIZE", (0,0), (-1,-1), 9),
+    asist_total = Asistencia.objects.filter(alumno=alumno, curso=curso).count()
+    asist_efectiva = Asistencia.objects.filter(
+        alumno=alumno, 
+        curso=curso
+    ).filter(Q(estado__iexact='Presente') | Q(estado__iexact='Atraso')).count()
+    
+    porc_asistencia = 0.0
+    if asist_total > 0:
+        porc_asistencia = round((asist_efectiva / asist_total) * 100, 1)
+
+    # =========================================================
+    # 4. CONSTRUCCIÓN DEL PDF
+    # =========================================================
+    buffer = io.BytesIO()
+    
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(A4),
+        leftMargin=15 * mm,
+        rightMargin=15 * mm,
+        topMargin=15 * mm,
+        bottomMargin=15 * mm,
+        title=f"Informe_{alumno.rut}"
+    )
+
+    story = []
+    styles = getSampleStyleSheet()
+
+    # A. ENCABEZADO
+    header_data = [
+        [
+            Paragraph("<b>INFORME PARCIAL DE NOTAS</b>", 
+                      ParagraphStyle('TitleInv', parent=styles['Heading1'], textColor=colors.white, fontSize=16)),
+            Paragraph(f"Generado: {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", 
+                      ParagraphStyle('DateInv', parent=styles['Normal'], textColor=colors.white, alignment=TA_RIGHT))
+        ]
+    ]
+    t_header = Table(header_data, colWidths=[200*mm, 67*mm])
+    t_header.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#4f46e5")),
+        ('TOPPADDING', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ('LEFTPADDING', (0,0), (-1,-1), 15),
+        ('RIGHTPADDING', (0,0), (-1,-1), 15),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
     ]))
+    story.append(t_header)
+    story.append(Spacer(1, 10*mm))
 
-    story.append(tabla)
+    # B. DATOS ALUMNO
+    prof_jefe_str = "Sin asignar"
+    if curso.profesor_jefe:
+        nombre_completo = curso.profesor_jefe.get_full_name()
+        if nombre_completo and nombre_completo.strip():
+            prof_jefe_str = nombre_completo
+        else:
+            prof_jefe_str = curso.profesor_jefe.username
 
-    # PROMEDIO FINAL
+    info_data = [
+        [f"ALUMNO: {alumno.apellidos}, {alumno.nombres}", f"RUT: {alumno.rut}"],
+        [f"CURSO: {curso.nombre} - {curso.año}", f"PROF. JEFE: {prof_jefe_str}"]
+    ]
+    
+    t_info = Table(info_data, colWidths=[133*mm, 134*mm])
+    t_info.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#f3f4f6")),
+        ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor("#374151")),
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+        ('TOPPADDING', (0,0), (-1,-1), 8),
+        ('LEFTPADDING', (0,0), (-1,-1), 12),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.white), 
+    ]))
+    story.append(t_info)
     story.append(Spacer(1, 8*mm))
-    story.append(Paragraph(f"<b>Promedio final del alumno:</b> {promedio_general}", styles["Normal"]))
-    story.append(Paragraph(f"<b>Porcentaje de asistencia:</b> {porcentaje_asistencia}%", styles["Normal"]))
-    story.append(Spacer(1, 8*mm))
 
-    # ANOTACIONES
-    story.append(Paragraph("<b>Anotaciones registradas:</b>", styles["Heading3"]))
+    # C. TABLA NOTAS
+    headers = [Paragraph("ASIGNATURA", style_center)]
+    for i in range(1, 11):
+        headers.append(Paragraph(f"N{i}", style_center))
+    headers.append(Paragraph("PROM", style_center))
+    
+    final_table_data = [headers] + table_data_notas
+    col_widths = [77*mm] + [17*mm]*10 + [20*mm]
+    
+    t_notas = Table(final_table_data, colWidths=col_widths, repeatRows=1)
+    t_notas.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#1f2937")),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#e5e7eb")),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor("#f9fafb")]),
+        ('FONTSIZE', (0,0), (-1,-1), 9),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('BACKGROUND', (-1,1), (-1,-1), colors.HexColor("#eff6ff")),
+        ('BOX', (-1,0), (-1,-1), 1, colors.HexColor("#bfdbfe")),
+    ]))
+    story.append(t_notas)
+    story.append(Spacer(1, 10*mm))
+
+    # D. RESUMEN
+    color_prom = colors.HexColor("#dc2626") if promedio_general < 4.0 else colors.HexColor("#059669")
+    color_asist = colors.HexColor("#dc2626") if porc_asistencia < 85.0 else colors.HexColor("#2563eb")
+    
+    resumen_data = [
+        [Paragraph("PROMEDIO GENERAL", style_center), Paragraph("PORCENTAJE ASISTENCIA", style_center)],
+        [
+            Paragraph(f"<b><font size=14 color={color_prom}>{formatear_nota(promedio_general)}</font></b>", style_center),
+            Paragraph(f"<b><font size=14 color={color_asist}>{formatear_nota(porc_asistencia)}%</font></b>", style_center)
+        ]
+    ]
+    t_resumen = Table(resumen_data, colWidths=[60*mm, 60*mm])
+    t_resumen.setStyle(TableStyle([
+        ('BOX', (0,0), (0,-1), 2, colors.HexColor("#e5e7eb")), 
+        ('BOX', (1,0), (1,-1), 2, colors.HexColor("#e5e7eb")), 
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#f3f4f6")),
+        ('TOPPADDING', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+    ]))
+    t_resumen.hAlign = 'RIGHT'
+    story.append(t_resumen)
+    story.append(Spacer(1, 10*mm))
+
+    # E. ANOTACIONES
+    anotaciones = Anotacion.objects.filter(alumno=alumno).order_by("-fecha")
+    story.append(Paragraph("OBSERVACIONES / ANOTACIONES", styles['Heading3']))
+    story.append(Spacer(1, 2*mm))
+    
     if anotaciones:
-        for an in anotaciones:
-            prof = an.profesor.get_full_name() or an.profesor.username
-            story.append(Paragraph(
-                f"<b>{an.fecha.strftime('%d/%m/%Y')}:</b> {an.texto} <i>({prof})</i>",
-                styles["Normal"]
-            ))
+        for anot in anotaciones:
+            prof_name = anot.profesor.get_full_name() or anot.profesor.username
+            txt = f"<b>{anot.fecha.strftime('%d/%m/%Y')} - {prof_name}:</b> {anot.texto}"
+            story.append(Paragraph(txt, ParagraphStyle('anot', parent=styles['Normal'], fontSize=9, leading=12)))
+            story.append(Spacer(1, 2*mm))
     else:
-        story.append(Paragraph("No hay anotaciones registradas.", styles["Normal"]))
-    story.append(Spacer(1, 15*mm))
+        story.append(Paragraph("<i>No se registran anotaciones a la fecha.</i>", styles['Normal']))
 
-    # FIRMAS
+    # F. FIRMAS
+    story.append(Spacer(1, 25*mm))
     firma_data = [
         ["__________________________", "__________________________"],
-        ["Firma Apoderado(a)", "Firma Docente / UTP"]
+        ["Firma Apoderado", "Firma Profesor Jefe / Dirección"]
     ]
-    from reportlab.platypus import Table
-    firma_table = Table(firma_data, colWidths=[90*mm, 90*mm])
-    firma_table.setStyle(TableStyle([
-        ("ALIGN", (0,0), (-1,-1), "CENTER"),
-        ("TOPPADDING", (0,0), (-1,-1), 10),
+    t_firmas = Table(firma_data, colWidths=[90*mm, 90*mm])
+    t_firmas.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('fontName', (0,0), (-1,-1), 'Helvetica'),
+        ('fontSize', (0,0), (-1,-1), 10),
     ]))
-    story.append(firma_table)
+    story.append(t_firmas)
+    
+    # PIE DE PÁGINA (Timestamp solo FECHA)
+    story.append(Spacer(1, 10*mm))
+    
+    # === CAMBIO AQUI: strftime('%Y%m%d') para solo AñoMesDia ===
+    footer = Paragraph(
+        f"<font color='#9ca3af' size=8>Documento oficial AulaTrack | {alumno.rut} | {timezone.now().strftime('%Y%m%d')}</font>", 
+        style_center
+    )
+    story.append(footer)
 
-    # PIE
-    story.append(Spacer(1, 6*mm))
-    story.append(Paragraph(
-        f"<font size='9'>Documento generado automáticamente por AulaTrack el {timezone.localtime().strftime('%d/%m/%Y %H:%M')}.</font>",
-        styles["Normal"]
-    ))
-
+    # GENERAR
     doc.build(story)
-    pdf = buf.getvalue()
-    buf.close()
+    pdf = buffer.getvalue()
+    buffer.close()
 
-    resp = HttpResponse(pdf, content_type="application/pdf")
-    resp["Content-Disposition"] = f'attachment; filename=\"reporte_{alumno.nombres}_{alumno.apellidos}.pdf\"'
-    return resp
-
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="Informe_{alumno.rut}.pdf"'
+    return response
 
 
 
@@ -977,112 +1057,147 @@ def seleccionar_asignatura(request, curso_id):
 @login_required
 def libro_notas(request, curso_id, asignatura_id):
     # ===========================
-    # Datos base
+    # 1. Carga de Datos Base
     # ===========================
     curso = get_object_or_404(Curso, id=curso_id)
     asignatura = get_object_or_404(Asignatura, id=asignatura_id)
+    
+    # Optimizacion: Traer alumnos ordenados
     alumnos = Alumno.objects.filter(curso=curso).order_by("apellidos", "nombres")
-    columnas_notas = range(1, 11)
+    columnas_notas = range(1, 11) # 10 notas máximo según estándar AulaTrack
 
     # ===========================
-    # Validación de permisos
+    # 2. Lógica de Permisos (AulaTrack Core)
     # ===========================
-    puede_editar = (
-        request.user.role == "docente"
-        and asignatura.profesor_id == request.user.id
-    ) or request.user.role in ["utp"] or request.user.is_superuser
+    user = request.user
+    
+    # Roles administrativos siempre pueden
+    es_admin_utp = user.role in ["utp", "admin"] or user.is_superuser
+    
+    # Profesor Jefe del CURSO actual (acceso total al curso)
+    es_profe_jefe = (curso.profesor_jefe_id == user.id)
+    
+    # Docente de la ASIGNATURA específica
+    es_profe_asignatura = (asignatura.profesor_id == user.id)
+
+    puede_editar = es_admin_utp or es_profe_jefe or es_profe_asignatura
 
     # ===========================
-    # Guardar notas
+    # 3. Procesamiento POST (Guardado)
     # ===========================
     if request.method == "POST":
         if not puede_editar:
-            messages.error(request, "No tienes permisos para modificar estas notas.")
+            messages.error(request, "Acceso denegado: No tienes permisos para editar este libro de clases.")
             return redirect("usuarios:libro_notas", curso_id=curso.id, asignatura_id=asignatura.id)
 
-        cambios = 0
-        cambios_detalle = []
+        cambios_contador = 0
+        detalle_cambios = []
 
-        for alumno in alumnos:
-            for i in columnas_notas:
-                key = f"nota_{alumno.id}_{i}"
-                valor = request.POST.get(key)
+        # Iteramos sobre los datos POST para no hacer loops innecesarios sobre objetos
+        for key, value in request.POST.items():
+            if not key.startswith("nota_"):
+                continue
+            
+            # key formato: nota_{alumno_id}_{numero_nota}
+            parts = key.split("_")
+            if len(parts) != 3: continue
+            
+            alumno_id, num_nota = parts[1], parts[2]
+            raw_val = value.strip().replace(',', '.')
 
-                if valor:
-                    #  Normalizar valor (coma → punto, eliminar espacios)
-                    valor = valor.replace(',', '.').strip()
-                    try:
-                        valor = float(valor)
-                    except ValueError:
-                        continue
+            if not raw_val: 
+                continue # Si viene vacío, lo ignoramos (o podríamos borrar la nota si existía)
 
-                    #  Validar rango permitido
-                    if valor < 1.0 or valor > 7.0:
-                        continue
+            try:
+                val_float = float(raw_val)
+            except ValueError:
+                continue # Valor no numérico ignorado
 
-                    #  Redondear a un decimal
-                    valor = round(valor, 1)
+            # Regla de negocio: Notas entre 1.0 y 7.0
+            if not (1.0 <= val_float <= 7.0):
+                continue
+            
+            val_final = round(val_float, 1)
 
-                    #  Crear o actualizar la nota
-                    nota, created = Nota.objects.update_or_create(
-                        alumno=alumno,
-                        asignatura=asignatura,
-                        numero=i,
-                        defaults={
-                            "valor": valor,
-                            "profesor": request.user,
-                            "evaluacion": f"Nota {i}",
-                        },
-                    )
-
-                    cambios += 1
-                    cambios_detalle.append(
-                        f"{'Creada' if created else 'Actualizada'} Nota {i}: {valor:.1f} "
-                        f"para {alumno.nombres} {alumno.apellidos}"
-                    )
-
-        # Registrar acción consolidada
-        if cambios > 0:
-            registrar_accion(
-                request.user,
-                asignatura,
-                CHANGE,
-                f"Modificación de notas en {curso.nombre} - {asignatura.nombre}: {cambios} cambios.\n"
-                + "\n".join(cambios_detalle[:10])
+            # Update or Create optimizado
+            nota_obj, created = Nota.objects.update_or_create(
+                alumno_id=alumno_id,
+                asignatura=asignatura,
+                numero=int(num_nota),
+                defaults={
+                    'valor': val_final,
+                    'profesor': user, # Registramos quién hizo el cambio real
+                    'evaluacion': f"Evaluación {num_nota}"
+                }
             )
-            messages.success(request, f"{cambios} notas guardadas correctamente.")
+
+            # Solo contamos si realmente fue una operación de escritura
+            # (Django update_or_create siempre retorna objeto, asumimos cambio para log simple)
+            cambios_contador += 1
+            accion = "Creada" if created else "Actualizada"
+            detalle_cambios.append(f"{accion} nota {num_nota} para Alumno ID {alumno_id}: {val_final}")
+
+        # ===========================
+        # 4. Auditoría (LogEntry)
+        # ===========================
+        if cambios_contador > 0:
+            LogEntry.objects.log_action(
+                user_id=user.id,
+                content_type_id=ContentType.objects.get_for_model(Nota).pk,
+                object_id=asignatura.id, # Linkeamos al ID de asignatura por referencia
+                object_repr=f"Notas {curso.nombre} - {asignatura.nombre}",
+                action_flag=CHANGE,
+                change_message=f"Edición masiva: {cambios_contador} notas modificadas."
+            )
+            messages.success(request, f"Se guardaron exitosamente {cambios_contador} notas.")
         else:
-            messages.info(request, "No se realizaron cambios en las notas.")
+            messages.info(request, "No se detectaron cambios válidos para guardar.")
 
         return redirect("usuarios:libro_notas", curso_id=curso.id, asignatura_id=asignatura.id)
 
     # ===========================
-    # Mostrar notas
+    # 5. Preparación de Datos para Render (GET)
     # ===========================
-    notas_por_alumno = {}
+    
+    # Optimizacion DB: Traer todas las notas de este curso/asignatura en UNA sola query
+    notas_qs = Nota.objects.filter(
+        alumno__curso=curso, 
+        asignatura=asignatura
+    ).values('alumno_id', 'numero', 'valor')
+
+    # Crear mapa de acceso rápido: {(alumno_id, numero): valor}
+    notas_map = {(n['alumno_id'], n['numero']): n['valor'] for n in notas_qs}
+
+    lista_alumnos = []
+    
     for alumno in alumnos:
-        notas_queryset = Nota.objects.filter(alumno=alumno, asignatura=asignatura).order_by("numero")
-        notas_dict = {n.numero: n for n in notas_queryset}
+        notas_alumno = []
+        suma = 0
+        cantidad = 0
+        
+        for i in columnas_notas:
+            # Acceso O(1) al diccionario
+            val = notas_map.get((alumno.id, i))
+            notas_alumno.append(val) # Puede ser None o float
+            if val is not None:
+                suma += val
+                cantidad += 1
+        
+        promedio = round(suma / cantidad, 1) if cantidad > 0 else None
+        
+        lista_alumnos.append({
+            'obj': alumno,
+            'notas': notas_alumno, # Lista ordenada index 0 -> Nota 1
+            'promedio': promedio
+        })
 
-        notas_lista = [notas_dict.get(i, None) for i in columnas_notas]
-        valores = [n.valor for n in notas_lista if n and n.valor is not None]
-        promedio = round(sum(valores) / len(valores), 1) if valores else None
-
-        notas_por_alumno[alumno] = {
-            "notas": notas_lista,
-            "promedio": promedio,
-        }
-
-    # ===========================
-    # Contexto
-    # ===========================
     context = {
         "curso": curso,
         "asignatura": asignatura,
-        "alumnos": alumnos,
-        "notas_por_alumno": notas_por_alumno,
+        "lista_alumnos": lista_alumnos, # Estructura ya procesada
         "columnas_notas": columnas_notas,
         "puede_editar": puede_editar,
+        "rango_colores": {"bajo": 4.0, "alto": 7.0} # Para uso en CSS/JS si se requiere
     }
 
     return render(request, "notas.html", context)
@@ -1617,3 +1732,151 @@ def cambiar_password(request, user_id):
         "usuario": usuario,
         "modo_password": True
     })
+
+
+
+# =========================================================
+# Reporte Consolidado de Asistencia por Curso
+# =========================================================
+@login_required
+def reporte_asistencia_curso(request, curso_id):
+    import io
+    from django.db.models import Count, Q, Min, Max
+    from django.utils import timezone
+    from django.http import HttpResponse
+    
+    # ReportLab Imports
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import mm
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+
+    curso = get_object_or_404(Curso, id=curso_id)
+
+    # 1. OBTENER RANGO DE FECHAS (PERÍODO)
+    # Buscamos la primera y última asistencia registrada en este curso
+    rango = Asistencia.objects.filter(curso=curso).aggregate(
+        inicio=Min('fecha'),
+        fin=Max('fecha')
+    )
+    
+    fecha_inicio = rango['inicio']
+    fecha_fin = rango['fin']
+
+    # Formateo manual para "10 Mar — 20 Nov 2025"
+    # (Django a veces necesita configuración de locale, esto es más seguro y rápido)
+    meses_abreviados = {
+        1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr', 5: 'May', 6: 'Jun',
+        7: 'Jul', 8: 'Ago', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dic'
+    }
+
+    if fecha_inicio and fecha_fin:
+        txt_periodo = f"{fecha_inicio.day} {meses_abreviados[fecha_inicio.month]} — {fecha_fin.day} {meses_abreviados[fecha_fin.month]} {fecha_fin.year}"
+    else:
+        txt_periodo = "Sin registros"
+
+    # 2. OBTENER ALUMNOS Y CONTEOS (Optimizado con Annotate)
+    # Esto cuenta todo en la base de datos directamente
+    alumnos = Alumno.objects.filter(curso=curso).order_by('apellidos').annotate(
+        total_presente=Count('asistencia', filter=Q(asistencia__estado='Presente')),
+        total_atraso=Count('asistencia', filter=Q(asistencia__estado='Atraso')),
+        total_ausente=Count('asistencia', filter=Q(asistencia__estado='Ausente')),
+        total_justificado=Count('asistencia', filter=Q(asistencia__estado='Justificado')),
+        total_registros=Count('asistencia')
+    )
+
+    # 3. PREPARAR DATOS PARA LA TABLA PDF
+    headers = ["Nº", "ALUMNO", "PRES.", "ATRASO", "AUS.", "JUST.", "TOTAL", "%"]
+    table_data = [headers]
+
+    style_cell = ParagraphStyle('cell', alignment=TA_CENTER, fontName='Helvetica', fontSize=9)
+    style_left = ParagraphStyle('left', alignment=TA_LEFT, fontName='Helvetica', fontSize=9)
+
+    for idx, alum in enumerate(alumnos, 1):
+        # Cálculos de presentación
+        # Nota: En Chile a veces se suma Atraso al Presente, aquí los muestro separados para claridad,
+        # pero sumo ambos para el porcentaje de asistencia.
+        efectivos = alum.total_presente + alum.total_atraso
+        porcentaje = 0
+        if alum.total_registros > 0:
+            porcentaje = round((efectivos / alum.total_registros) * 100, 0) # Sin decimales para limpieza
+
+        # Color si la asistencia es crítica (<85%)
+        color_pct = "#dc2626" if porcentaje < 85 else "#111827"
+
+        row = [
+            str(idx),
+            Paragraph(f"{alum.apellidos}, {alum.nombres}", style_left),
+            str(alum.total_presente),
+            str(alum.total_atraso),
+            str(alum.total_ausente),
+            str(alum.total_justificado),
+            str(alum.total_registros),
+            Paragraph(f"<b><font color='{color_pct}'>{int(porcentaje)}%</font></b>", style_cell)
+        ]
+        table_data.append(row)
+
+    # 4. GENERAR PDF
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4, # Vertical está bien para listas, si son muchos datos usa landscape(A4)
+        leftMargin=15*mm, rightMargin=15*mm,
+        topMargin=20*mm, bottomMargin=20*mm,
+        title=f"Asistencia_{curso.nombre}"
+    )
+
+    story = []
+    styles = getSampleStyleSheet()
+
+    # --- ENCABEZADO ---
+    story.append(Paragraph("INFORME DE ASISTENCIA GENERAL", styles['Title']))
+    story.append(Spacer(1, 5*mm))
+
+    # Info del Curso y Periodo
+    info_text = f"""
+    <b>Curso:</b> {curso.nombre} <br/>
+    <b>Profesor Jefe:</b> {curso.profesor_jefe.get_full_name() if curso.profesor_jefe else 'No asignado'} <br/>
+    <b>Período:</b> {txt_periodo} <br/>
+    <b>Total días registrados:</b> {fecha_fin.day if fecha_fin else 0} (aprox)
+    """
+    story.append(Paragraph(info_text, styles['Normal']))
+    story.append(Spacer(1, 10*mm))
+
+    # --- TABLA ---
+    # Anchos de columna calculados para A4 vertical
+    col_widths = [10*mm, 80*mm, 15*mm, 15*mm, 15*mm, 15*mm, 15*mm, 15*mm]
+    t = Table(table_data, colWidths=col_widths, repeatRows=1)
+
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#4f46e5")), # Cabecera Azul
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 8),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        # Columna de Nombres alineada a la izquierda
+        ('ALIGN', (1,0), (1,-1), 'LEFT'),
+        # Zebra y Bordes
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#e5e7eb")),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor("#f9fafb")]),
+    ]))
+
+    story.append(t)
+    
+    # Pie de página
+    story.append(Spacer(1, 10*mm))
+    story.append(Paragraph(
+        f"<font size=8 color='#6b7280'>Documento generado por AulaTrack el {timezone.now().strftime('%d/%m/%Y')}</font>",
+        ParagraphStyle('footer', alignment=TA_CENTER)
+    ))
+
+    doc.build(story)
+    pdf = buffer.getvalue()
+    buffer.close()
+
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="Asistencia_{curso.nombre}.pdf"'
+    return response

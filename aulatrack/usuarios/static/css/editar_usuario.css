@@ -15,6 +15,8 @@
     display: flex;
     justify-content: center;
     padding: 2rem 1rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .card-edit {
@@ -34,6 +36,7 @@
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
     border-bottom: 2px solid #f3f4f6;
+    margin-top: 0;
 }
 
 /* Grupos de formulario */
@@ -58,6 +61,9 @@
     font-size: 0.95rem;
     transition: border-color 0.2s, box-shadow 0.2s;
     box-sizing: border-box;
+    font-family: inherit;
+    background-color: #fff;
+    color: var(--text-main);
 }
 
 .input-aula:focus {
@@ -89,6 +95,9 @@ select.input-aula {
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s;
+    font-size: 1rem;
+    text-align: center;
+    flex: 1; /* Ocupar espacio equitativo si hay espacio */
 }
 
 .btn-save:hover {
@@ -100,8 +109,12 @@ select.input-aula {
     text-decoration: none;
     font-weight: 500;
     font-size: 0.95rem;
-    padding: 0.5rem 1rem;
+    padding: 0.75rem 1rem;
     border-radius: 0.5rem;
+    text-align: center;
+    transition: background-color 0.2s;
+    flex: 1; /* Ocupar espacio equitativo si hay espacio */
+    display: inline-block;
 }
 
 .btn-cancel:hover {
@@ -116,4 +129,41 @@ select.input-aula {
     list-style: none;
     padding: 0;
     margin-top: 0.25rem;
+}
+
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+    
+    .edit-wrapper {
+        padding: 1rem; /* Menos margen lateral */
+    }
+
+    .card-edit {
+        padding: 1.5rem; /* Menos padding interno */
+        box-shadow: none; /* Diseño más plano */
+    }
+
+    .card-edit h1 {
+        font-size: 1.4rem;
+    }
+
+    /* Inputs fáciles de tocar y sin zoom */
+    .input-aula {
+        font-size: 16px !important; /* Evita zoom en iOS */
+        padding: 12px;
+    }
+
+    /* Botones en columna */
+    .actions {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .btn-save, .btn-cancel {
+        width: 100%;
+        padding: 14px; /* Botones más altos */
+        flex: auto;
+    }
 }

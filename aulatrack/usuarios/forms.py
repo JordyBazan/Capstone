@@ -19,7 +19,7 @@ Usuario = get_user_model()
 class LoginForm(AuthenticationForm):
     username = forms.CharField(
         label="Usuario",
-        widget=forms.TextInput(attrs={"autofocus": True, "placeholder": "RUT o Usuario"})
+        widget=forms.TextInput(attrs={"autofocus": True, "placeholder": "Usuario"})
     )
     password = forms.CharField(
         label="Contraseña",

@@ -1,37 +1,141 @@
-/* === Curso Eliminar Confirmar — Tema claro consistente con Home === */
-:root{
-  --bg:#ffffff;
-  --text:#0f172a;
-  --text-strong:#111827;
-  --border:#e5e7eb;
-  --danger:#ef4444;
-  --danger-weak:#fee2e2;
-  --focus:#974be4;
-}
-.main{
-  background:#ffffff;            /*  fondo blanco solo en Home */
-  color:#0f172a;                 /* texto oscuro para contraste */
-}
-.confirm{
-  background:#fff; border:1px solid var(--border); border-radius:12px;
-  padding:1rem; max-width:640px;
-  box-shadow:0 6px 18px rgba(2,6,23,.06);
-}
-.confirm h1{ margin:0 0 .5rem; font-size:1.25rem; font-weight:800; color:var(--text-strong); }
-.confirm p{ color:var(--text); }
+/* =============================================================
+   ELIMINAR CURSO (Confirmación)
+   Tema claro consistente con Home
+   ============================================================= */
 
-.warn{
-  background:var(--danger-weak); color:var(--danger);
-  padding:.6rem .8rem; border-radius:10px; font-weight:700; margin: .75rem 0 1rem;
+:root {
+  --bg: #ffffff;
+  --text: #0f172a;
+  --text-strong: #111827;
+  --border: #e5e7eb;
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
+  --danger-weak: #fee2e2;
+  --focus: #974be4;
 }
 
-.actions{ display:flex; gap:.6rem; flex-wrap:wrap; }
-.btn{
-  display:inline-flex; align-items:center; justify-content:center;
-  height:38px; padding:0 .9rem; border-radius:10px; font-weight:700;
-  border:1px solid var(--border); background:#fff; color:var(--text-strong);
-  text-decoration:none; cursor:pointer; transition:box-shadow .15s ease, border-color .15s ease;
+.main {
+  background: #ffffff;            /* fondo blanco solo en Home */
+  color: #0f172a;                 /* texto oscuro para contraste */
+  padding: 2rem;
+  min-height: 100vh;
 }
-.btn:hover{ border-color:var(--focus); box-shadow:0 0 0 3px rgba(151,75,228,.15); }
-.btn.danger{ background:var(--danger); color:#fff; border-color:transparent; }
-.btn.cancel{ background:#fff; }
+
+/* Tarjeta de confirmación */
+.confirm {
+  background: #fff; 
+  border: 1px solid var(--border); 
+  border-radius: 12px;
+  padding: 2rem; 
+  max-width: 640px;
+  margin: 0 auto; /* Centrado */
+  box-shadow: 0 6px 18px rgba(2,6,23,.06);
+}
+
+.confirm h1 { 
+  margin: 0 0 1rem; 
+  font-size: 1.5rem; 
+  font-weight: 800; 
+  color: var(--text-strong); 
+}
+
+.confirm p { 
+  color: var(--text); 
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+/* Caja de advertencia */
+.warn {
+  background: var(--danger-weak); 
+  color: #991b1b;
+  padding: 1rem; 
+  border-radius: 10px; 
+  font-weight: 600; 
+  margin: 1.5rem 0;
+  border: 1px solid #fecaca;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Botones */
+.actions { 
+  display: flex; 
+  gap: 1rem; 
+  flex-wrap: wrap; 
+  justify-content: flex-end; /* Botones a la derecha */
+  margin-top: 2rem;
+}
+
+.btn {
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center;
+  height: 42px; 
+  padding: 0 1.5rem; 
+  border-radius: 10px; 
+  font-weight: 700;
+  border: 1px solid var(--border); 
+  background: #fff; 
+  color: var(--text-strong);
+  text-decoration: none; 
+  cursor: pointer; 
+  transition: all .2s ease;
+  font-size: 0.95rem;
+}
+
+.btn:hover { 
+  border-color: var(--focus); 
+  box-shadow: 0 0 0 3px rgba(151,75,228,.15); 
+}
+
+/* Botón Peligro (Eliminar) */
+.btn.danger { 
+  background: var(--danger); 
+  color: #fff; 
+  border-color: var(--danger); 
+}
+
+.btn.danger:hover {
+  background: var(--danger-hover);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Botón Cancelar */
+.btn.cancel { 
+  background: #f8fafc; 
+}
+
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  
+  .main {
+    padding: 1rem;
+  }
+
+  .confirm {
+    padding: 1.5rem;
+    box-shadow: none; /* Diseño más plano */
+    border: none;
+    width: 100%;
+  }
+
+  .confirm h1 {
+    font-size: 1.4rem;
+  }
+
+  /* Botones apilados */
+  .actions {
+    flex-direction: column-reverse; /* Cancelar abajo, Eliminar arriba (o viceversa según prefieras) */
+    gap: 12px;
+  }
+
+  .btn {
+    width: 100%; /* Ancho completo */
+    height: 48px; /* Más fácil de tocar */
+    font-size: 1rem;
+  }
+}

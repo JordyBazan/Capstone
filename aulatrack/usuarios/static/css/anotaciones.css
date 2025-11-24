@@ -7,7 +7,7 @@
     --bg-card: #ffffff;
     --text-main: #111827;
     --text-muted: #6b7280;
-    --border: #e5e7eb;
+    --border: #e2e8f0;
     
     /* Colores de Estado */
     --success: #10b981;
@@ -225,7 +225,50 @@
     font-weight: 700;
 }
 
-/* Responsive */
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
 @media (max-width: 768px) {
-    .profile-grid { grid-template-columns: 1fr; }
+    
+    /* 1. Colapsar Grilla a 1 Columna */
+    .profile-grid { 
+        grid-template-columns: 1fr; 
+        gap: 1rem;
+    }
+
+    /* 2. Ajustes de Contenedor */
+    .main-container {
+        padding: 0;
+    }
+
+    /* 3. Encabezado Compacto */
+    .sectionTitle {
+        font-size: 1.5rem;
+        padding: 0 0.5rem;
+    }
+    .hint {
+        padding: 0 0.5rem;
+    }
+
+    /* 4. Tarjetas ancho completo */
+    .card {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        box-shadow: none;
+        margin-bottom: 1rem;
+        padding: 1rem;
+    }
+
+    /* 5. Gráfico de Asistencia (ajuste etiquetas) */
+    .chart-row {
+        font-size: 0.85rem;
+    }
+    .chart-label { width: 70px; }
+
+    /* 6. Botones grandes */
+    .btn-primary, .btn-outline {
+        padding: 12px;
+        font-size: 1rem;
+    }
 }

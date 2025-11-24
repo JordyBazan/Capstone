@@ -1,3 +1,7 @@
+/* =============================================================
+   HISTORIAL DE ACCIONES (Logs)
+   ============================================================= */
+
 /* === Fondo general === */
 body, .main, .app {
   background: #ffffff !important;
@@ -17,6 +21,7 @@ body, .main, .app {
   border-radius: 14px;
   padding: 2rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  margin-top: 1rem;
 }
 
 /* === Header === */
@@ -25,11 +30,15 @@ body, .main, .app {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap; /* Permite que se apile en móvil */
+  gap: 1rem;
 }
+
 .hist-header h1 {
   font-size: 1.8rem;
   font-weight: 800;
   color: #111827;
+  margin: 0;
 }
 
 /* === Botones === */
@@ -72,13 +81,14 @@ body, .main, .app {
 }
 .btn-danger:hover { background: #dc2626; }
 
-/* === Selects === */
+/* === Filtros (Selects) === */
 .hist-filters {
   display: flex;
   flex-wrap: wrap;
   gap: 0.7rem;
   margin-bottom: 1.5rem;
 }
+
 .hist-select {
   background: #ffffff;
   color: #111827;
@@ -87,29 +97,38 @@ body, .main, .app {
   border-radius: 8px;
   font-size: 14px;
   transition: all .2s ease;
+  min-width: 120px;
 }
+
 .hist-select:hover, .hist-select:focus {
   border-color: #8b5cf6;
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+  outline: none;
 }
 
 /* === Tabla === */
 .hist-table-wrap {
-  overflow-x: auto;
+  overflow-x: auto; /* Scroll horizontal vital */
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   background: #ffffff;
+  -webkit-overflow-scrolling: touch;
 }
+
 .hist-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.95rem;
   color: #111827;
+  min-width: 800px; /* Fuerza scroll si la pantalla es chica */
 }
+
 .hist-table th, .hist-table td {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap; /* Evita que se rompan las líneas */
 }
+
 .hist-table th {
   background: #f9fafb;
   color: #111827;
@@ -117,12 +136,15 @@ body, .main, .app {
   text-transform: uppercase;
   font-size: 0.8rem;
 }
+
 .hist-table td {
   color: #1f2937;
 }
+
 .hist-table tr:hover td {
   background: #f3f4f6;
 }
+
 .empty {
   text-align: center;
   padding: 1rem;
@@ -141,10 +163,10 @@ body, .main, .app {
 .tag-blue { background: #bfdbfe; color: #1e3a8a; }
 .tag-red { background: #fecaca; color: #7f1d1d; }
 
-/* === Filas coloreadas === */
-.bg-creacion { background: #ecfdf5; color: #065f46; }
-.bg-edicion { background: #eff6ff; color: #1e3a8a; }
-.bg-eliminacion { background: #fef2f2; color: #7f1d1d; }
+/* === Filas coloreadas (Opcional) === */
+/* .bg-creacion { background: #ecfdf5; color: #065f46; } */
+/* .bg-edicion { background: #eff6ff; color: #1e3a8a; } */
+/* .bg-eliminacion { background: #fef2f2; color: #7f1d1d; } */
 
 /* === Botón eliminar individual === */
 .btn-delete {
@@ -178,4 +200,51 @@ body, .main, .app {
 .page-info {
   margin: 0 10px;
   color: #374151;
+}
+
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  
+  .hist-container {
+    padding: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .hist-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .hist-header h1 {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  .hist-header .btn-danger {
+    width: 100%; /* Botón ancho completo */
+    padding: 12px;
+  }
+
+  /* Filtros apilados */
+  .hist-filters {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .hist-select, .btn-blue, .btn-secondary {
+    width: 100%;
+    box-sizing: border-box;
+    height: 42px;
+  }
+
+  /* Tabla con scroll */
+  .hist-table-wrap {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    box-shadow: none;
+  }
 }

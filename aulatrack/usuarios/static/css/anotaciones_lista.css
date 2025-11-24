@@ -45,13 +45,15 @@
 .table-responsive {
     overflow-x: auto;
     width: 100%;
+    /* Suavidad de scroll en iOS */
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Tabla */
 .anotaciones-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 600px;
+    min-width: 600px; /* Fuerza scroll en móviles */
 }
 
 .anotaciones-table th {
@@ -108,9 +110,58 @@
     font-size: 0.85rem;
     font-weight: 600;
     transition: background-color 0.2s, transform 0.1s;
+    white-space: nowrap;
 }
 
 .btn-detalles:hover {
     background-color: var(--primary-hover);
     transform: translateY(-1px);
+}
+
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+    
+    .main-container {
+        padding: 0; /* Aprovechar todo el ancho */
+        margin-top: 1rem;
+    }
+
+    .sectionTitle {
+        font-size: 1.4rem;
+        padding: 0 1rem;
+    }
+
+    .hint {
+        padding: 0 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .table-card {
+        border-radius: 0; /* Quitar bordes redondeados para pegar a los lados */
+        border-left: none;
+        border-right: none;
+        box-shadow: none;
+    }
+
+    /* Ocultar columna ID para ganar espacio */
+    .col-id, 
+    .anotaciones-table th:first-child, 
+    .anotaciones-table td:first-child {
+        display: none;
+    }
+
+    /* Ajustar celdas */
+    .anotaciones-table th, 
+    .anotaciones-table td {
+        padding: 12px 10px;
+        font-size: 0.9rem;
+    }
+
+    /* Botón más fácil de tocar */
+    .btn-detalles {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
 }

@@ -1,147 +1,208 @@
 {% extends "base.html" %}
-{% load static dict_extras %}
 {% load static %}
 
-{% block title %}Registro de Notas - AulaTrack{% endblock %}
+{% block title %}Libro de Notas - AulaTrack{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/notas.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notas.css' %}">
 {% endblock %}
 
 {% block content %}
+<div class="dashboard-container">
 
+    <div class="header-section">
+        <h2 class="sectionTitle">{{ asignatura.nombre }}</h2>
+        <div class="subTitle">{{ curso.nombre }} - Año {{ curso.año }}</div>
+        
+        {% if puede_editar %}
+            <span class="status-badge status-edit">
+                <i class="fas fa-pen"></i>&nbsp; Modo Edición Activo
+            </span>
+        {% else %}
+            <span class="status-badge status-read">
+                <i class="fas fa-eye"></i>&nbsp; Solo Lectura
+            </span>
+        {% endif %}
+    </div>
 
-<h2 class="sectionTitle">{{ asignatura.nombre }} - {{ curso.año }} {{ curso.nombre }}</h2>
-<p class="hint">
-  Registro de notas del curso. 
-  {% if puede_editar %}
-    Puedes editar las notas.
-  {% else %}
-    Solo lectura.
-  {% endif %}
-</p>
-<div class="divider"></div>
+    <form method="post" autocomplete="off">
+        {% csrf_token %}
+        
+        <div class="grades-card">
+            <div class="grades-scroll">
+                <table class="grades-table">
+                    <thead>
+                        <tr>
+                            <th class="col-alumno">Alumno</th>
+                            
+                            {% for i in columnas_notas %}
+                                <th style="text-align: center;">N{{ i }}</th>
+                            {% endfor %}
+                            
+                            <th style="text-align: center;">Prom</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in lista_alumnos %}
+                        <tr>
+                            <td class="col-alumno">
+                                <div class="alumno-info">
+                                    <span class="alumno-apellidos">{{ item.obj.apellidos }}</span>
+                                    <span class="alumno-nombres">{{ item.obj.nombres }}</span>
+                                </div>
+                            </td>
 
-<form method="post">
-  {% csrf_token %}
-  <div class="grades-scroll">
-    <table class="grades-table">
-      <thead>
-        <tr>
-          <th>Alumno</th>
-          {% for i in columnas_notas %}
-            <th>Nota {{ i }}</th>
-          {% endfor %}
-          <th>Promedio</th>
-        </tr>
-      </thead>
+                            {% for nota_valor in item.notas %}
+                            <td>
+                                <div class="nota-container">
+                                    <input type="text" 
+                                           name="nota_{{ item.obj.id }}_{{ forloop.counter }}"
+                                           class="nota-input js-nota"
+                                           inputmode="decimal"
+                                           placeholder="-"
+                                           value="{% if nota_valor %}{{ nota_valor|stringformat:'.1f' }}{% endif %}"
+                                           {% if not puede_editar %}readonly{% endif %}>
+                                </div>
+                            </td>
+                            {% endfor %}
 
-      <tbody>
-        {% for alumno, data in notas_por_alumno.items %}
-          <tr>
-            <td style="text-align:left; font-weight:600;">
-              {{ alumno.apellidos }} {{ alumno.nombres }}
-            </td>
+                            <td class="prom-cell js-promedio">
+                                {% if item.promedio %}
+                                    {{ item.promedio|stringformat:".1f" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-            {% for i in columnas_notas %}
-              {% with nota=data.notas|index:i %}
-                <td>
-                  <input type="text"
-                         lang="en"
-                         inputmode="decimal"
-                         name="nota_{{ alumno.id }}_{{ i }}"
-                         {% if nota and nota.valor is not None %}
-                           value="{{ nota.valor|floatformat:1 }}"
-                         {% endif %}
-                         {% if not puede_editar %}readonly{% endif %}
-                         class="nota-input {% if nota and nota.valor < 4 %}low{% elif nota and nota.valor >= 4 %}high{% endif %}">
-                </td>
-              {% endwith %}
-            {% endfor %}
-
-            <td class="promedio {% if data.promedio and data.promedio < 4 %}bad{% elif data.promedio %}ok{% endif %}">
-              {% if data.promedio %}
-                {{ data.promedio|floatformat:1 }}
-              {% else %}
-                -
-              {% endif %}
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  {% if puede_editar %}
-  <div class="save-container">
-    <button type="submit" class="save-btn">Guardar Notas</button>
-  </div>
-  {% endif %}
-</form>
+        {% if puede_editar %}
+        <div class="actions-bar">
+            <button type="submit" class="btn-save">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:6px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                </svg>
+                Guardar Notas
+            </button>
+        </div>
+        {% endif %}
+    </form>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const inputs = document.querySelectorAll('.nota-input');
+    
+    // === 1. Lógica de Formato Automático (X.Y) ===
+    const formatearInput = (input) => {
+        // Elimina todo lo que NO sea número
+        let valor = input.value.replace(/\D/g, ''); 
+        
+        // Limitar a 2 dígitos (evitar "655")
+        if (valor.length > 2) {
+            valor = valor.substring(0, 2);
+        }
 
-  // === Colorear según valor ===
-  const actualizarColor = (input) => {
-    input.classList.remove('low', 'high');
-    const val = parseFloat(input.value.replace(',', '.'));
-    if (!isNaN(val)) {
-      if (val < 4) input.classList.add('low');
-      else input.classList.add('high');
-    }
-  };
+        // Transformar a formato X.Y
+        if (valor.length >= 2) {
+            // Si escriben 65 -> 6.5
+            input.value = valor.charAt(0) + '.' + valor.charAt(1);
+        } else {
+            // Si escriben 6 -> 6
+            input.value = valor;
+        }
+    };
 
-  // === Recalcular promedio ===
-  const recalcularPromedio = (fila) => {
-    const celdas = fila.querySelectorAll('.nota-input:not([readonly])');
-    let sum = 0, count = 0;
-    celdas.forEach(inp => {
-      const v = parseFloat(inp.value.replace(',', '.'));
-      if (!isNaN(v)) { sum += v; count++; }
+    // === 2. Lógica de Colores (Semáforo) ===
+    const actualizarColor = (input) => {
+        input.classList.remove('low', 'high');
+        const val = parseFloat(input.value); 
+
+        if (!isNaN(val)) {
+            if (val < 4.0) input.classList.add('low');
+            else input.classList.add('high');
+        }
+    };
+
+    // === 3. Cálculo de Promedio en Vivo ===
+    const actualizarPromedioFila = (row) => {
+        const inputs = row.querySelectorAll('.js-nota');
+        let suma = 0, count = 0;
+
+        inputs.forEach(inp => {
+            const v = parseFloat(inp.value);
+            if (!isNaN(v)) { suma += v; count++; }
+        });
+
+        const promCell = row.querySelector('.js-promedio');
+        if (count > 0) {
+            const promedio = (suma / count).toFixed(1); // toFixed(1) devuelve string con punto
+            promCell.textContent = promedio; // Mostramos CON PUNTO
+            
+            // Color del promedio
+            promCell.classList.remove('bad', 'ok');
+            if (parseFloat(promedio) < 4.0) promCell.classList.add('bad');
+            else promCell.classList.add('ok');
+        } else {
+            promCell.textContent = '-';
+            promCell.classList.remove('bad', 'ok');
+        }
+    };
+
+    // === 4. Inicialización ===
+    const inputs = document.querySelectorAll('.js-nota');
+
+    // Carga inicial de colores (inputs)
+    inputs.forEach(inp => {
+        if(inp.value) actualizarColor(inp);
     });
-    const prom = count ? (sum / count).toFixed(1) : '-';
-    const promCell = fila.querySelector('.promedio');
-    promCell.textContent = prom;
-    promCell.classList.remove('ok', 'bad');
-    if (prom !== '-' && prom < 4) promCell.classList.add('bad');
-    else if (prom !== '-') promCell.classList.add('ok');
-  };
-
-  // === Inicializar ===
-  document.querySelectorAll('.grades-table tbody tr').forEach(fila => {
-    fila.querySelectorAll('.nota-input').forEach(input => {
-      if (input.value.includes(',')) input.value = input.value.replace(',', '.');
-      if (input.value && !input.value.includes('.')) input.value += '.0';
-      actualizarColor(input);
-    });
-    recalcularPromedio(fila);
-  });
-
-  // === Entrada en vivo ===
-  inputs.forEach(input => {
-    input.addEventListener('input', e => {
-      e.target.value = e.target.value.replace(',', '.');
-      if (/^\d+\.\d{2,}$/.test(e.target.value)) {
-        e.target.value = parseFloat(e.target.value).toFixed(1);
-      }
-      actualizarColor(e.target);
-      recalcularPromedio(e.target.closest('tr'));
+    
+    // Carga inicial de colores (promedios)
+    document.querySelectorAll('.js-promedio').forEach(cell => {
+        const val = parseFloat(cell.textContent); // parsea "6.5" correctamente
+        if (!isNaN(val)) {
+            if (val < 4.0) cell.classList.add('bad');
+            else cell.classList.add('ok');
+        }
     });
 
-    input.addEventListener('blur', e => {
-      let val = e.target.value.trim();
-      if (/^\d$/.test(val)) {
-        e.target.value = val + '.0';
-      } else if (/^\d[.,]\d$/.test(val)) {
-        e.target.value = val.replace(',', '.');
-      }
-      if (/^\d+\.\d{2,}$/.test(e.target.value)) {
-        e.target.value = parseFloat(e.target.value).toFixed(1);
-      }
+    // Event Listeners
+    inputs.forEach(inp => {
+        inp.addEventListener('input', (e) => {
+            // 1. Auto-formato (65 -> 6.5)
+            formatearInput(e.target);
+            
+            // 2. Validaciones extra de rango
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val)) {
+                 if (val > 7.0) e.target.value = '7.0'; 
+                 if (val < 1.0 && e.target.value.length === 3) e.target.value = '1.0';
+            }
+
+            // 3. Actualizar visuales
+            actualizarColor(e.target);
+            actualizarPromedioFila(e.target.closest('tr'));
+        });
+        
+        // Al salir del input (blur): Asegurar formato X.Y limpio
+        inp.addEventListener('blur', (e) => {
+             // Aquí aseguramos que si quedó algo raro, se arregle
+             const val = parseFloat(e.target.value);
+             if(!isNaN(val)){
+                 e.target.value = val.toFixed(1); // Esto asegura "6.0" con punto
+                 actualizarColor(e.target);
+                 actualizarPromedioFila(e.target.closest('tr'));
+             } else {
+                 if(e.target.value.trim() !== "") e.target.value = ""; // Limpiar si no es numero
+             }
+        });
+
+        // UX: Seleccionar todo al hacer click
+        inp.addEventListener('focus', (e) => e.target.select());
     });
-  });
 });
 </script>
 {% endblock %}

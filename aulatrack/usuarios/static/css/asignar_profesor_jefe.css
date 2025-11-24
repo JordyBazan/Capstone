@@ -1,6 +1,6 @@
-/* ===============================================
-   AulaTrack · Asignar Profesor Jefe (Modo Claro)
-   =============================================== */
+/* =============================================================
+   AULATRACK · ASIGNAR PROFESOR JEFE (Modo Claro)
+   ============================================================= */
 
 :root {
   --bg: #ffffff;
@@ -243,18 +243,43 @@ tbody tr:hover td {
   border: 1px solid #fde68a;
 }
 
-/* ------------------------
-   RESPONSIVE
-------------------------- */
-@media (max-width: 720px) {
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  
+  .main {
+    padding: 1rem;
+  }
+
   .card {
     padding: 1.2rem;
+    margin-bottom: 1rem;
   }
-  table th, table td {
-    padding: 0.75rem;
+
+  /* Tabla con scroll */
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
+  
+  /* Botones grandes */
   .actions {
     flex-direction: column;
     align-items: stretch;
+  }
+  .btn-primary, .btn-secondary {
+    padding: 12px;
+    width: 100%;
+  }
+
+  /* Ajuste de formulario */
+  .form {
+    max-width: 100%;
+  }
+  
+  select, input {
+    font-size: 16px !important; /* Evita zoom en iOS */
   }
 }

@@ -1,4 +1,6 @@
-/* === AulaTrack · Contraste Pro (Sidebar oscuro + contenido claro) === */
+/* =============================================================
+   AULATRACK · CONTRASTE PRO (Sidebar oscuro + contenido claro)
+   ============================================================= */
 :root {
   /* Marca */
   --brand-400:#b197fc;
@@ -29,142 +31,198 @@
 }
 
 /* Reset */
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--text);}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; font-family: "Inter", system-ui, sans-serif; background: var(--bg); color: var(--text); }
 
 /* =============================
-   GRID APP
+   GRID APP (ESCRITORIO)
    ============================= */
 .app {
-  display:grid;
-  grid-template-columns:260px 1fr;
-  min-height:100vh;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
 }
+
+/* --- CORRECCIÓN VITAL PARA ESCRITORIO --- */
+/* Ocultamos elementos móviles para que no rompan el Grid */
+.menu-toggle { display: none !important; }
+.overlay { display: none !important; }
 
 /* =============================
    SIDEBAR OSCURO
    ============================= */
 .sidebar {
-  background:var(--side-bg);
-  color:var(--side-text);
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
-  border-right:1px solid var(--side-border);
-  position:sticky;
-  top:0;
-  height:100vh;
+  background: var(--side-bg);
+  color: var(--side-text);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid var(--side-border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 100; /* Z-index base */
 }
 
 .sidebar-content {
-  padding:20px 16px 90px;
-  overflow-y:auto;
+  padding: 20px 16px 90px;
+  overflow-y: auto;
 }
 
 /* Brand */
-.brand {
-  display:flex;align-items:center;gap:10px;margin-bottom:1rem;
-}
+.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
 .logo {
-  width:38px;height:38px;display:grid;place-items:center;
-  border-radius:10px;
-  background:linear-gradient(135deg,var(--brand-600),var(--brand-800));
-  color:#fff;font-weight:900;
+  width: 38px; height: 38px; display: grid; place-items: center;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--brand-600), var(--brand-800));
+  color: #fff; font-weight: 900;
 }
-.name {
-  font-weight:800;color:#fff;font-size:1.1rem;
-}
+.name { font-weight: 800; color: #fff; font-size: 1.1rem; }
 
 /* Perfil */
-.profile {
-  display:flex;align-items:center;gap:10px;margin:1rem 0;
-}
+.profile { display: flex; align-items: center; gap: 10px; margin: 1rem 0; }
 .avatar {
-  width:36px;height:36px;border-radius:999px;
-  background:#2e3150;color:#fff;font-weight:800;
-  display:grid;place-items:center;
+  width: 36px; height: 36px; border-radius: 999px;
+  background: #2e3150; color: #fff; font-weight: 800;
+  display: grid; place-items: center;
 }
-.docente{font-weight:700;color:#fff;}
-.rol{font-size:.85rem;color:var(--side-muted);}
+.docente { font-weight: 700; color: #fff; }
+.rol { font-size: .85rem; color: var(--side-muted); }
 
 /* Menú */
-.nav-section{margin-top:1rem;}
-.nav-section h4{
-  margin:0 0 .5rem;color:var(--side-muted);font-size:.9rem;font-weight:700;
+.nav-section { margin-top: 1rem; }
+.nav-section h4 { margin: 0 0 .5rem; color: var(--side-muted); font-size: .9rem; font-weight: 700; }
+.nav-section ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.nav-section a {
+  display: block; padding: 8px 10px; border-radius: 8px;
+  color: var(--side-text); transition: var(--transition);
 }
-.nav-section ul{list-style:none;margin:0;padding:0;display:grid;gap:4px;}
-.nav-section a{
-  display:block;
-  padding:8px 10px;
-  border-radius:8px;
-  color:var(--side-text);
-  transition:var(--transition);
-}
-.nav-section a:hover{
-  background:var(--side-hover);
-  color:#fff;
-}
+.nav-section a:hover { background: var(--side-hover); color: #fff; }
 
 /* =============================
    LOGOUT FIJO
    ============================= */
 .logout-fixed {
-  position:fixed;
-  bottom:16px;
-  left:0;
-  width:260px;
-  padding:0 16px 0;
-  background:var(--side-bg);
-  border-top:1px solid var(--side-border);
+  position: fixed; bottom: 16px; left: 0; width: 260px;
+  padding: 0 16px 0; background: var(--side-bg);
+  border-top: 1px solid var(--side-border);
 }
 .logout-btn {
-  width:100%;
-  padding:.75rem 1rem;
-  border:0;
-  border-radius:10px;
-  background:var(--danger);
-  color:#fff;
-  font-weight:700;
-  cursor:pointer;
-  transition:var(--transition);
-  box-shadow:0 8px 18px rgba(220,38,38,0.25);
+  width: 100%; padding: .75rem 1rem; border: 0; border-radius: 10px;
+  background: var(--danger); color: #fff; font-weight: 700; cursor: pointer;
+  transition: var(--transition); box-shadow: 0 8px 18px rgba(220,38,38,0.25);
 }
-.logout-btn:hover {
-  background:var(--danger-hover);
-  box-shadow:0 10px 22px rgba(220,38,38,0.35);
-}
+.logout-btn:hover { background: var(--danger-hover); box-shadow: 0 10px 22px rgba(220,38,38,0.35); }
 
 /* =============================
    CONTENIDO CLARO
    ============================= */
-.main {
-  background:var(--bg);
-  padding:24px 28px;
-}
-.topbar {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-bottom:1rem;
-}
+.main { background: var(--bg); padding: 24px 28px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
 .content {
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:1.5rem;
-  box-shadow:var(--shadow);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow);
 }
 
 /* Links */
-a { color:var(--brand-500); text-decoration:none; transition:var(--transition); }
-a:hover { color:var(--brand-400); }
+a { color: var(--brand-500); text-decoration: none; transition: var(--transition); }
+a:hover { color: var(--brand-400); }
 
 /* Scroll */
-.sidebar::-webkit-scrollbar {width:6px;}
-.sidebar::-webkit-scrollbar-thumb {
-  background:#3a3d5a;
-  border-radius:10px;
-}
-.sidebar::-webkit-scrollbar-thumb:hover {
-  background:#4a4f7a;
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-thumb { background: #3a3d5a; border-radius: 10px; }
+.sidebar::-webkit-scrollbar-thumb:hover { background: #4a4f7a; }
+
+
+/* =============================================================
+   RESPONSIVE: MÓVILES Y TABLETS (max-width: 768px)
+   ============================================================= */
+@media (max-width: 768px) {
+
+    /* 1. ROMPER LA GRILLA PRINCIPAL */
+    .app {
+        display: block; /* Ya no es grid, ocupa todo el ancho */
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    /* 2. SIDEBAR OFF-CANVAS (Oculto a la izquierda) */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px; /* Escondido */
+        width: 260px;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: none;
+        border-right: none;
+    }
+
+    /* Clase activa (JavaScript la agrega) */
+    .sidebar.active {
+        left: 0; /* Aparece */
+        box-shadow: 5px 0 25px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Ajuste del botón Logout móvil */
+    .logout-fixed {
+        width: 260px; /* Ajustado al ancho del sidebar */
+        left: 0;
+        bottom: 0;
+        position: absolute; /* Relativo al sidebar */
+    }
+
+    /* 3. CONTENIDO PRINCIPAL */
+    .main {
+        width: 100%;
+        padding: 16px; /* Menos padding */
+        min-height: 100vh;
+    }
+
+    .topbar {
+        gap: 12px;
+        justify-content: flex-start;
+    }
+
+    /* 4. ELEMENTOS MÓVILES VISIBLES */
+    
+    /* Botón Menú */
+    .menu-toggle {
+        display: flex !important; /* Forzamos que se vea */
+        align-items: center;
+        justify-content: center;
+        width: 40px; height: 40px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--brand-600);
+        font-size: 1.5rem;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    /* Overlay (Fondo Oscuro) */
+    .overlay {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 999; /* Debajo del sidebar */
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+        display: block !important; /* Necesario para la transición */
+    }
+
+    .overlay.active {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    /* Ajustes generales de contenido móvil */
+    .content { padding: 1rem; overflow-x: hidden; }
+    
+    .nav-buttons { width: 100%; gap: 10px; display: flex; }
+    .nav-buttons .btn { flex: 1; text-align: center; justify-content: center; }
 }

@@ -1,3 +1,7 @@
+/* =============================================================
+   CREAR ASIGNATURA (Estilo Limpio)
+   ============================================================= */
+
 :root {
   --bg: #f8fafc;
   --text: #0f172a;
@@ -54,9 +58,12 @@
   margin-bottom: 0.3rem;
 }
 
+/* Estilos de Inputs */
 .form-card input,
 .form-card select,
 .form-card textarea {
+  width: 100%; /* Asegura ancho completo */
+  box-sizing: border-box; /* Evita desbordes */
   padding: 0.6rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -64,6 +71,7 @@
   color: var(--text);
   background: #fff;
   transition: border-color var(--transition), box-shadow var(--transition);
+  font-family: inherit;
 }
 
 .form-card input:focus,
@@ -79,18 +87,21 @@
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
 }
 
 .btn {
   border-radius: var(--radius);
-  padding: 0.6rem 1.1rem;
+  padding: 0.7rem 1.2rem;
   font-weight: 700;
   font-size: 0.95rem;
   cursor: pointer;
   transition: all var(--transition);
   text-decoration: none;
   border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Botón primario */
@@ -132,20 +143,41 @@
 .btn-secondary:hover {
   border-color: var(--focus);
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+  background: #f9fafb;
 }
 
-/* ----- Responsive ----- */
-@media (max-width: 576px) {
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
   .page {
-    margin: 1.5rem;
+    margin: 1rem auto;
+    padding: 0 1rem; /* Espacio lateral */
+    max-width: 100%;
   }
 
+  .form-card {
+    padding: 1.25rem;
+    box-shadow: none; /* Diseño más ligero en móvil */
+  }
+
+  /* Inputs fáciles de tocar */
+  .form-card input,
+  .form-card select,
+  .form-card textarea {
+    font-size: 16px !important; /* Evita zoom en iOS */
+    padding: 12px;
+  }
+
+  /* Botones en columna */
   .actions {
-    flex-direction: column-reverse;
+    flex-direction: column;
+    gap: 10px;
   }
 
   .btn {
     width: 100%;
     text-align: center;
+    padding: 14px; /* Área táctil más grande */
   }
 }

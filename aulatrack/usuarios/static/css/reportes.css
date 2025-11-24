@@ -1,31 +1,159 @@
-.main{ background:#ffffff; color:#0f172a; }
-.main h1, .main h2, .main h3{ color:#111827; }
-.main .sectionTitle{ color:#111827; }
-.main .hint{ color:#64748b; }
-.main .divider{ background:#e5e7eb; }
+/* =============================================================
+   REPORTES (Menú de Selección)
+   ============================================================= */
 
-.main .input, .main select{
-  background:#f1f5f9; border:1px solid #e5e7eb; color:#0f172a;
-  padding:.6rem .75rem; border-radius:10px; outline:0;
-}
-
-.curso-options{
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-  gap:14px; justify-content:start;
+.main { 
+  background: #ffffff; 
+  color: #0f172a; 
+  min-height: 100vh;
 }
 
-.op-reportes{
-  background:#ffffff;
-  border:1px solid #323865;          
-  border-left:6px solid var(--brand-600);
-  border-radius:16px;
-  padding:16px;
-  color:#0f172a;
+/* Encabezados */
+.main h1, .main h2, .main h3 { 
+  color: #111827; 
+  margin-top: 0;
 }
-.op-reportes h3{ margin:0 0 6px; font-weight:800; color:#111827; }
-.op-reportes p{ color:#475569; }
-.op-reportes a{
-  display:inline-flex; margin-top:10px; background:#111827; color:#fff;
-  padding:.45rem .8rem; border-radius:10px;
+
+.sectionTitle { 
+  font-size: 1.8rem; 
+  font-weight: 800; 
+  color: #111827; 
+  margin-bottom: 0.5rem; 
 }
-.op-reportes a:hover{ background:#0b1220; }
+
+.hint { 
+  color: #64748b; 
+  font-size: 1rem; 
+  margin-bottom: 2rem; 
+}
+
+.divider { 
+  height: 1px; 
+  background: #e5e7eb; 
+  margin: 1.5rem 0; 
+}
+
+/* Inputs y Selects (Filtros) */
+.main .input, .main select {
+  background: #ffffff; 
+  border: 1px solid #e5e7eb; 
+  color: #0f172a;
+  padding: .6rem .75rem; 
+  border-radius: 10px; 
+  outline: 0;
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  max-width: 300px; /* No ocupar todo el ancho en PC */
+}
+
+.main .input:focus, .main select:focus { 
+  border-color: #7c3aed; 
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15); 
+}
+
+/* --- GRILLA DE REPORTES --- */
+.curso-options {
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px; 
+  justify-content: start;
+  margin-top: 1rem;
+}
+
+/* --- TARJETA DE REPORTE --- */
+.op-reportes {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;          
+  border-left: 5px solid #7c3aed; /* Borde de marca */
+  border-radius: 14px;
+  padding: 1.5rem;
+  color: #0f172a;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%; /* Iguala alturas */
+}
+
+.op-reportes:hover { 
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.1);
+  border-color: #d1d5db;
+}
+
+.op-reportes h3 { 
+  margin: 0 0 8px; 
+  font-weight: 800; 
+  font-size: 1.2rem;
+  color: #111827; 
+}
+
+.op-reportes p { 
+  color: #475569; 
+  font-size: 0.95rem; 
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+/* Botón dentro de la tarjeta */
+.op-reportes a {
+  display: inline-flex; 
+  align-items: center;
+  justify-content: center;
+  margin-top: auto; /* Empuja el botón al fondo */
+  background: #1f2937; 
+  color: #fff;
+  padding: .7rem 1.2rem; 
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.op-reportes a:hover { 
+  background: #111827; 
+}
+
+/* Variantes de color (Opcional, si quieres diferenciar tipos) */
+.op-reportes.accent-green { border-left-color: #10b981; }
+.op-reportes.accent-orange { border-left-color: #f97316; }
+
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  
+  .sectionTitle {
+    font-size: 1.5rem;
+  }
+
+  /* Inputs ocupan todo el ancho */
+  .main .input, .main select {
+    max-width: 100%;
+    font-size: 16px !important; /* Evita zoom iOS */
+    padding: 12px;
+  }
+
+  /* Grilla a 1 sola columna */
+  .curso-options {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .op-reportes {
+    padding: 1.25rem;
+    /* Quitar efecto hover en táctil */
+    transform: none !important; 
+  }
+
+  /* Botón ancho completo */
+  .op-reportes a {
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+  }
+}

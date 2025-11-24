@@ -1,44 +1,137 @@
-/* === Asignar Docente a Curso (blanco / texto oscuro) === */
-.main{ background:#fff; color:#0f172a; }
+/* =============================================================
+   ASIGNAR DOCENTE A CURSO (blanco / texto oscuro)
+   ============================================================= */
+.main { background: #fff; color: #0f172a; }
 
-.page{
-  max-width:680px; margin:12px 0; 
-}
-.page h1{
-  margin:0 0 .25rem; font-size:1.5rem; font-weight:800; color:#111827;
-}
-.page .hint{ color:#64748b; margin-bottom:1rem; }
-
-/* tarjeta */
-.form-card{
-  background:#ffffff; border:1px solid #e5e7eb; border-radius:14px;
-  padding:1.25rem; box-shadow:0 6px 18px rgba(2,6,23,.06);
+.page {
+  max-width: 680px; 
+  margin: 12px 0; 
 }
 
-/* campos */
-.field{ margin-bottom:1rem; }
-.label{ display:block; font-weight:700; color:#111827; margin-bottom:.35rem; }
-
-/* inputs/selects SIEMPRE claros (sobrescriben tema oscuro) */
-select, input, textarea{
-  appearance:none; width:100%; min-height:40px;
-  border:1px solid #d1d5db; border-radius:10px; padding:.55rem .75rem;
-  background:#ffffff !important; color:#111827 !important;
-  outline:none;
-}
-select:focus, input:focus, textarea:focus{
-  border-color:#974be4; box-shadow:0 0 0 3px rgba(151,75,228,.18);
+.page h1 {
+  margin: 0 0 .25rem; 
+  font-size: 1.5rem; 
+  font-weight: 800; 
+  color: #111827;
 }
 
-/* acciones */
-.actions{ display:flex; gap:.6rem; margin-top:.5rem; }
-.btn{
-  display:inline-flex; align-items:center; justify-content:center;
-  height:38px; padding:0 .95rem; border-radius:10px;
-  font-weight:700; text-decoration:none; cursor:pointer;
-  border:1px solid #e5e7eb; background:#fff; color:#111827;
-  transition:border-color .15s, box-shadow .15s;
+.page .hint { 
+  color: #64748b; 
+  margin-bottom: 1rem; 
 }
-.btn:hover{ border-color:#974be4; box-shadow:0 0 0 3px rgba(151,75,228,.15); }
-.btn.primary{ background:#9333ea; color:#fff; border-color:#9333ea; }
-.btn.primary:hover{ background:#7e22ce; }
+
+/* Tarjeta */
+.form-card {
+  background: #ffffff; 
+  border: 1px solid #e5e7eb; 
+  border-radius: 14px;
+  padding: 1.25rem; 
+  box-shadow: 0 6px 18px rgba(2,6,23,.06);
+}
+
+/* Campos */
+.field { margin-bottom: 1rem; }
+
+.label { 
+  display: block; 
+  font-weight: 700; 
+  color: #111827; 
+  margin-bottom: .35rem; 
+}
+
+/* Inputs/selects SIEMPRE claros (sobrescriben tema oscuro) */
+select, input, textarea {
+  appearance: none; 
+  width: 100%; 
+  min-height: 40px;
+  border: 1px solid #d1d5db; 
+  border-radius: 10px; 
+  padding: .55rem .75rem;
+  background: #ffffff !important; 
+  color: #111827 !important;
+  outline: none;
+  font-family: inherit;
+}
+
+select:focus, input:focus, textarea:focus {
+  border-color: #974be4; 
+  box-shadow: 0 0 0 3px rgba(151,75,228,.18);
+}
+
+/* Acciones */
+.actions { 
+  display: flex; 
+  gap: .6rem; 
+  margin-top: 1.5rem; 
+}
+
+.btn {
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center;
+  height: 38px; 
+  padding: 0 .95rem; 
+  border-radius: 10px;
+  font-weight: 700; 
+  text-decoration: none; 
+  cursor: pointer;
+  border: 1px solid #e5e7eb; 
+  background: #fff; 
+  color: #111827;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.btn:hover { 
+  border-color: #974be4; 
+  box-shadow: 0 0 0 3px rgba(151,75,228,.15); 
+}
+
+.btn.primary { 
+  background: #9333ea; 
+  color: #fff; 
+  border-color: #9333ea; 
+}
+
+.btn.primary:hover { 
+  background: #7e22ce; /* Un poco más oscuro */
+}
+
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+    
+    .page {
+        max-width: 100%;
+        margin: 0;
+    }
+
+    .page h1 {
+        font-size: 1.4rem;
+    }
+
+    .form-card {
+        box-shadow: none;
+        border: none;
+        padding: 0; /* Quitar padding interno para ganar espacio */
+        background: transparent;
+    }
+
+    /* Inputs más grandes para tocar */
+    select, input {
+        min-height: 45px; /* Más alto */
+        font-size: 16px; /* Evita zoom en iOS */
+    }
+
+    /* Botones apilados */
+    .actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn {
+        width: 100%;
+        height: 45px; /* Botón más alto */
+        font-size: 1rem;
+    }
+}
