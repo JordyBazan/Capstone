@@ -1,137 +1,240 @@
 /* =============================================================
-   ASIGNAR DOCENTE A CURSO (blanco / texto oscuro)
+   ASIGNAR DOCENTE A CURSO (Diseño Profesional)
    ============================================================= */
-.main { background: #fff; color: #0f172a; }
 
-.page {
-  max-width: 680px; 
-  margin: 12px 0; 
+:root {
+  --bg-body: #f3f4f6;
+  --surface: #ffffff;
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+  --danger: #ef4444;
+  --radius: 12px;
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
-.page h1 {
-  margin: 0 0 .25rem; 
-  font-size: 1.5rem; 
-  font-weight: 800; 
-  color: #111827;
+body, .main { background: var(--bg-body) !important; }
+
+/* === HEADER === */
+.dashboard-header {
+  margin-bottom: 2rem;
+  background: var(--surface);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
 }
 
-.page .hint { 
-  color: #64748b; 
-  margin-bottom: 1rem; 
+.dashboard-header h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0 0 0.5rem 0;
 }
 
-/* Tarjeta */
+.dashboard-header .hint {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* === FORMULARIO (Tarjeta Superior) === */
 .form-card {
-  background: #ffffff; 
-  border: 1px solid #e5e7eb; 
-  border-radius: 14px;
-  padding: 1.25rem; 
-  box-shadow: 0 6px 18px rgba(2,6,23,.06);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--primary); /* Detalle de diseño */
 }
 
-/* Campos */
-.field { margin-bottom: 1rem; }
-
-.label { 
-  display: block; 
-  font-weight: 700; 
-  color: #111827; 
-  margin-bottom: .35rem; 
+.form-card h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-top: 0;
+  margin-bottom: 1.5rem;
 }
 
-/* Inputs/selects SIEMPRE claros (sobrescriben tema oscuro) */
-select, input, textarea {
-  appearance: none; 
-  width: 100%; 
-  min-height: 40px;
-  border: 1px solid #d1d5db; 
-  border-radius: 10px; 
-  padding: .55rem .75rem;
-  background: #ffffff !important; 
-  color: #111827 !important;
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto; /* Dos inputs + botón */
+  gap: 1.5rem;
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* Inputs */
+select, input {
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #f9fafb;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+select:focus, input:focus {
   outline: none;
-  font-family: inherit;
+  border-color: var(--primary);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
-select:focus, input:focus, textarea:focus {
-  border-color: #974be4; 
-  box-shadow: 0 0 0 3px rgba(151,75,228,.18);
+/* Botón Principal */
+.btn-prim {
+  height: 42px;
+  padding: 0 24px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
 }
+
+.btn-prim:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 10px -1px rgba(79, 70, 229, 0.3);
+}
+
+/* === TABLA DE RESULTADOS === */
+.asignaciones h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--text-main);
+}
+
+.table-container {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+.styled-table th {
+  background: #f8fafc;
+  text-align: left;
+  padding: 1rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+}
+
+.styled-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-main);
+  vertical-align: middle;
+}
+
+.styled-table tr:last-child td { border-bottom: none; }
+.styled-table tr:hover td { background: #f9fafb; }
+
+/* Chips (Asignaturas) */
+.chip {
+  display: inline-block;
+  background: #eef2ff;
+  color: var(--primary);
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 2px;
+  border: 1px solid #e0e7ff;
+}
+
+.muted { color: var(--text-muted); font-style: italic; font-size: 0.9rem; }
 
 /* Acciones */
-.actions { 
-  display: flex; 
-  gap: .6rem; 
-  margin-top: 1.5rem; 
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
-.btn {
-  display: inline-flex; 
-  align-items: center; 
-  justify-content: center;
-  height: 38px; 
-  padding: 0 .95rem; 
-  border-radius: 10px;
-  font-weight: 700; 
-  text-decoration: none; 
+.btn.small {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-main);
+  transition: all 0.2s;
+}
+
+.btn.small:hover { border-color: var(--primary); color: var(--primary); }
+
+.btn.danger {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: var(--danger);
   cursor: pointer;
-  border: 1px solid #e5e7eb; 
-  background: #fff; 
-  color: #111827;
-  transition: border-color .15s, box-shadow .15s;
 }
 
-.btn:hover { 
-  border-color: #974be4; 
-  box-shadow: 0 0 0 3px rgba(151,75,228,.15); 
+.btn.danger:hover {
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
 }
 
-.btn.primary { 
-  background: #9333ea; 
-  color: #fff; 
-  border-color: #9333ea; 
+/* Mensaje vacío */
+.empty {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+  font-style: italic;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px dashed var(--border);
 }
 
-.btn.primary:hover { 
-  background: #7e22ce; /* Un poco más oscuro */
-}
-
-/* =========================================
-   RESPONSIVE (Móvil < 768px)
-   ========================================= */
+/* === RESPONSIVE === */
 @media (max-width: 768px) {
-    
-    .page {
-        max-width: 100%;
-        margin: 0;
-    }
-
-    .page h1 {
-        font-size: 1.4rem;
-    }
-
-    .form-card {
-        box-shadow: none;
-        border: none;
-        padding: 0; /* Quitar padding interno para ganar espacio */
-        background: transparent;
-    }
-
-    /* Inputs más grandes para tocar */
-    select, input {
-        min-height: 45px; /* Más alto */
-        font-size: 16px; /* Evita zoom en iOS */
-    }
-
-    /* Botones apilados */
-    .actions {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .btn {
-        width: 100%;
-        height: 45px; /* Botón más alto */
-        font-size: 1rem;
-    }
+  .field-row {
+    grid-template-columns: 1fr; /* Apilar todo */
+    gap: 1rem;
+  }
+  
+  .btn-prim { width: 100%; }
+  
+  .table-container {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
 }

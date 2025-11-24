@@ -1,5 +1,5 @@
 /* =============================================================
-   HISTORIAL DE ACCIONES (Logs)
+   HISTORIAL DE ACCIONES (Logs) - CORREGIDO
    ============================================================= */
 
 /* === Fondo general === */
@@ -22,6 +22,7 @@ body, .main, .app {
   padding: 2rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   margin-top: 1rem;
+  max-width: 100%; /* Asegura que no se desborde del padre */
 }
 
 /* === Header === */
@@ -30,7 +31,7 @@ body, .main, .app {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1.5rem;
-  flex-wrap: wrap; /* Permite que se apile en móvil */
+  flex-wrap: wrap;
   gap: 1rem;
 }
 
@@ -53,32 +54,19 @@ body, .main, .app {
   cursor: pointer;
   transition: all .2s ease;
   text-decoration: none;
+  white-space: nowrap;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-  color: #fff;
-  box-shadow: 0 3px 10px rgba(124, 58, 237, 0.25);
-}
+.btn-primary { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; box-shadow: 0 3px 10px rgba(124, 58, 237, 0.25); }
 .btn-primary:hover { filter: brightness(1.05); }
 
-.btn-secondary {
-  background: #f3f4f6;
-  color: #111827;
-}
+.btn-secondary { background: #f3f4f6; color: #111827; }
 .btn-secondary:hover { background: #e5e7eb; }
 
-.btn-blue {
-  background: #0ea5e9;
-  color: #fff;
-}
+.btn-blue { background: #0ea5e9; color: #fff; }
 .btn-blue:hover { background: #0284c7; }
 
-.btn-danger {
-  background: #ef4444;
-  color: #fff;
-  font-weight: 700;
-}
+.btn-danger { background: #ef4444; color: #fff; font-weight: 700; }
 .btn-danger:hover { background: #dc2626; }
 
 /* === Filtros (Selects) === */
@@ -87,6 +75,7 @@ body, .main, .app {
   flex-wrap: wrap;
   gap: 0.7rem;
   margin-bottom: 1.5rem;
+  align-items: center;
 }
 
 .hist-select {
@@ -97,7 +86,7 @@ body, .main, .app {
   border-radius: 8px;
   font-size: 14px;
   transition: all .2s ease;
-  min-width: 120px;
+  min-width: 140px;
 }
 
 .hist-select:hover, .hist-select:focus {
@@ -106,27 +95,28 @@ body, .main, .app {
   outline: none;
 }
 
-/* === Tabla === */
+/* === Tabla (CORRECCIÓN AQUÍ) === */
 .hist-table-wrap {
-  overflow-x: auto; /* Scroll horizontal vital */
+  overflow-x: auto; /* Permite scroll si es estrictamente necesario */
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   background: #ffffff;
-  -webkit-overflow-scrolling: touch;
+  width: 100%;
 }
 
 .hist-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: #111827;
-  min-width: 800px; /* Fuerza scroll si la pantalla es chica */
+  /* min-width: 1000px; <-- Quitamos esto para que intente ajustarse primero */
 }
 
 .hist-table th, .hist-table td {
-  padding: 0.75rem 1rem;
+  padding: 0.85rem 1rem;
   border-bottom: 1px solid #e5e7eb;
-  white-space: nowrap; /* Evita que se rompan las líneas */
+  text-align: left;
+  vertical-align: top; /* Alinear texto arriba */
 }
 
 .hist-table th {
@@ -134,11 +124,41 @@ body, .main, .app {
   color: #111827;
   font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  white-space: nowrap; /* Encabezados en una línea */
 }
 
 .hist-table td {
   color: #1f2937;
+}
+
+/* --- CONTROL DE ANCHO DE COLUMNAS --- */
+
+/* 1. Columnas Pequeñas (Fecha, Usuario, Acción, Modelo, Eliminar) */
+/* nth-child corresponde al orden: 1:Fecha, 2:Usuario, 3:Acción, 4:Modelo, 7:Eliminar */
+.hist-table td:nth-child(1),
+.hist-table td:nth-child(2),
+.hist-table td:nth-child(3),
+.hist-table td:nth-child(4),
+.hist-table td:nth-child(7) {
+    white-space: nowrap; /* Forzar una sola línea */
+    width: 1%; /* Ajustar al contenido mínimo */
+}
+
+/* 2. Columnas de Texto Largo (5:Objeto, 6:Detalle) */
+.hist-table td:nth-child(5), 
+.hist-table td:nth-child(6) {
+    white-space: normal; /* PERMITIR SALTO DE LÍNEA */
+    word-break: break-word; /* Romper palabras largas si es necesario */
+    min-width: 150px; /* Ancho mínimo para leer */
+    max-width: 300px; /* Ancho máximo antes de saltar línea */
+}
+
+/* Estilo específico para el texto del detalle */
+.hist-table td:nth-child(6) {
+    font-size: 0.85rem;
+    color: #4b5563;
+    line-height: 1.4;
 }
 
 .hist-table tr:hover td {
@@ -147,59 +167,64 @@ body, .main, .app {
 
 .empty {
   text-align: center;
-  padding: 1rem;
+  padding: 2rem;
   color: #6b7280;
 }
 
 /* === Etiquetas de acción === */
 .tag {
   display: inline-block;
-  padding: 3px 8px;
+  padding: 4px 8px;
   border-radius: 6px;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
-.tag-green { background: #bbf7d0; color: #065f46; }
-.tag-blue { background: #bfdbfe; color: #1e3a8a; }
-.tag-red { background: #fecaca; color: #7f1d1d; }
-
-/* === Filas coloreadas (Opcional) === */
-/* .bg-creacion { background: #ecfdf5; color: #065f46; } */
-/* .bg-edicion { background: #eff6ff; color: #1e3a8a; } */
-/* .bg-eliminacion { background: #fef2f2; color: #7f1d1d; } */
+.tag-green { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.tag-blue { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+.tag-red { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
 /* === Botón eliminar individual === */
 .btn-delete {
   background: none;
   border: none;
-  color: #dc2626;
+  color: #9ca3af;
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   font-weight: bold;
+  line-height: 1;
   transition: all .2s;
+  padding: 0 5px;
 }
 .btn-delete:hover {
-  color: #b91c1c;
-  transform: scale(1.2);
+  color: #dc2626;
+  transform: scale(1.1);
 }
 
 /* === Paginación === */
 .hist-pagination {
   margin-top: 1.5rem;
   text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 .btn-small {
-  padding: 0.3rem 0.7rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 8px;
   background: #f3f4f6;
   color: #111827;
   text-decoration: none;
   font-weight: 600;
+  font-size: 0.9rem;
+  border: 1px solid #e5e7eb;
 }
-.btn-small:hover { background: #e5e7eb; }
+.btn-small:hover { background: #e5e7eb; border-color: #d1d5db; }
 .page-info {
-  margin: 0 10px;
   color: #374151;
+  font-weight: 500;
 }
 
 /* =========================================
@@ -214,37 +239,40 @@ body, .main, .app {
 
   .hist-header {
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
     gap: 1rem;
   }
-
-  .hist-header h1 {
-    font-size: 1.5rem;
-    text-align: center;
+  
+  .hist-header form {
+      width: 100%;
   }
 
   .hist-header .btn-danger {
-    width: 100%; /* Botón ancho completo */
+    width: 100%;
     padding: 12px;
   }
 
   /* Filtros apilados */
   .hist-filters {
     flex-direction: column;
+    align-items: stretch;
     gap: 10px;
   }
 
-  .hist-select, .btn-blue, .btn-secondary {
+  .hist-select, .btn-blue, .btn-primary, .btn-secondary {
     width: 100%;
-    box-sizing: border-box;
     height: 42px;
   }
 
-  /* Tabla con scroll */
-  .hist-table-wrap {
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-    box-shadow: none;
+  /* En móvil, forzamos un ancho mínimo para habilitar scroll y que se lea bien */
+  .hist-table {
+      min-width: 900px; 
+  }
+  
+  /* Relajamos los anchos máximos en móvil para aprovechar el scroll */
+  .hist-table td:nth-child(5), 
+  .hist-table td:nth-child(6) {
+      max-width: none;
+      min-width: 200px;
   }
 }

@@ -1,83 +1,156 @@
 {% extends 'base.html' %}
-{% load static dict_extras %}
-{% block title %}Gestión de Usuarios{% endblock %}
+{% load static %}
+
+{% block title %}Gestión de Usuarios - AulaTrack{% endblock %}
+
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/cursos_lista.css' %}">
+<link rel="stylesheet" href="{% static 'css/gestion_usuarios.css' %}">
 {% endblock %}
 
 {% block content %}
 
-<div class="page-head flex-between">
-  <div>
-    <h1>Usuarios</h1>
-    <div class="hint">Listado de todos los usuarios registrados en el sistema</div>
-  </div>
-  <div>
-    <a class="btn" href="{% url 'usuarios:registro' %}">+ Agregar usuario</a>
-  </div>
+<div class="dashboard-header">
+    <div class="header-top">
+        <div>
+            <h1>Usuarios del Sistema</h1>
+            <p class="hint">Administración de cuentas y roles de acceso</p>
+        </div>
+        <a class="btn-action" href="{% url 'usuarios:registro' %}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Nuevo Usuario
+        </a>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-title">Total Usuarios</span>
+            <span class="stat-value">{{ usuarios_filtrados|length }}</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-title">Rol Actual</span>
+            <span class="stat-value" style="color: var(--primary);">
+                {% if rol_seleccionado %}{{ rol_seleccionado|title }}{% else %}Todos{% endif %}
+            </span>
+        </div>
+    </div>
 </div>
 
-<div class="filter-bar">
-  <form method="get">
-    <input type="hidden" name="page" value="4">
-    <label for="rol">Filtrar por rol:</label>
-    <select name="rol" id="rol" onchange="this.form.submit()">
-      <option value="">Todos los roles</option>
-      {% for key, value in roles %}
-        <option value="{{ key }}" {% if rol_seleccionado == key %}selected{% endif %}>
-          {{ value }}
-        </option>
-      {% endfor %}
-    </select>
-  </form>
-  <br>
+<div class="toolbar">
+    <div class="filters-group">
+        <div class="search-box">
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="userSearch" class="control-input search-input" placeholder="Buscar por nombre, RUT o email...">
+        </div>
+
+        <form method="get" style="flex:1;">
+            <input type="hidden" name="page" value="4">
+            <select name="rol" onchange="this.form.submit()" class="control-input">
+                <option value="">Todos los Roles</option>
+                {% for key, value in roles %}
+                    <option value="{{ key }}" {% if rol_seleccionado == key %}selected{% endif %}>{{ value }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
 </div>
 
-<div class="table-wrap">
-<table class="table">
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Usuario</th>
-      <th>Nombre</th>
-      <th>Apellido</th>
-      <th>RUT</th>
-      <th>Correo electrónico</th>
-      <th>Rol</th>
-      <th>Acciones</th>
-    </tr>
-  </thead>
+<div class="table-container">
+    <table class="pro-table" id="userTable">
+        <thead>
+            <tr>
+                <th>Usuario</th>
+                <th>RUT</th>
+                <th>Nombre Completo</th>
+                <th>Rol</th>
+                <th class="col-actions">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for usuario in usuarios_filtrados %}
+            <tr>
+                <td>
+                    <div class="user-cell">
+                        <div class="user-avatar">
+                            {{ usuario.username|slice:":2"|upper }}
+                        </div>
+                        <div class="user-info">
+                            <strong>{{ usuario.username }}</strong>
+                            <span class="user-email">{{ usuario.email|default:"Sin correo" }}</span>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-family: monospace;">{{ usuario.rut|default:"-" }}</td>
+                <td>{{ usuario.nombres }} {{ usuario.apellidos }}</td>
+                
+                <td>
+                    {% if usuario.is_superuser %}
+                        <span class="role-badge role-admin">Administrador</span>
+                    {% else %}
+                        <span class="role-badge role-{{ usuario.role }}">{{ usuario.get_role_display }}</span>
+                    {% endif %}
+                </td>
 
-  <tbody>
-    {% for usuario in usuarios_filtrados %}
-      <tr>
-        <td>{{ forloop.counter }}</td>
-        <td>{{ usuario.username }}</td>
-        <td>{{ usuario.nombres }}</td>
-        <td>{{ usuario.apellidos }}</td>
-        <td>{{ usuario.rut }}</td>
-        <td>{{ usuario.email }}</td>
-        <td>{{ usuario.get_role_display }}</td>
-
-        <td class="cell-actions">
-          {% if not usuario.is_superuser %}
-            <a class="link" href="{% url 'usuarios:editar_usuario' usuario.id %}">Editar</a>
-            <a class="link text-danger"
-              href="{% url 'usuarios:eliminar_usuario' usuario.id %}"
-              onclick="return confirm('¿Estás seguro de que deseas eliminar este usuario?');">
-              Eliminar
-            </a>
-            <a class="link" href="{% url 'usuarios:cambiar_password' usuario.id %}">Cambiar contraseña</a>
-          {% else %}
-            <span class="text-muted">(Tú) Administrador del sistema</span>
-          {% endif %}
-        </td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="8">No hay usuarios registrados.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
-
+                <td class="col-actions">
+                    <div class="action-group">
+                        {% if not usuario.is_superuser %}
+                            <a href="{% url 'usuarios:cambiar_password' usuario.id %}" class="btn-icon" title="Cambiar Contraseña">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                            </a>
+                            <a href="{% url 'usuarios:editar_usuario' usuario.id %}" class="btn-icon" title="Editar Datos">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            </a>
+                            <a href="{% url 'usuarios:eliminar_usuario' usuario.id %}" class="btn-icon danger js-delete" title="Eliminar Usuario">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </a>
+                        {% else %}
+                            <span style="font-size:0.8rem; color:#9ca3af; font-style:italic;">Sistema</span>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align:center; padding: 2rem; color: #6b7280;">
+                    No se encontraron usuarios.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // 1. Buscador en Tiempo Real
+    const searchInput = document.getElementById('userSearch');
+    const table = document.getElementById('userTable');
+    
+    if (searchInput && table) {
+        searchInput.addEventListener('keyup', function() {
+            const filter = searchInput.value.toLowerCase();
+            const rows = table.getElementsByTagName('tr');
+
+            // Empezamos en 1 para saltar el encabezado
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const text = row.textContent.toLowerCase();
+                // Muestra la fila si el texto coincide
+                row.style.display = text.indexOf(filter) > -1 ? "" : "none";
+            }
+        });
+    }
+
+    // 2. Confirmación de Eliminación (Estilo nativo seguro)
+    const deleteButtons = document.querySelectorAll('.js-delete');
+    deleteButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            if (!confirm('¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.')) {
+                e.preventDefault();
+            }
+        });
+    });
+});
+</script>
+
 {% endblock %}

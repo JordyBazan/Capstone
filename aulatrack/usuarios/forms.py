@@ -259,21 +259,25 @@ class AsignarAsignaturasForm(forms.Form):
 
 class AsignarDocenteCursoForm(forms.ModelForm):
     class Meta:
-        model = Curso
-        # Asumimos que el campo en el modelo Curso es 'profesor_jefe'
-        fields = ['profesor_jefe']
-        
+        model = DocenteCurso
+        fields = ['docente', 'curso']
         widgets = {
-            'profesor_jefe': forms.Select(attrs={'class': 'form-select'}),
-        }
-        
-        labels = {
-            'profesor_jefe': 'Seleccionar Profesor Jefe',
+            'docente': forms.Select(attrs={'class': 'control-input'}),
+            'curso': forms.Select(attrs={'class': 'control-input'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # FILTRO CRÍTICO: Solo mostrar usuarios que tengan el rol de 'Docente'
-        # Ajusta 'Docente' si en tu base de datos los roles se guardan de otra forma (ej: 'DOC')
-        self.fields['profesor_jefe'].queryset = Usuario.objects.filter(role='docente')
-        self.fields['profesor_jefe'].empty_label = "Seleccione un docente..."
+        
+        # 1. Filtrar solo usuarios que sean DOCENTES
+        self.fields['docente'].queryset = Usuario.objects.filter(role='docente').order_by('apellidos', 'nombres')
+        
+        # 2. Mejorar cómo se ven los nombres en el select (Nombre Apellido en vez de username)
+        self.fields['docente'].label_from_instance = lambda obj: f"{obj.get_full_name()} ({obj.username})"
+        
+        # 3. Ordenar cursos
+        self.fields['curso'].queryset = Curso.objects.all().order_by('año', 'nombre')
+        
+        # 4. Textos de ayuda visual (Placeholder)
+        self.fields['docente'].empty_label = "Seleccione un docente..."
+        self.fields['curso'].empty_label = "Seleccione un curso..."

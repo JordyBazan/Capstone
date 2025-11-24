@@ -1,197 +1,106 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Panel UTP - Asignar Docente a Curso{% endblock %}
+
+{% block title %}Asignar Docente a Curso - AulaTrack{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/asignar_docente_curso.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="page-admin">
 
-  <div class="header-top">
+<div class="dashboard-header">
     <h1>Asignación de Docentes</h1>
-  </div>
-
-
-
-  <!-- Formulario de asignación -->
-  <form method="post" class="form-card fade-in">
-    {% csrf_token %}
-    <h2>Asignar nuevo docente</h2>
-    <div class="field-row">
-      <div class="field">
-        <label for="{{ form.docente.id_for_label }}">Docente</label>
-        {{ form.docente }}
-      </div>
-      <div class="field">
-        <label for="{{ form.curso.id_for_label }}">Curso</label>
-        {{ form.curso }}
-      </div>
-      <button type="submit" class="btn-prim">Guardar</button>
-    </div>
-  </form>
-
-  <!-- Lista de asignaciones -->
-  <div class="asignaciones fade-in">
-    <h2>Listado de Asignaciones</h2>
-
-    {% if asignaciones %}
-      <div class="table-container">
-        <table class="styled-table">
-          <thead>
-            <tr>
-              <th>Docente</th>
-              <th>Curso</th>
-              <th>Asignaturas del Curso</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for asignacion in asignaciones %}
-              <tr>
-                <td>{{ asignacion.docente.get_full_name|default:asignacion.docente.username }}</td>
-                <td>{{ asignacion.curso.nombre }}</td>
-                <td>
-                  {% if asignacion.curso.asignaturas.all %}
-                    {% for asig in asignacion.curso.asignaturas.all %}
-                      <span class="chip">{{ asig.nombre }}</span>
-                    {% endfor %}
-                  {% else %}
-                    <span class="muted">Sin asignaturas</span>
-                  {% endif %}
-                </td>
-                <td class="actions">
-                  <a href="{% url 'usuarios:curso_editar' asignacion.curso.id %}" class="btn small">Ver curso</a>
-                  <form method="post" 
-                        action="{% url 'usuarios:eliminar_asignacion' asignacion.id %}" 
-                        class="inline-form js-delete-form" 
-                        data-confirm="¿Seguro que deseas eliminar esta asignación? Esta acción no se puede deshacer.">
-                    {% csrf_token %}
-                    <button type="submit" class="btn small danger">Eliminar</button>
-                  </form>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <p class="empty">No hay asignaciones registradas.</p>
-    {% endif %}
-  </div>
+    <p class="hint">Vincula profesores a cursos completos para que puedan gestionar todas sus asignaturas.</p>
 </div>
 
-<!-- JS: Confirmación de eliminación -->
+<form method="post" class="form-card fade-in">
+    {% csrf_token %}
+    <h2>Nueva Asignación</h2>
+    
+    <div class="field-row">
+        <div class="field">
+            <label for="{{ form.docente.id_for_label }}">Seleccionar Docente:</label>
+            {{ form.docente }}
+        </div>
+        <div class="field">
+            <label for="{{ form.curso.id_for_label }}">Seleccionar Curso:</label>
+            {{ form.curso }}
+        </div>
+        <button type="submit" class="btn-prim">Asignar Docente</button>
+    </div>
+</form>
+
+<div class="asignaciones fade-in">
+    <h2>Asignaciones Vigentes</h2>
+
+    {% if asignaciones %}
+        <div class="table-container">
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Docente</th>
+                        <th>Curso Asignado</th>
+                        <th>Asignaturas Relacionadas</th>
+                        <th style="text-align: right;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asignacion in asignaciones %}
+                    <tr>
+                        <td>
+                            <strong>{{ asignacion.docente.get_full_name|default:asignacion.docente.username }}</strong>
+                        </td>
+                        <td>
+                            <span style="font-weight:600;">{{ asignacion.curso.nombre }}</span>
+                        </td>
+                        <td>
+                            {% with materias=asignacion.curso.asignaturas.all %}
+                                {% if materias %}
+                                    {% for asig in materias %}
+                                        <span class="chip">{{ asig.nombre }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="muted">Sin asignaturas registradas</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="actions">
+                            <a href="{% url 'usuarios:curso_editar' asignacion.curso.id %}" class="btn small">Ver Curso</a>
+                            
+                            <form method="post" 
+                                  action="{% url 'usuarios:eliminar_asignacion' asignacion.id %}" 
+                                  class="js-delete-form" 
+                                  data-confirm="¿Eliminar la asignación de {{ asignacion.docente }} al curso {{ asignacion.curso }}?">
+                                {% csrf_token %}
+                                <button type="submit" class="btn small danger">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <p>No hay docentes asignados a cursos todavía.</p>
+        </div>
+    {% endif %}
+</div>
+
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  const forms = document.querySelectorAll(".js-delete-form");
-
-  forms.forEach(form => {
-    form.addEventListener("submit", function(e) {
-      const msg = this.getAttribute("data-confirm") || "¿Estás seguro de eliminar este registro?";
-      if (!confirm(msg)) {
-        e.preventDefault();
-      }
+    const forms = document.querySelectorAll(".js-delete-form");
+    forms.forEach(form => {
+        form.addEventListener("submit", function(e) {
+            const msg = this.getAttribute("data-confirm") || "¿Estás seguro?";
+            if (!confirm(msg)) {
+                e.preventDefault();
+            }
+        });
     });
-  });
 });
 </script>
 
-
-
 {% endblock %}
-
-<style>
-.page-admin {
-  max-width: 1150px;
-  margin: auto;
-  padding: 2rem;
-  font-family: "Inter", system-ui, sans-serif;
-}
-
-.stats {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.card-stat {
-  flex: 1;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1rem;
-  text-align: center;
-  transition: all 0.25s ease;
-}
-.card-stat:hover { background: #f1f5f9; transform: translateY(-2px); }
-
-.form-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-}
-
-.field-row { display: flex; gap: 1rem; align-items: flex-end; }
-.field label { font-weight: 600; color: #1e293b; }
-
-.btn-prim {
-  background: linear-gradient(90deg, #2563eb, #1d4ed8);
-  color: white;
-  border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
-  cursor: pointer;
-}
-.btn-prim:hover { filter: brightness(1.1); }
-
-/* Tabla */
-.table-container {
-  max-height: 500px;
-  overflow-y: auto;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-}
-.styled-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-}
-.styled-table th {
-  background: #f9fafb;
-  position: sticky;
-  top: 0;
-}
-.styled-table th, .styled-table td {
-  padding: 0.9rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-.styled-table tbody tr:hover {
-  background: #f1f5f9;
-}
-
-.chip {
-  background: #e0f2fe;
-  color: #0369a1;
-  border-radius: 12px;
-  padding: 3px 8px;
-  margin: 2px;
-  font-size: 0.85rem;
-  display: inline-block;
-}
-
-.btn.small {
-  font-size: 0.85rem;
-  padding: 0.35rem 0.7rem;
-  border-radius: 6px;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  color: #1e293b;
-}
-.btn.small:hover { background: #e2e8f0; }
-.btn.small.danger { background: #dc2626; color: white; border: none; }
-.btn.small.danger:hover { background: #b91c1c; }
-</style>
