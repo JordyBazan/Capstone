@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}AulaClass - Curso{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/curso.css' %}">
+{% endblock %}
+
+{% block content %}
+<h2 class="sectionTitle">{{ curso.año }} {{ curso.nombre }} - {{ curso.sala }}</h2>
+
+<div class="divider"></div>
+
+<div class="curso-options">
+
+  {% if user.role != 'inspector' %}
+  <!-- Asistencia -->
+  <div class="curso-card op-asistencia">
+    <h3>Asistencia</h3>
+    <p>Registro de Asistencia de alumnos</p>
+    <a href="{% url 'usuarios:asistencia' curso.id %}" class="cta">Entrar</a>
+  </div>
+
+  <!-- Notas -->
+  <div class="curso-card op-notas">
+    <h3>Notas</h3>
+    <p>Calificaciones por asignatura</p>
+    <a href="{% url 'usuarios:notas' curso.id %}" class="cta">Entrar</a>
+  </div>
+  {% endif %}
+
+  <!-- Anotaciones -->
+  <div class="curso-card op-anotaciones">
+    <h3>Anotaciones</h3>
+    <p>Observaciones y reportes de conducta</p>
+    <a href="{% url 'usuarios:anotaciones_curso' curso.id %}" class="cta">Entrar</a>
+  </div>
+
+  <!-- Reportes -->
+  <!--<div class="curso-card op-reportes">
+    <h3>Reportes (Solo Admin)</h3>
+    <p>Exportar y estadísticas</p>
+    <a href="{% url 'usuarios:reportes' %}" class="cta">Entrar</a>
+  </div> -->
+
+</div>
+{% endblock %}

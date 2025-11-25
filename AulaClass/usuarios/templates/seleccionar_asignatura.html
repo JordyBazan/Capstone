@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}AulaClass - Seleccionar Asignatura{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/curso.css' %}">
+{% endblock %}
+
+
+
+{% block content %}
+<h2 class="sectionTitle">Notas - {{ curso.año }} {{ curso.nombre }}</h2>
+<p class="hint">Selecciona una asignatura para ver o registrar notas</p>
+
+<div class="divider"></div>
+
+<div class="curso-options">
+  {% for asignatura in asignaturas %}
+  <div class="curso-card op-notas">
+    <h3>{{ asignatura.nombre }}</h3>
+    <p>Ver y registrar notas</p>
+    <a href="{% url 'usuarios:libro_notas' curso.id asignatura.id %}" class="cta">Entrar</a>
+  </div>
+  {% empty %}
+  <p>No hay asignaturas registradas para este curso.</p>
+  {% endfor %}
+</div>
+{% endblock %}

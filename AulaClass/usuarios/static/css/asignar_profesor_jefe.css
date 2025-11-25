@@ -1,0 +1,296 @@
+/* =============================================================
+   AulaClass · ASIGNAR PROFESOR JEFE (Estilo Profesional)
+   ============================================================= */
+
+:root {
+  --bg-body: #f8fafc;       /* Fondo gris muy claro */
+  --surface: #ffffff;       /* Blanco puro */
+  --primary: #6366f1;       /* Índigo AulaClass */
+  --primary-hover: #4f46e5;
+  --text-main: #1e293b;     /* Gris oscuro */
+  --text-strong: #111827;   /* Casi negro para títulos */
+  --text-muted: #64748b;    /* Gris medio */
+  --border: #e2e8f0;
+  --border-focus: #818cf8;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --radius: 12px;
+  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* === LAYOUT GENERAL === */
+.main {
+  background-color: var(--bg-body);
+  color: var(--text-main);
+  padding: 2rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* Títulos */
+h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-strong);
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.025em;
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-strong);
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.divider {
+  border: 0;
+  height: 1px;
+  background: var(--border);
+  margin: 2.5rem 0;
+}
+
+/* === TARJETAS (CARDS) === */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.card.large {
+  max-width: 100%; /* Ocupa todo el ancho disponible */
+}
+
+/* === FORMULARIO === */
+.form {
+  max-width: 500px; /* Ancho controlado para el formulario */
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-row label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* Inputs y Selects Estilizados */
+select, input[type="text"] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background-color: #fff;
+  color: var(--text-main);
+  font-size: 0.95rem;
+  transition: var(--transition);
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  appearance: none; /* Quitar estilo nativo */
+}
+
+/* Flecha custom para select */
+select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+  background-position: right 1rem center;
+  background-repeat: no-repeat;
+  background-size: 1.2em;
+}
+
+select:focus, input[type="text"]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); /* Anillo de foco */
+}
+
+select:hover, input[type="text"]:hover {
+  border-color: #cbd5e1;
+}
+
+/* === BOTONES === */
+.actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  align-items: center;
+}
+
+.btn-primary, .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition);
+  border: 1px solid transparent;
+}
+
+/* Botón Principal (Guardar) */
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(79, 70, 229, 0.4);
+}
+
+/* Botón Secundario (Volver) */
+.btn-secondary {
+  background-color: #fff;
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover {
+  background-color: #f8fafc;
+  color: var(--text-main);
+  border-color: #cbd5e1;
+}
+
+/* === TABLA DE CURSOS === */
+.table-container {
+  overflow-x: auto; /* Scroll horizontal si es necesario */
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  min-width: 600px; /* Evita que se aplaste demasiado */
+}
+
+thead th {
+  background-color: #f8fafc;
+  color: var(--text-muted);
+  text-align: left;
+  padding: 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+
+tbody td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-main);
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr:hover td {
+  background-color: #f8fafc; /* Hover en filas */
+}
+
+/* Botón "Editar" dentro de la tabla (Chip) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary);
+  background-color: #e0e7ff; /* Fondo lila suave */
+  border-radius: 999px;
+  text-decoration: none;
+  transition: var(--transition);
+  border: 1px solid transparent;
+}
+
+.chip:hover {
+  background-color: var(--primary);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+}
+
+/* =========================================
+   RESPONSIVE (Móvil < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  
+  .main {
+    padding: 1rem;
+  }
+
+  .card {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  /* Formulario full width */
+  .form {
+    max-width: 100%;
+  }
+
+  /* Botones grandes y apilados */
+  .actions {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    padding: 0.85rem; /* Más alto para tocar */
+    font-size: 1rem;
+  }
+
+  /* Inputs cómodos */
+  select, input[type="text"] {
+    padding: 0.85rem;
+    font-size: 16px !important; /* Evita zoom en iOS */
+  }
+
+  /* Tabla con scroll */
+  .table-container {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    box-shadow: none;
+  }
+  
+  /* Ajuste de padding en celdas para móvil */
+  thead th, tbody td {
+    padding: 0.75rem;
+  }
+}
