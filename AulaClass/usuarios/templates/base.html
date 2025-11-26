@@ -7,6 +7,7 @@
     <title>{% block title %}AulaClass{% endblock %}</title>
 
     <link rel="icon" type="image/png" href="{% static 'icono/logo.png' %}">
+
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -27,6 +28,7 @@
         <div class="sidebar-content">
             <div class="brand">
                 <div class="logo">AC</div>
+                
                 <div class="name">AulaClass</div>
             </div>
 
@@ -51,7 +53,7 @@
                     <ul>
                         <li><a href="{% url 'usuarios:home_page' %}">Inicio</a></li>
 
-                        {#  SUPERUSUARIO tiene acceso total #}
+                        {#  === SUPERUSUARIO (Acceso Total) === #}
                         {% if user.is_superuser %}
                             <li><a href="{% url 'usuarios:cursos_lista' %}">Gestión Académica</a></li>
                             <li><a href="{% url 'usuarios:crear_curso' %}">Crear Curso</a></li>
@@ -62,7 +64,7 @@
                             <li><a href="{% url 'usuarios:historial_admin' %}">Historial</a></li>
                             <li><a href="{% url 'usuarios:asignar_docente_curso' %}">Asignar Docente a Curso</a></li>
 
-                        {#  UTP sin acceso a Usuarios ni Historial #}
+                        {#  === UTP (Gestión sin usuarios admin) === #}
                         {% elif user.role == "utp" %}
                             <li><a href="{% url 'usuarios:cursos_lista' %}">Gestión Académica</a></li>
                             <li><a href="{% url 'usuarios:crear_curso' %}">Crear Curso</a></li>
@@ -71,9 +73,11 @@
                             <li><a href="{% url 'usuarios:agregar_alumno' %}">Agregar Alumno</a></li>
                             <li><a href="{% url 'usuarios:asignar_docente_curso' %}">Asignar Docente a Curso</a></li>
 
+                        {#  === DOCENTE (Solo sus cursos) === #}
                         {% elif user.role == "docente" %}
                             <li><a href="{% url 'usuarios:home_page' %}">Mis Cursos</a></li>
 
+                        {#  === ALUMNO (Vista personal) === #}
                         {% elif user.role == "alumno" %}
                             <li><a href="{% url 'usuarios:home_page' %}">Mi Inicio</a></li>
                         {% endif %}

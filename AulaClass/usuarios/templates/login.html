@@ -1,43 +1,132 @@
+{% extends 'base.html' %}
 {% load static %}
+
+{% block title %}Acceso AulaClass{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/login.css' %}">
 {% endblock %}
 
 {% block content %}
-<main class="login">
-  <header><h1>AulaClass</h1></header>
-
-  <form method="post" novalidate>
-    {% csrf_token %}
-
-    {# errores generales (credenciales inválidas, etc.) #}
-    {% if form.non_field_errors %}
-      <div class="form-errors">{{ form.non_field_errors }}</div>
-    {% endif %}
-
-    <div class="field">
-      <label for="{{ form.username.id_for_label }}">Usuario</label>
-      {{ form.username }}
-      <div class="error">{{ form.username.errors }}</div>
-    </div>
-
-    <div class="field">
-      <label for="{{ form.password.id_for_label }}">Contraseña</label>
-      {{ form.password }}
-      <div class="error">{{ form.password.errors }}</div>
-    </div>
-
-    {# si venías de una página protegida, Django pasa ?next=/ruta #}
-    {% if next %}
-      <input type="hidden" name="next" value="{{ next }}">
-    {% endif %}
-
-    <div class="actions">
-      <button type="submit">Acceder</button>
-    </div>
-
+<div class="split-screen">
     
-  </form>
-</main>
+    <div class="left-pane">
+        <div class="pane-content">
+            <div class="brand-badge">
+                <img src="{% static 'icono/logo.png' %}" alt="Logo" class="pane-logo">
+                <span>AulaClass</span>
+            </div>
+            
+            <div class="hero-text">
+                <h2>Gestión escolar simplificada.</h2>
+                <p>La plataforma integral para docentes, UTP y directivos que transforma la educación en Chile.</p>
+            </div>
+        </div>
+        <div class="pane-image" style="background-image: url('https://wwwfs.mineduc.cl/Archivos/infoescuelas/imagenes/20173/SALA%20DE%20CLASES%202.JPG');"></div>
+        <div class="pane-overlay"></div>
+    </div>
+
+    <div class="right-pane">
+        <main class="login-container">
+            <header>
+                <img src="{% static 'icono/logo.png' %}" alt="Logo" class="mobile-logo">
+                <h1>¡Hola de nuevo!</h1>
+                <p class="subtitle">Ingresa tus credenciales para acceder al sistema.</p>
+            </header>
+
+            <form method="post" novalidate id="loginForm">
+                {% csrf_token %}
+
+                {# --- Alerta de Errores (Credenciales inválidas) --- #}
+                {% if form.non_field_errors %}
+                <div class="alert-error fade-in">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span>Credenciales incorrectas. Inténtalo nuevamente.</span>
+                </div>
+                {% endif %}
+
+                {# --- Input Usuario --- #}
+                <div class="input-group">
+                    <label for="{{ form.username.id_for_label }}">Usuario</label>
+                    <div class="input-wrapper {% if form.username.errors %}error-border{% endif %}">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        {{ form.username }}
+                    </div>
+                </div>
+
+                {# --- Input Contraseña --- #}
+                <div class="input-group">
+                    <label for="{{ form.password.id_for_label }}">Contraseña</label>
+                    <div class="input-wrapper {% if form.password.errors %}error-border{% endif %}">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        
+                        {{ form.password }}
+                        
+                        <button type="button" class="toggle-pass" onclick="togglePass()" title="Mostrar contraseña">
+                            <svg id="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
+
+                    <div class="extra-options">
+                        <a href="#" onclick="mostrarAlertaRecuperacion(event)" class="forgot">
+                            ¿Olvidaste tu contraseña?
+                        </a>
+                    </div>
+                </div>
+
+                {# Redirección inteligente #}
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <span>Ingresar a mi cuenta</span>
+                    <div class="spinner" style="display:none;"></div> </button>
+            </form>
+            
+            <footer>
+                <p>© 2025 AulaClass. Todos los derechos reservados.</p>
+            </footer>
+        </main>
+    </div>
+</div>
+
+<script>
+    // Función para mostrar/ocultar contraseña
+    function togglePass() {
+        const input = document.getElementById('{{ form.password.id_for_label }}');
+        const eye = document.getElementById('eye');
+        if (input.type === 'password') {
+            input.type = 'text';
+            eye.style.stroke = '#7c3aed'; // Color activo
+        } else {
+            input.type = 'password';
+            eye.style.stroke = '#94a3b8'; // Color inactivo
+        }
+    }
+
+    // Animación de carga al enviar
+    document.getElementById('loginForm').addEventListener('submit', function() {
+        const btn = document.getElementById('submitBtn');
+        const spinner = btn.querySelector('.spinner');
+        
+        // Evita doble envío
+        btn.style.opacity = '0.8';
+        btn.style.pointerEvents = 'none';
+        
+        // Muestra spinner
+        if(spinner) spinner.style.display = 'block';
+    });
+    // Función para mostrar la alerta de olvido de clave
+    function mostrarAlertaRecuperacion(event) {
+        event.preventDefault(); // Evita que el enlace recargue la página
+        
+        Swal.fire({
+            title: '¿Olvidaste tu contraseña?',
+            text: 'Por motivos de seguridad, solo el Administrador o UTP pueden restablecer las claves. Por favor, acércate a secretaría o envía un correo a soporte.',
+            icon: 'info',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#7c3aed', // Color violeta de tu marca
+            footer: '<a href="mailto:soporte@aulaclass.cl" style="color:#7c3aed; font-weight:600; text-decoration:none;">Enviar correo a soporte@aulaclass.cl</a>'
+        });
+    }
+</script>
 {% endblock %}
