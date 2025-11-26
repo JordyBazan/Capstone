@@ -759,7 +759,7 @@ def reporte_alumno(request, alumno_id):
     if count_promedios > 0:
         promedio_general = round(suma_promedios / count_promedios, 1)
 
-    # B. Asistencia (CORRECCIÓN AULATRACK)
+    # B. Asistencia (CORRECCIÓN )
     # Definimos estados válidos para ignorar basura o scripts de prueba
     estados_validos = ['Presente', 'Ausente', 'Justificado', 'Atraso']
     
@@ -812,7 +812,7 @@ def reporte_alumno(request, alumno_id):
     ]
     t_header = Table(header_data, colWidths=[200*mm, 67*mm])
     t_header.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#4f46e5")), # Azul Primario AulaTrack
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#4f46e5")), # Azul Primario 
         ('TOPPADDING', (0,0), (-1,-1), 10),
         ('BOTTOMPADDING', (0,0), (-1,-1), 10),
         ('LEFTPADDING', (0,0), (-1,-1), 15),
