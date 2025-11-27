@@ -99,5 +99,4 @@ urlpatterns = [
     path('usuario/editar/<int:id>/', views.editar_usuario, name='editar_usuario'),
 
     
-    path('reportes/asistencia/<int:curso_id>/', views.reporte_asistencia_curso, name='reporte_asistencia_curso'),
 ]

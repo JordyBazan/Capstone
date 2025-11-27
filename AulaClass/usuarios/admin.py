@@ -20,9 +20,9 @@ class RangoNotaFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         return (
-            ('rojas', '🔴 Insuficientes (< 4.0)'),
-            ('azules', '🟢 Suficientes (≥ 4.0)'),
-            ('criticas', '⚠️ Críticas (< 3.0)'),
+            ('rojas', 'Insuficientes (< 4.0)'),
+            ('azules', 'Suficientes (≥ 4.0)'),
+            ('criticas', 'Críticas (< 3.0)'),
         )
 
     def queryset(self, request, queryset):

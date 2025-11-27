@@ -5,11 +5,11 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import get_user_model
 from django.forms import CheckboxSelectMultiple
+from django.db.models import Q
 from django.db.models.functions import Lower
 
 # Modelos
 from .models import Curso, Asignatura, Usuario, Alumno, DocenteCurso
-from django.db.models import Q
 
 Usuario = get_user_model()
 
@@ -19,11 +19,19 @@ Usuario = get_user_model()
 class LoginForm(AuthenticationForm):
     username = forms.CharField(
         label="Usuario",
-        widget=forms.TextInput(attrs={"autofocus": True, "placeholder": "Usuario"})
+        # Nota: AbstractUser suele tener username de 150 caracteres
+        widget=forms.TextInput(attrs={
+            "autofocus": True, 
+            "placeholder": "Usuario",
+            "maxlength": "150" 
+        })
     )
     password = forms.CharField(
         label="Contraseña",
-        widget=forms.PasswordInput(attrs={"placeholder": "••••••••"})
+        widget=forms.PasswordInput(attrs={
+            "placeholder": "••••••••",
+            "maxlength": "128" # Estándar de Django hashing
+        })
     )
 
     def __init__(self, *args, **kwargs):
@@ -46,9 +54,15 @@ class RegistroForm(UserCreationForm):
             'email',
             'role',
         ]
-        # Nota: UserCreationForm ya maneja password1 y password2 internamente,
-        # no es necesario declararlos en 'fields' si usas la clase base, 
-        # pero si los quieres explícitos para el orden, está bien.
+        # Definimos widgets aquí para asegurar los maxlength según el modelo
+        widgets = {
+            'username': forms.TextInput(attrs={'maxlength': '150'}),
+            'nombres': forms.TextInput(attrs={'maxlength': '100'}),
+            'apellidos': forms.TextInput(attrs={'maxlength': '100'}),
+            'rut': forms.TextInput(attrs={'maxlength': '12'}),
+            # EmailField ya valida formato, pero el maxlength ayuda visualmente
+            'email': forms.EmailInput(attrs={'maxlength': '254'}), 
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -62,9 +76,10 @@ class RegistroForm(UserCreationForm):
             if isinstance(field.widget, forms.Select):
                 css_class = 'form-select input-aula'
             
+            # Actualizamos atributos sin borrar los que definimos en 'widgets'
             field.widget.attrs.update({
                 'class': css_class,
-                'placeholder': field.label  # Placeholder automático
+                'placeholder': field.label 
             })
 
     def save(self, commit=True):
@@ -94,8 +109,17 @@ class AsignaturaForm(forms.ModelForm):
             "curso": "Curso",
         }
         widgets = {
-            "nombre": forms.TextInput(attrs={"placeholder": "Ej: Matemáticas", "class": "form-control input-aula"}),
-            "descripcion": forms.Textarea(attrs={"placeholder": "Breve descripción", "rows": 2, "class": "form-control input-aula"}),
+            "nombre": forms.TextInput(attrs={
+                "placeholder": "Ej: Matemáticas", 
+                "class": "form-control input-aula",
+                "maxlength": "100" # Limite modelo
+            }),
+            "descripcion": forms.Textarea(attrs={
+                "placeholder": "Breve descripción", 
+                "rows": 2, 
+                "class": "form-control input-aula"
+                # TextField no tiene límite estricto en DB, pero podemos poner uno lógico si queremos
+            }),
             "profesor": forms.Select(attrs={"class": "form-select input-aula"}),
             "curso": forms.Select(attrs={"class": "form-select input-aula"}),
         }
@@ -119,10 +143,25 @@ class CursoForm(forms.ModelForm):
             "profesor_jefe": "Profesor Jefe (Docente)",
         }
         widgets = {
-            "año": forms.TextInput(attrs={"placeholder": "Ej: 2025", "class": "form-control input-aula"}),
-            "nombre": forms.TextInput(attrs={"placeholder": "Ej: 1° Básico A", "class": "form-control input-aula"}),
-            "sala": forms.TextInput(attrs={"placeholder": "Ej: Aula 1", "class": "form-control input-aula"}),
-            "profesor_jefe": forms.Select(attrs={"data-placeholder": "Seleccione un Docente", "class": "form-select input-aula"}),
+            "año": forms.TextInput(attrs={
+                "placeholder": "Ej: 2025", 
+                "class": "form-control input-aula",
+                "maxlength": "15" # Limite modelo
+            }),
+            "nombre": forms.TextInput(attrs={
+                "placeholder": "Ej: 1° Básico A", 
+                "class": "form-control input-aula",
+                "maxlength": "50" # Limite modelo
+            }),
+            "sala": forms.TextInput(attrs={
+                "placeholder": "Ej: Aula 1", 
+                "class": "form-control input-aula",
+                "maxlength": "50" # Limite modelo
+            }),
+            "profesor_jefe": forms.Select(attrs={
+                "data-placeholder": "Seleccione un Docente", 
+                "class": "form-select input-aula"
+            }),
         }
 
     def __init__(self, *args, **kwargs):
@@ -171,7 +210,7 @@ class CursoAsignaturasForm(forms.ModelForm):
     asignaturas = forms.ModelMultipleChoiceField(
         queryset=Asignatura.objects.select_related("profesor").order_by("nombre"),
         required=False,
-        widget=CheckboxSelectMultiple, # Los checkboxes suelen llevar estilos distintos, no input-aula
+        widget=CheckboxSelectMultiple, 
         label="Asignaturas del curso",
     )
 
@@ -193,9 +232,9 @@ class CursoEditForm(forms.ModelForm):
         model = Curso
         fields = ['año', 'nombre', 'sala']
         widgets = {
-             "año": forms.TextInput(attrs={"class": "form-control input-aula"}),
-             "nombre": forms.TextInput(attrs={"class": "form-control input-aula"}),
-             "sala": forms.TextInput(attrs={"class": "form-control input-aula"}),
+             "año": forms.TextInput(attrs={"class": "form-control input-aula", "maxlength": "15"}),
+             "nombre": forms.TextInput(attrs={"class": "form-control input-aula", "maxlength": "50"}),
+             "sala": forms.TextInput(attrs={"class": "form-control input-aula", "maxlength": "50"}),
         }
 
 # =========================================================
@@ -230,10 +269,10 @@ class AlumnoForm(forms.ModelForm):
         fields = ['rut', 'nombres', 'apellidos', 'fecha_nacimiento', 'contacto_emergencia', 'curso']
         widgets = {
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date', 'class': 'form-control input-aula'}),
-            'rut': forms.TextInput(attrs={'class': 'form-control input-aula'}),
-            'nombres': forms.TextInput(attrs={'class': 'form-control input-aula'}),
-            'apellidos': forms.TextInput(attrs={'class': 'form-control input-aula'}),
-            'contacto_emergencia': forms.TextInput(attrs={'class': 'form-control input-aula'}),
+            'rut': forms.TextInput(attrs={'class': 'form-control input-aula', 'maxlength': '12'}),
+            'nombres': forms.TextInput(attrs={'class': 'form-control input-aula', 'maxlength': '100'}),
+            'apellidos': forms.TextInput(attrs={'class': 'form-control input-aula', 'maxlength': '100'}),
+            'contacto_emergencia': forms.TextInput(attrs={'class': 'form-control input-aula', 'maxlength': '50'}),
             'curso': forms.Select(attrs={'class': 'form-select input-aula'}),
         }
 
@@ -252,7 +291,6 @@ class AsignarAsignaturasForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         if curso:
-    
             self.fields['asignaturas'].queryset = Asignatura.objects.filter(
                 Q(curso=curso) | Q(curso__isnull=True)
             )

@@ -1,9 +1,9 @@
 /* =============================================================
-   LOGIN CSS - VERSIÓN FINAL BLINDADA
+   AULACLASS - LOGIN CSS (VERSIÓN FINAL)
    ============================================================= */
 
-/* 1. RESET AGRESIVO (Anula base.css) 
-   Esto es vital porque base.css está empujando o limitando el ancho. */
+/* 1. RESET AGRESIVO 
+   Necesario para anular estilos globales de base.css que puedan afectar el layout */
 
 body, html {
     margin: 0 !important;
@@ -11,48 +11,48 @@ body, html {
     width: 100vw !important;
     height: 100vh !important;
     overflow: hidden !important;
-    background: #fff !important; /* Asegura fondo blanco limpio */
-    display: block !important; /* Quita flex/grid globales del body */
+    background: #fff !important;
+    display: block !important;
 }
 
-/* Reseteamos los contenedores del layout principal de Django */
+/* Reseteamos contenedores principales de Django */
 .app, .main, .content {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    max-width: none !important; /* Quita restricciones de ancho del dashboard */
-    display: block !important; /* Permite que el split-screen maneje el layout */
+    max-width: none !important;
+    display: block !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     position: static !important;
 }
 
-/* Ocultamos definitivamente los elementos del menú */
+/* Ocultamos elementos de navegación del sistema principal */
 .sidebar, .topbar, .menu-toggle, .overlay, .nav-buttons, .logout-fixed {
     display: none !important;
 }
 
 /* =============================================================
-   DISEÑO SPLIT-SCREEN (Pantalla Dividida)
+   LAYOUT SPLIT-SCREEN (Pantalla Dividida)
    ============================================================= */
 
 .split-screen {
     display: flex;
-    width: 100vw; /* Forzamos ancho total del viewport */
-    height: 100vh; /* Forzamos alto total del viewport */
-    position: fixed; /* Fijamos para evitar scrolls extraños */
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
     top: 0;
     left: 0;
 }
 
-/* --- PANEL IZQUIERDO (50%) --- */
+/* --- PANEL IZQUIERDO (50%) - IMAGEN Y BRANDING --- */
 .left-pane {
     width: 50%;
     height: 100%;
     position: relative;
-    background-color: #1e1b4b;
+    background-color: #1e1b4b; /* Base oscura por si falla la imagen */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -61,6 +61,7 @@ body, html {
     overflow: hidden;
 }
 
+/* Imagen de fondo animada */
 .pane-image {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -71,16 +72,18 @@ body, html {
 }
 @keyframes zoomSlow { from { transform: scale(1); } to { transform: scale(1.15); } }
 
+/* Capa violeta translúcida sobre la imagen */
 .pane-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(to top, rgba(76, 29, 149, 0.85), rgba(124, 58, 237, 0.3));
+    background: linear-gradient(to top, rgba(76, 29, 149, 0.9), rgba(124, 58, 237, 0.4));
     z-index: 2;
 }
 
+/* Contenido (Texto y Logo) */
 .pane-content {
     position: relative;
-    z-index: 3;
+    z-index: 10; /* Asegura que esté por encima del overlay */
     width: 100%;
     height: 100%;
     display: flex;
@@ -100,15 +103,36 @@ body, html {
     border: 1px solid rgba(255,255,255,0.25);
     font-weight: 700;
     font-size: 1.2rem;
+    color: #ffffff;
 }
 .pane-logo { height: 28px; width: auto; }
 
-.hero-text { width: 100%; }
-.hero-text h2 { font-size: 2.5rem; line-height: 1.1; margin-bottom: 1.5rem; font-weight: 800; word-break: break-word; }
-.hero-text p { font-size: 1.1rem; opacity: 0.95; line-height: 1.6; max-width: 90%; }
+/* MODIFICACIÓN: Texto Hero Blanco Puro */
+.hero-text { 
+    width: 100%; 
+}
+
+.hero-text h2 { 
+    color: #ffffff !important; /* FORZADO BLANCO */
+    font-size: 2.5rem; 
+    line-height: 1.1; 
+    margin-bottom: 1.5rem; 
+    font-weight: 800; 
+    word-break: break-word;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.2); /* Sombra suave para legibilidad */
+}
+
+.hero-text p { 
+    color: #ffffff !important; /* FORZADO BLANCO */
+    font-size: 1.1rem; 
+    opacity: 1; /* Opacidad al 100% para blancura total */
+    line-height: 1.6; 
+    max-width: 90%; 
+    font-weight: 500;
+}
 
 
-/* --- PANEL DERECHO (50%) --- */
+/* --- PANEL DERECHO (50%) - FORMULARIO --- */
 .right-pane {
     width: 50%;
     height: 100%;
@@ -118,7 +142,7 @@ body, html {
     justify-content: center;
     padding: 2rem;
     position: relative;
-    z-index: 5;
+    z-index: 20;
 }
 
 .login-container {
@@ -126,12 +150,12 @@ body, html {
     max-width: 420px;
 }
 
-/* Header Login */
-.mobile-logo { display: none; } /* Se ve solo en móvil */
+/* Header del Formulario */
+.mobile-logo { display: none; }
 header h1 { font-size: 2.2rem; color: #0f172a; margin-bottom: 0.5rem; font-weight: 800; }
 .subtitle { color: #64748b; font-size: 1rem; margin-bottom: 2.5rem; }
 
-/* Inputs */
+/* Inputs y Labels */
 .input-group { margin-bottom: 1.5rem; }
 .input-group label { display: block; font-size: 0.95rem; font-weight: 600; color: #334155; margin-bottom: 8px; }
 
@@ -164,11 +188,13 @@ input {
     font-weight: 500;
 }
 
-/* Botones */
+/* Botones y Links */
 .toggle-pass { position: absolute; right: 16px; background: none; border: none; cursor: pointer; padding: 4px; }
 .toggle-pass svg { width: 22px; stroke: #94a3b8; }
+
 .extra-options { text-align: right; margin-top: 10px; }
-.forgot { color: #7c3aed; font-size: 0.95rem; font-weight: 600; text-decoration: none; }
+.forgot { color: #7c3aed; font-size: 0.95rem; font-weight: 600; text-decoration: none; transition: color 0.2s; }
+.forgot:hover { color: #6d28d9; text-decoration: underline; }
 
 .btn-submit {
     width: 100%;
@@ -186,19 +212,49 @@ input {
     align-items: center;
     gap: 10px;
     box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.25);
+    transition: all 0.2s;
 }
 .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.4); }
+
+/* Spinner de carga */
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Footer */
 footer { margin-top: 4rem; text-align: center; color: #94a3b8; font-size: 0.85rem; }
 
-/* Alertas */
-.alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 14px; border-radius: 12px; font-size: 0.95rem; display: flex; align-items: center; gap: 12px; margin-bottom: 2rem; }
+/* Alertas de Error (Django Messages / Form Errors) */
+.alert-error { 
+    background: #fef2f2; 
+    border: 1px solid #fecaca; 
+    color: #b91c1c; 
+    padding: 14px; 
+    border-radius: 12px; 
+    font-size: 0.95rem; 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    margin-bottom: 2rem; 
+    animation: fadeIn 0.3s ease-in;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* --- RESPONSIVE --- */
+/* =============================================================
+   RESPONSIVE DESIGN (Móvil y Tablets)
+   ============================================================= */
 @media (max-width: 1024px) {
     .left-pane { display: none; }
     .right-pane { width: 100%; padding: 2rem; }
+    
     .mobile-logo { display: block; margin: 0 auto 1.5rem; width: 70px; }
     header { text-align: center; }
+    
+    .login-container { max-width: 100%; }
 }

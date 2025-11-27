@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Historial de Acciones{% endblock %}
+{% block title %}Historial de Acciones | AulaClass{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/historial_acciones.css' %}">
@@ -10,18 +10,23 @@
 {% block content %}
 <main class="hist-container">
 
-  <!-- Header -->
   <div class="hist-header">
-    <h1>Historial de acciones</h1>
+    <div>
+        <h1>Historial de acciones</h1>
+        <p style="color:#6b7280; margin:0; font-size:0.9rem;">
+            Mostrando página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+        </p>
+    </div>
+    
     <form method="post" action="{% url 'usuarios:eliminar_todos_logs' %}"
-          onsubmit="return confirm('¿Seguro que deseas eliminar todo el historial?')">
+          onsubmit="return confirm('ZONA DE PELIGRO\n\n¿Seguro que deseas eliminar TODO el historial?\nEsta acción es irreversible.')">
       {% csrf_token %}
-      <button type="submit" class="btn-danger">Eliminar todo</button>
+      <button type="submit" class="btn-danger">Eliminar todo el historial</button>
     </form>
   </div>
 
-  <!-- Filtros -->
   <form method="get" class="hist-filters">
+    
     <select name="usuario" class="hist-select">
       <option value="">Todos los usuarios</option>
       {% for u in usuarios %}
@@ -46,21 +51,17 @@
     </select>
 
     <button type="submit" class="btn-primary">Filtrar</button>
-    <a href="{% url 'usuarios:historial_admin' %}" class="btn-secondary">Limpiar</a>
+    
+    {% if usuario_filtrado or accion_filtrada or modelo_filtrado %}
+        <a href="{% url 'usuarios:historial_admin' %}" class="btn-secondary">Limpiar</a>
+    {% endif %}
 
-    <!--  BOTÓN PDF YA CORREGIDO -->
-    <a href="
-    ?pdf=1
-    {% if usuario_filtrado %}&usuario={{ usuario_filtrado }}{% endif %}
-    {% if accion_filtrada %}&accion={{ accion_filtrada }}{% endif %}
-    {% if modelo_filtrado %}&modelo={{ modelo_filtrado }}{% endif %}
-    " class="btn-blue">
-      Exportar PDF
+    <a href="?pdf=1{% if usuario_filtrado %}&usuario={{ usuario_filtrado }}{% endif %}{% if accion_filtrada %}&accion={{ accion_filtrada }}{% endif %}{% if modelo_filtrado %}&modelo={{ modelo_filtrado }}{% endif %}" 
+       class="btn-blue" target="_blank" style="margin-left: auto;">
+       Exportar PDF
     </a>
-    <!--  FIN DEL CAMBIO -->
   </form>
 
-  <!-- Tabla -->
   <div class="hist-table-wrap">
     <table class="hist-table">
       <thead>
@@ -71,19 +72,16 @@
           <th>Modelo</th>
           <th>Objeto</th>
           <th>Detalle</th>
-          <th>Eliminar</th>
+          <th style="text-align:center;">Eliminar</th>
         </tr>
       </thead>
       <tbody>
-        {% for log in logs %}
-        <tr class="
-          {% if log.action_flag == 1 %}bg-creacion
-          {% elif log.action_flag == 2 %}bg-edicion
-          {% elif log.action_flag == 3 %}bg-eliminacion
-          {% endif %}
-        ">
-          <td>{{ log.action_time|date:"d/m/Y H:i" }}</td>
-          <td>{{ log.user.get_full_name|default:log.user.username }}</td>
+        {% for log in page_obj %}
+        <tr>
+          <td style="font-family:monospace; color:#6b7280;">{{ log.action_time|date:"d/m/Y H:i" }}</td>
+          
+          <td style="font-weight:600;">{{ log.user.get_full_name|default:log.user.username }}</td>
+          
           <td>
             {% if log.action_flag == 1 %}
               <span class="tag tag-green">Creación</span>
@@ -95,14 +93,18 @@
               <span class="tag">Otro</span>
             {% endif %}
           </td>
+
           <td>{{ log.content_type.model|capfirst }}</td>
-          <td>{{ log.object_repr }}</td>
-          <td class="muted">{{ log.change_message|default:"—" }}</td>
-          <td class="center">
+
+          <td>{{ log.object_repr|default:"—" }}</td>
+
+          <td>{{ log.change_message|default:"—"|truncatechars:100 }}</td>
+
+          <td style="text-align: center;">
             <form method="post" action="{% url 'usuarios:eliminar_log' log.id %}" style="display:inline;">
               {% csrf_token %}
               <button type="submit" class="btn-delete" title="Eliminar registro"
-                      onclick="return confirm('¿Seguro que deseas eliminar este registro del historial?')">×</button>
+                      onclick="return confirm('¿Eliminar este registro?')">×</button>
             </form>
           </td>
         </tr>
@@ -112,6 +114,24 @@
       </tbody>
     </table>
   </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="hist-pagination">
+    
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if usuario_filtrado %}&usuario={{ usuario_filtrado }}{% endif %}{% if accion_filtrada %}&accion={{ accion_filtrada }}{% endif %}{% if modelo_filtrado %}&modelo={{ modelo_filtrado }}{% endif %}" class="btn-small">&laquo; Anterior</a>
+    {% endif %}
+
+    <span class="page-info">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if usuario_filtrado %}&usuario={{ usuario_filtrado }}{% endif %}{% if accion_filtrada %}&accion={{ accion_filtrada }}{% endif %}{% if modelo_filtrado %}&modelo={{ modelo_filtrado }}{% endif %}" class="btn-small">Siguiente &raquo;</a>
+    {% endif %}
+    
+  </div>
+  {% endif %}
 
 </main>
 {% endblock %}

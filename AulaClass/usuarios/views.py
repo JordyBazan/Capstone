@@ -1122,7 +1122,7 @@ def libro_notas(request, curso_id, asignatura_id):
             raw_val = value.strip().replace(',', '.')
 
             if not raw_val: 
-                continue # Si viene vacío, lo ignoramos (o podríamos borrar la nota si existía)
+                continue # Si viene vacío, lo ignoramos 
 
             try:
                 val_float = float(raw_val)
@@ -1399,7 +1399,7 @@ def editar_usuario(request, id):
     roles = Usuario.ROLE_CHOICES
 
     if request.method == 'POST':
-        # --- NUEVO: Capturar el username ---
+        # ---Capturar el username ---
         nuevo_username = request.POST.get('username')
         
         # Validación simple: Verificar que el username no esté ocupado por OTRO usuario
@@ -1443,9 +1443,11 @@ def eliminar_usuario(request, id):
 # =========================================================
 @user_passes_test(es_utp)
 def historial_acciones_admin(request):
-    """Historial completo de todas las acciones sin paginación, con columnas alineadas."""
+    """
+    Historial con Paginación, Filtros Limpios y PDF.
+    """
     import io
-    from django.template.loader import render_to_string
+    from django.core.paginator import Paginator
     from django.utils import timezone
     from reportlab.lib.pagesizes import landscape, A4
     from reportlab.lib import colors
@@ -1453,119 +1455,81 @@ def historial_acciones_admin(request):
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import mm
 
-    logs = (
-        LogEntry.objects.select_related("user", "content_type")
-        .order_by("-action_time")
-    )
+    # 1. Consulta Base
+    logs = LogEntry.objects.select_related("user", "content_type").order_by("-action_time")
 
+    # 2. Filtros
     accion = request.GET.get("accion")
     usuario_id = request.GET.get("usuario")
     modelo = request.GET.get("modelo")
 
-    if accion:
-        logs = logs.filter(action_flag=int(accion))
-    if usuario_id:
-        logs = logs.filter(user_id=usuario_id)
-    if modelo:
-        logs = logs.filter(content_type__model=modelo.lower())
+    if accion: logs = logs.filter(action_flag=int(accion))
+    if usuario_id: logs = logs.filter(user_id=usuario_id)
+    if modelo: logs = logs.filter(content_type__model=modelo.lower())
 
+    # 3. Exportación PDF (Antes de paginar, para exportar TODO lo filtrado)
     if "pdf" in request.GET:
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
-            buffer,
-            pagesize=landscape(A4),
-            leftMargin=18 * mm,
-            rightMargin=18 * mm,
-            topMargin=18 * mm,
-            bottomMargin=18 * mm,
+            buffer, pagesize=landscape(A4),
+            leftMargin=15*mm, rightMargin=15*mm, topMargin=15*mm, bottomMargin=15*mm,
+            title="Historial_AulaClass"
         )
-
         styles = getSampleStyleSheet()
-        style_normal = ParagraphStyle(
-            "normal",
-            fontSize=8,
-            leading=10,
-            textColor=colors.HexColor("#111827"),
-        )
-        style_accion = ParagraphStyle(
-            "accion",
-            fontSize=8,
-            leading=10,
-            alignment=1,  # centrado
-        )
+        style_normal = ParagraphStyle("normal", fontSize=8, leading=10)
+        style_header = ParagraphStyle("header", parent=styles['Heading2'], alignment=1)
 
-        story = []
-        story.append(Paragraph("<b>Historial de Acciones - AulaClass</b>", styles["Title"]))
-        story.append(Spacer(1, 4))
-        story.append(Paragraph(f"<b>Generado por:</b> {request.user.get_full_name() or request.user.username}", styles["Normal"]))
-        story.append(Paragraph(f"<b>Fecha:</b> {timezone.localtime().strftime('%d/%m/%Y %H:%M')}", styles["Normal"]))
-        story.append(Spacer(1, 10))
-
+        story = [Paragraph("Historial de Acciones - AulaClass", style_header), Spacer(1, 10)]
+        
         data = [["Fecha", "Usuario", "Acción", "Modelo", "Objeto", "Detalle"]]
-
         for log in logs:
-            if log.action_flag == 1:
-                accion_str = "<font color='#16a34a'><b>Creación</b></font>"
-            elif log.action_flag == 2:
-                accion_str = "<font color='#2563eb'><b>Edición</b></font>"
-            elif log.action_flag == 3:
-                accion_str = "<font color='#dc2626'><b>Eliminación</b></font>"
-            else:
-                accion_str = "<font color='#6b7280'><b>Otro</b></font>"
-
-            detalle = log.change_message or "—"
-            detalle = detalle.replace("\n", "<br/>• ")
-            detalle = f"<font color='#334155'>• {detalle}</font>"
-
+            if log.action_flag == 1: act = "<font color='#166534'><b>Creación</b></font>"
+            elif log.action_flag == 2: act = "<font color='#1e40af'><b>Edición</b></font>"
+            elif log.action_flag == 3: act = "<font color='#991b1b'><b>Eliminación</b></font>"
+            else: act = "Otro"
+            
+            detalle = (log.change_message or "-").replace("\n", "<br/>")
             data.append([
                 Paragraph(log.action_time.strftime("%d/%m/%Y %H:%M"), style_normal),
                 Paragraph(log.user.get_full_name() or log.user.username, style_normal),
-                Paragraph(accion_str, style_accion),
+                Paragraph(act, style_normal),
                 Paragraph(log.content_type.model.capitalize(), style_normal),
-                Paragraph(log.object_repr or "—", style_normal),
-                Paragraph(detalle, style_normal),
+                Paragraph(log.object_repr, style_normal),
+                Paragraph(f"<font color='#4b5563'>{detalle}</font>", style_normal),
             ])
 
-        #  Ajuste de anchos balanceados
-        table = Table(
-            data,
-            repeatRows=1,
-            colWidths=[25 * mm, 30 * mm, 25 * mm, 35 * mm, 55 * mm, 110 * mm],
-        )
-
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f1f5f9")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#111827")),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, 0), 9),
-            ("ALIGN", (0, 0), (-1, 0), "CENTER"),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#cbd5e1")),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
-            ("LEFTPADDING", (0, 0), (-1, -1), 5),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 5),
-            ("TOPPADDING", (0, 0), (-1, -1), 5),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        t = Table(data, repeatRows=1, colWidths=[28*mm, 35*mm, 22*mm, 25*mm, 50*mm, 105*mm])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#f3f4f6")),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#e5e7eb")),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,0), 9),
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('PADDING', (0,0), (-1,-1), 4),
         ]))
-
-        story.append(table)
+        story.append(t)
         doc.build(story)
-        pdf = buffer.getvalue()
-        buffer.close()
-
-        response = HttpResponse(pdf, content_type="application/pdf")
+        response = HttpResponse(buffer.getvalue(), content_type="application/pdf")
         response["Content-Disposition"] = 'attachment; filename="Historial_AulaClass.pdf"'
+        buffer.close()
         return response
 
+    # 4. PAGINACIÓN (50 registros por página)
+    paginator = Paginator(logs, 50)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # 5. Contexto (Filtro de Modelos Limpio)
     usuarios = Usuario.objects.all().order_by("first_name", "last_name")
-    modelos = (
-        ContentType.objects.values_list("model", flat=True)
-        .distinct()
-        .order_by("model")
-    )
+    
+    # Excluir basura técnica
+    modelos_ignorados = ['contenttype', 'session', 'logentry', 'permission', 'group', 'adminlog']
+    modelos = LogEntry.objects.exclude(
+        content_type__model__in=modelos_ignorados
+    ).values_list('content_type__model', flat=True).distinct().order_by('content_type__model')
 
     return render(request, "historial_admin.html", {
-        "logs": logs,
+        "page_obj": page_obj, # IMPORTANTE: Usamos page_obj en el template
         "usuarios": usuarios,
         "modelos": modelos,
         "accion_filtrada": accion,
@@ -1590,7 +1554,7 @@ def eliminar_todos_logs(request):
     """Elimina todos los registros del historial."""
     if request.method == "POST":
         LogEntry.objects.all().delete()
-        messages.success(request, "🧹 Se ha eliminado todo el historial de acciones.")
+        messages.success(request, "Se ha eliminado todo el historial de acciones.")
     return redirect("usuarios:historial_admin")
 
 
@@ -1741,148 +1705,3 @@ def cambiar_password(request, user_id):
 
 
 
-# =========================================================
-# Reporte Consolidado de Asistencia por Curso
-# =========================================================
-@login_required
-def reporte_asistencia_curso(request, curso_id):
-    import io
-    from django.db.models import Count, Q, Min, Max
-    from django.utils import timezone
-    from django.http import HttpResponse
-    
-    # ReportLab Imports
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib import colors
-    from reportlab.lib.units import mm
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-
-    curso = get_object_or_404(Curso, id=curso_id)
-
-    # 1. OBTENER RANGO DE FECHAS (PERÍODO)
-    # Buscamos la primera y última asistencia registrada en este curso
-    rango = Asistencia.objects.filter(curso=curso).aggregate(
-        inicio=Min('fecha'),
-        fin=Max('fecha')
-    )
-    
-    fecha_inicio = rango['inicio']
-    fecha_fin = rango['fin']
-
-    # Formateo manual para "10 Mar — 20 Nov 2025"
-    # (Django a veces necesita configuración de locale, esto es más seguro y rápido)
-    meses_abreviados = {
-        1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr', 5: 'May', 6: 'Jun',
-        7: 'Jul', 8: 'Ago', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dic'
-    }
-
-    if fecha_inicio and fecha_fin:
-        txt_periodo = f"{fecha_inicio.day} {meses_abreviados[fecha_inicio.month]} — {fecha_fin.day} {meses_abreviados[fecha_fin.month]} {fecha_fin.year}"
-    else:
-        txt_periodo = "Sin registros"
-
-    # 2. OBTENER ALUMNOS Y CONTEOS (Optimizado con Annotate)
-    # Esto cuenta todo en la base de datos directamente
-    alumnos = Alumno.objects.filter(curso=curso).order_by('apellidos').annotate(
-        total_presente=Count('asistencia', filter=Q(asistencia__estado='Presente')),
-        total_atraso=Count('asistencia', filter=Q(asistencia__estado='Atraso')),
-        total_ausente=Count('asistencia', filter=Q(asistencia__estado='Ausente')),
-        total_justificado=Count('asistencia', filter=Q(asistencia__estado='Justificado')),
-        total_registros=Count('asistencia')
-    )
-
-    # 3. PREPARAR DATOS PARA LA TABLA PDF
-    headers = ["Nº", "ALUMNO", "PRES.", "ATRASO", "AUS.", "JUST.", "TOTAL", "%"]
-    table_data = [headers]
-
-    style_cell = ParagraphStyle('cell', alignment=TA_CENTER, fontName='Helvetica', fontSize=9)
-    style_left = ParagraphStyle('left', alignment=TA_LEFT, fontName='Helvetica', fontSize=9)
-
-    for idx, alum in enumerate(alumnos, 1):
-        # Cálculos de presentación
-        # Nota: En Chile a veces se suma Atraso al Presente, aquí los muestro separados para claridad,
-        # pero sumo ambos para el porcentaje de asistencia.
-        efectivos = alum.total_presente + alum.total_atraso
-        porcentaje = 0
-        if alum.total_registros > 0:
-            porcentaje = round((efectivos / alum.total_registros) * 100, 0) # Sin decimales para limpieza
-
-        # Color si la asistencia es crítica (<85%)
-        color_pct = "#dc2626" if porcentaje < 85 else "#111827"
-
-        row = [
-            str(idx),
-            Paragraph(f"{alum.apellidos}, {alum.nombres}", style_left),
-            str(alum.total_presente),
-            str(alum.total_atraso),
-            str(alum.total_ausente),
-            str(alum.total_justificado),
-            str(alum.total_registros),
-            Paragraph(f"<b><font color='{color_pct}'>{int(porcentaje)}%</font></b>", style_cell)
-        ]
-        table_data.append(row)
-
-    # 4. GENERAR PDF
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=A4, # Vertical está bien para listas, si son muchos datos usa landscape(A4)
-        leftMargin=15*mm, rightMargin=15*mm,
-        topMargin=20*mm, bottomMargin=20*mm,
-        title=f"Asistencia_{curso.nombre}"
-    )
-
-    story = []
-    styles = getSampleStyleSheet()
-
-    # --- ENCABEZADO ---
-    story.append(Paragraph("INFORME DE ASISTENCIA GENERAL", styles['Title']))
-    story.append(Spacer(1, 5*mm))
-
-    # Info del Curso y Periodo
-    info_text = f"""
-    <b>Curso:</b> {curso.nombre} <br/>
-    <b>Profesor Jefe:</b> {curso.profesor_jefe.get_full_name() if curso.profesor_jefe else 'No asignado'} <br/>
-    <b>Período:</b> {txt_periodo} <br/>
-    <b>Total días registrados:</b> {fecha_fin.day if fecha_fin else 0} (aprox)
-    """
-    story.append(Paragraph(info_text, styles['Normal']))
-    story.append(Spacer(1, 10*mm))
-
-    # --- TABLA ---
-    # Anchos de columna calculados para A4 vertical
-    col_widths = [10*mm, 80*mm, 15*mm, 15*mm, 15*mm, 15*mm, 15*mm, 15*mm]
-    t = Table(table_data, colWidths=col_widths, repeatRows=1)
-
-    t.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#4f46e5")), # Cabecera Azul
-        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,0), 8),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        # Columna de Nombres alineada a la izquierda
-        ('ALIGN', (1,0), (1,-1), 'LEFT'),
-        # Zebra y Bordes
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#e5e7eb")),
-        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor("#f9fafb")]),
-    ]))
-
-    story.append(t)
-    
-    # Pie de página
-    story.append(Spacer(1, 10*mm))
-    story.append(Paragraph(
-        f"<font size=8 color='#6b7280'>Documento generado por AulaClass el {timezone.now().strftime('%d/%m/%Y')}</font>",
-        ParagraphStyle('footer', alignment=TA_CENTER)
-    ))
-
-    doc.build(story)
-    pdf = buffer.getvalue()
-    buffer.close()
-
-    response = HttpResponse(pdf, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="Asistencia_{curso.nombre}.pdf"'
-    return response
