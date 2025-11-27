@@ -62,7 +62,7 @@
                             <li><a href="{% url 'usuarios:agregar_alumno' %}">Agregar Alumno</a></li>
                             <li><a href="{% url 'usuarios:gestion_usuario' %}">Usuarios</a></li>
                             <li><a href="{% url 'usuarios:historial_admin' %}">Historial</a></li>
-                            <li><a href="{% url 'usuarios:asignar_docente_curso' %}">Asignar Docente a Curso</a></li>
+                            <!-- <li><a href="{% url 'usuarios:asignar_docente_curso' %}">Asignar Docente a Curso</a></li> -->
 
                         {#  === UTP (Gestión sin usuarios admin) === #}
                         {% elif user.role == "utp" %}
@@ -71,7 +71,7 @@
                             <li><a href="{% url 'usuarios:crear_asignatura' %}">Crear Asignatura</a></li>
                             <li><a href="{% url 'usuarios:asignar_profesor_jefe' %}">Profesor Jefe</a></li>
                             <li><a href="{% url 'usuarios:agregar_alumno' %}">Agregar Alumno</a></li>
-                            <li><a href="{% url 'usuarios:asignar_docente_curso' %}">Asignar Docente a Curso</a></li>
+                            <!-- <li><a href="{% url 'usuarios:asignar_docente_curso' %}">Asignar Docente a Curso</a></li> -->
 
                         {#  === DOCENTE (Solo sus cursos) === #}
                         {% elif user.role == "docente" %}
